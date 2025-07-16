@@ -5,9 +5,9 @@ A simple Progressive Web App (PWA) used to record shearing tallies. It allows yo
 ## Setup
 
 1. Clone this repository.
-2. Serve the files using any static web server. Examples:
-   - `npx serve` (Node.js)
-   - `python3 -m http.server`
+2. Serve the files in the `public/` directory using any static web server. Examples:
+   - `npx serve public`
+   - `python3 -m http.server public`
    The service worker requires the app to be served via `http://` or `https://` for full functionality.
 
 ## Running Offline
@@ -16,7 +16,7 @@ When the app is first opened while online, it caches its files using a service w
 
 ## Build
 
-There is no build step. All files are already in `index.html`, `main.js` and related assets. Simply serve these files as described above.
+There is no build step. All files are located in the `public/` folder. Simply serve that directory as described above.
 
 ## PWA Features
 
@@ -30,5 +30,3 @@ Click **Export Data** to choose an output format:
 
 **CSV** – generates a summary CSV with station details, sheep type totals per shearer and shed staff hours.
 - **Excel** – generates a formatted `.xlsx` summary (requires browser support for `xlsx.full.min.js`).
-
-<!-- Trigger deploy -->
