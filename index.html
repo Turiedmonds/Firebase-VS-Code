@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+   <!-- Configure the viewport so mobile browsers size the page correctly -->
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>SHEAR iQ Tally Processor</title>
+<link rel="stylesheet" href="styles.css">
+   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- iOS Home Screen Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#000000" /> 
+</head>
+<body>
+
+   <div style="position:absolute; top:10px; right:10px; font-size:14px; display: flex; gap: 8px; align-items: center;">
+  <div id="userInfo" style="color: white; font-weight: bold;"></div>
+  <button id="logoutBtn" class="tab-button">Logout</button>
+</div>
+
+   <div id="tabNav" class="tabs">
+  <button class="tab-button active" data-view="tallySheetView">Tally Sheet</button>
+  <button class="tab-button" data-view="summaryView">Daily Summary</button>
+<button class="tab-button" data-view="stationSummaryView">Station Summary</button>
+   </div>
+<div id="tallySheetView" class="view">
+<div class="logo-container">
+      <img src="logo.png" alt="SHEΔR iQ logo" />
+      <h2>Tally Processor</h2>
+    </div>
+  <label>Date:</label><br/>
+<input id="date" type="date"/><br/><br/>
+<label>Station Name:</label><br/>
+<input id="stationName" class="small-input" type="text"/><br/><br/>
+<label>Team Leader:</label><br/>
+<input id="teamLeader" class="small-input" type="text"/><br/><br/>
+<label>Comb Type:</label><br/>
+<input id="combType" class="small-input" type="text">
+<div style="margin-top: 14px;">
+<div style="display: flex; gap: 14px; margin-bottom: 16px;">
+<div style="flex: 1;">
+<label for="startTime">Start Time:</label><br/>
+<select id="startTime" class="small-input"></select>
+</div>
+<div style="flex: 1;">
+<label for="finishTime">Finish Time:</label><br/>
+<select id="finishTime" class="small-input"></select>
+</div>
+<div style="flex: 1;">
+<label for="hoursWorked">Hours Worked:</label><br/>
+<input id="hoursWorked" class="small-input" type="text"/>
+</div>
+</div>
+   <button id="timeFormatToggle" class="toggle-button">Switch to 12-hour format</button>
+<button id="workdayToggle" class="toggle-button">8 or 9 Hour Day </button>
+<div id="timeSystemLabel" class="time-label">Time System: 8-Hour Day</div>
+</div>
+<h2>Shearers </h2>
+<div id="stand-controls" class="button-row">
+  <button id="add-stand-btn" onclick="addStand()">Add Stand</button>
+  <button id="remove-stand-btn" onclick="removeStand()">Remove Stand</button>
+</div>
+<div id="count-controls" class="button-row">
+  <button id="add-count-btn" onclick="addCount()">Add Count</button>
+  <button id="remove-count-btn" onclick="removeCount()">Remove Count</button>
+</div>
+<table id="tallyTable">
+<thead>
+<tr id="headerRow">
+<th>Count #</th>
+<th>Stand 1<br/><input placeholder="Name" type="text"/></th>
+<th>Stand 2<br/><input placeholder="Name" type="text"/></th>
+<th>Stand 3<br/><input placeholder="Name" type="text"/></th>
+<th>Stand 4<br/><input placeholder="Name" type="text"/></th>
+<th>Stand 5<br/><input placeholder="Name" type="text"/></th>
+<th>Stand 6<br/><input placeholder="Name" type="text"/></th> 
+<th>Count Total</th>
+<th class="sheep-type">Sheep Type</th>
+</tr>
+</thead>
+<tbody id="tallyBody">
+<!-- Run rows -->
+</tbody>
+<tfoot>
+<tr id="subtotalRow">
+<th>Shearer Totals</th>
+</tr>
+</tfoot>
+</table>
+<div class="section">
+<h2>Shed Staff</h2>
+<div id="shedstaff-controls" class="button-row">
+  <button id="add-shedstaff-btn" onclick="addShedStaff()">Add Shed Staff</button>
+<button id="remove-shedstaff-btn" onclick="removeShedStaff()">Remove Shed Staff</button>
+</div>
+   <table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Hours Worked</th>
+</tr>
+</thead>
+<tbody id="shedStaffTable">
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+   <tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<table id="sheepTypeTotalsTable">
+  <thead>
+    <tr>
+      <th>Sheep Type</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+<div class="button-row">
+    <button id="saveButton" onclick="saveData()">Save</button>
+<button id="loadPrevButton" onclick="loadPreviousSession()">Load Previous</button>
+    <button id="resetButton" onclick="resetApp()">Reset</button>
+   <button onclick="showExportPrompt()">Export Data</button>
+  </div>
+   
+<datalist id="sheepTypes">
+  <option value="Other">
+  <option value="Long Tails">
+  <option value="Uncrutched">
+  <option value="Fly Blow">
+  <option value="Wether Lambs">
+  <option value="Ewe Lambs">
+  <option value="Mixed Lambs">
+  <option value="Merino Lambs">
+  <option value="2nd Shear Ewes">
+  <option value="Full Wool">
+  <option value="Half Bred Ewes">
+  <option value="1/4 Bred Ewes">
+  <option value="Corridale Ewes">
+  <option value="Merino Ewes">
+  <option value="Merino Wethers">
+  <option value="Rams">
+  <option value="Stud Rams">
+  <option value="Merino Rams">
+  <option value="Merino Stud Rams">
+</datalist>
+
+<script src="xlsx.full.min.js"></script>  
+<script src="main.js"></script>
+<script>
+  const firebaseConfig = { 
+  apiKey: "AIzaSyCuQh49AgKbrMvrxcuwsR8Svy86aP3Fg2Q",
+  authDomain: "sheariq-tally-app.firebaseapp.com",
+  projectId: "sheariq-tally-app",
+  storageBucket: "sheariq-tally-app.firebasestorage.app",
+  messagingSenderId: "201669876235",
+  appId: "1:201669876235:web:379fc4035da99f4b09450e"
+};
+
+    // ...other config
+  
+  firebase.initializeApp(firebaseConfig);
+  firebase.auth().onAuthStateChanged(user => {
+    const info = document.getElementById('userInfo');
+    if (user) {
+      if (info) info.textContent = `Logged in as: ${user.email}`;
+    } else {
+      window.location.href = 'login.html';
+    }
+  });
+</script>
+
+  </div> <!-- tallySheetView -->
+
+<div id="summaryView" class="view" style="display:none;">
+  <div class="logo-container">
+      <img src="logo.png" alt="SHEΔR iQ logo" />
+      <h2>Tally Processor</h2>
+  </div>
+  <h2>Summary</h2>
+  <table id="summaryTable">
+    <thead>
+      <tr></tr>
+    </thead>
+    <tbody id="summaryTableBody"></tbody>
+  </table>
+  <div class="section">
+    <h2>Shed Staff</h2>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Hours Worked</th></tr>
+      </thead>
+      <tbody id="summaryShedStaff"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="stationSummaryView" class="view" style="display:none;">
+  <div class="logo-container">
+      <img src="logo.png" alt="SHEΔR iQ logo" />
+      <h2>Station Summary</h2>
+  </div>
+  <div class="filters">
+    <label for="stationSelect">Station:</label>
+     <select id="stationSelect" class="small-input"></select>
+    <label for="summaryStart">Start Date:</label>
+    <input id="summaryStart" type="date" />
+    <label for="summaryEnd">End Date:</label>
+    <input id="summaryEnd" type="date" />
+    <button id="stationSummaryApply">Apply</button>
+    <button id="stationSummaryExport">Export CSV</button>
+  </div>
+   <p id="stationNoData" class="message" style="display:none;">No data found for the selected station and dates.</p>
+  <h3>Shearer Summary</h3>
+  <table id="stationShearerTable">
+    <thead><tr></tr></thead>
+    <tbody></tbody>
+  </table>
+  <h3>Shed Staff</h3>
+  <table id="stationStaffTable">
+    <thead><tr><th>Name</th><th>Hours Worked</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <h3>Team Leaders</h3>
+  <table id="stationLeaderTable">
+    <thead><tr><th>Name</th><th>Total Sheep</th><th>Dates Led</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <h3>Comb Types</h3>
+  <table id="stationCombTable">
+    <thead><tr><th>Comb Type</th><th>Dates Used</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <h3>Totals</h3>
+  <table id="stationTotalTable">
+    <thead><tr></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+   
+</body>
+</html>

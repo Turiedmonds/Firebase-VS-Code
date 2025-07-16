@@ -1,0 +1,295 @@
+body { font-family: Arial, sans-serif; background: #000; color: #fff; padding: 20px; overflow-x: auto; }
+/* Ensure all labels share the same base font size */
+label {
+  font-size: 14px;
+}
+
+.message {
+  margin-top: 10px;
+  font-style: italic;
+  color: #ffea00;
+}
+
+/* Ensure time entry labels use the same font size as other form labels */
+label[for="startTime"],
+label[for="finishTime"],
+label[for="hoursWorked"] {
+  font-size: 14px;
+}
+
+table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+#tallyTable {
+  table-layout: auto;
+  width: auto;
+  min-width: 100%;
+}
+th, td { border: 1px solid #555; padding: 8px; text-align: center; }
+th { background: #222; }
+/* Increase input padding for touch devices */
+input[type="number"], input[type="text"], select {
+  width: 100%;
+  padding: 8px 6px;
+  box-sizing: border-box;
+}
+/* Small inputs align with the date field size */
+input.small-input { width: auto; }
+
+/* Station name input width */
+#stationName {
+  width: 200px;
+}
+
+/* Station summary station select width */
+#stationSelect {
+  width: 200px;
+}
+
+/* Team leader input width */
+#teamLeader {
+  width: 200px;
+}
+
+/* Date input width */
+#date {
+  width: 200px;
+}
+
+/* Comb type input width */
+#combType {
+  width: 200px;
+}
+
+/* Start time input width */
+#startTime {
+  width: 100px;
+}
+
+/* Finish time input width */
+#finishTime {
+  width: 100px;
+}
+
+/* Hours worked input width */
+
+#hoursWorked {
+  width: 100px;
+   text-align: left;
+}
+
+/* Base button styling for easier tapping */
+button {
+  padding: 12px 16px;
+}
+
+/* Shared styling for button rows */
+.button-row {
+  margin-top: 10px;
+  display: flex;
+}
+
+.button-row button {
+  padding: 12px 16px;
+  background: #444;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.toggle-button {
+  padding: 12px 16px;
+  background: #444;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.time-label {
+  margin-top: 8px;
+  font-weight: bold;
+  color: #0f0;
+  font-size: 16px;
+}
+
+/* Space the second button in each row */
+.button-row button + button {
+  margin-left: 10px;
+}
+
+/* Auto-fit sheep type column */
+#tallyTable th.sheep-type,
+#tallyTable td.sheep-type {
+  white-space: nowrap;
+}
+
+#tallyTable td.sheep-type input {
+  width: auto;
+  min-width: 10ch;
+  max-width: 100%;
+  padding-right: 20px;
+  box-sizing: border-box;
+}
+
+#headerRow input[type="text"] {
+  width: fit-content;
+  min-width: 8ch;
+  max-width: 100%;
+  padding-right: 4px;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 4px 6px;
+  box-sizing: content-box;
+}
+#shedStaffTable input[type="text"] {
+ width: fit-content;
+  min-width: 14ch;
+  max-width: 100%;
+  padding-right: 4px;
+  box-sizing: content-box;
+}
+
+#shedStaffTable input[type="number"] {
+  width: auto;
+  min-width: 6ch;
+}
+
+/* Header layout */
+.logo-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.logo-container img {
+  display: block;
+  margin: 0 auto 10px;
+  max-width: 150px;
+  width: 80%;
+  height: auto;
+}
+
+.logo-container h1 {
+  font-size: 2.2em;
+  margin: 0;
+  font-weight: bold;
+}
+
+.logo-container h2 {
+  font-size: 1.4em;
+  margin: 6px 0 0;
+  font-weight: bold;
+}
+
+@media (max-width: 600px) {
+  .logo-container h1 {
+    font-size: 1.8em;
+  }
+  .logo-container h2 {
+    font-size: 1.2em;
+  }
+  .logo-container img {
+    max-width: 120px;
+  }
+
+  /* Stack flex-based form rows */
+  #tallySheetView div[style*="display: flex"] {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* Button rows stack vertically */
+  .button-row {
+    flex-direction: column;
+  }
+  .button-row button {
+    width: 100%;
+    margin: 0 0 10px 0;
+  }
+  .button-row button + button {
+    margin-left: 0;
+  }
+
+  .toggle-button {
+    width: 100%;
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .filters {
+    flex-direction: column;
+  }
+  .filters > * {
+    width: 100%;
+    max-width: 300px;
+    margin-bottom: 10px;
+  }
+
+  /* Full width inputs on small screens */
+  #stationName,
+   #stationSelect,
+  #teamLeader,
+  #date,
+  #combType,
+  #startTime,
+  #finishTime,
+  #hoursWorked {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .tab-button,
+  .toggle-button,
+  .section h2,
+  label {
+    font-size: 0.9em;
+  }
+
+  .section {
+    margin-bottom: 16px;
+  }
+}
+
+.highlight-error {
+  background-color: #ff6666 !important;
+  border: 2px solid #ff0000 !important;
+}
+
+/* Tab navigation */
+.tabs {
+  display: flex;
+  margin-bottom: 10px;
+}
+.tab-button {
+  padding: 12px 16px;
+  background: #444;
+  color: #fff;
+  border: 1px solid #555;
+  cursor: pointer;
+  margin-right: 4px;
+}
+.tab-button.active {
+  background: #666;
+}
+.view {
+  display: none;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+#userInfo {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 14px;
+}
