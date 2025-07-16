@@ -178,19 +178,11 @@
   <option value="Merino Stud Rams">
 </datalist>
 
-<script src="xlsx.full.min.js"></script>  
-<script src="main.js"></script>
-<script>
-  
-  firebase.auth().onAuthStateChanged(user => {
-    const info = document.getElementById('userInfo');
-    if (user) {
-      if (info) info.textContent = `Logged in as: ${user.email}`;
-    } else {
-      window.location.href = 'login.html';
-    }
-  });
-</script>
+<script src="xlsx.full.min.js"></script>
+<script type="module" src="auth.js"></script>
+<script type="module" src="tally.js"></script>
+<script type="module" src="export.js"></script>
+<script type="module" src="serviceworker.js"></script>
 
   </div> <!-- tallySheetView -->
 
