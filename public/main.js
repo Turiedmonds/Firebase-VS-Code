@@ -418,11 +418,21 @@ function updateSheepTypeTotals() {
     body.innerHTML = '';
     Object.keys(totals).forEach(type => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${type}</td><td>${totals[type]}</td>`;
+        const tdType = document.createElement('td');
+        tdType.textContent = type;
+        const tdTotal = document.createElement('td');
+        tdTotal.textContent = totals[type];
+        tr.appendChild(tdType);
+        tr.appendChild(tdTotal);
         body.appendChild(tr);
     });
     const totalRow = document.createElement('tr');
-    totalRow.innerHTML = `<td>Total</td><td>${grandTotal}</td>`;
+    const label = document.createElement('td');
+    label.textContent = 'Total';
+    const value = document.createElement('td');
+    value.textContent = grandTotal;
+    totalRow.appendChild(label);
+    totalRow.appendChild(value);
     body.appendChild(totalRow);
 }
 
@@ -1230,25 +1240,54 @@ function buildSummary() {
     const theadRow = document.querySelector('#summaryTable thead tr');
     const tbody = document.getElementById('summaryTableBody');
     if (!theadRow || !tbody) return;
-    theadRow.innerHTML = '<th>Shearer</th>' + types.map(t => `<th>${t}</th>`).join('') + '<th>Total</th>';
+    theadRow.innerHTML = '';
+    const shearerTh = document.createElement('th');
+    shearerTh.textContent = 'Shearer';
+    theadRow.appendChild(shearerTh);
+    types.forEach(t => {
+        const th = document.createElement('th');
+        th.textContent = t;
+        theadRow.appendChild(th);
+    });
+    const totalTh = document.createElement('th');
+    totalTh.textContent = 'Total';
+    theadRow.appendChild(totalTh);
     tbody.innerHTML = '';
 
     names.forEach((name, idx) => {
         let rowTotal = 0;
-        const cells = types.map(t => {
+        const tr = document.createElement('tr');
+        const nameTd = document.createElement('td');
+        nameTd.textContent = name;
+        tr.appendChild(nameTd);
+        types.forEach(t => {
+            const td = document.createElement('td');
             const val = totals[t] ? totals[t][idx] : 0;
             rowTotal += val;
-            return `<td>${val}</td>`;
-        }).join('');
-        tbody.innerHTML += `<tr><td>${name}</td>${cells}<td>${rowTotal}</td></tr>`;
+            td.textContent = val;
+            tr.appendChild(td);
+        });
+        const totalTd = document.createElement('td');
+        totalTd.textContent = rowTotal;
+        tr.appendChild(totalTd);
+        tbody.appendChild(tr);
     });
 
-    const totalCells = types.map(t => {
+    const totalRow = document.createElement('tr');
+    const labelTh = document.createElement('th');
+    labelTh.textContent = 'Total Sheep';
+    totalRow.appendChild(labelTh);
+    types.forEach(t => {
+        const th = document.createElement('th');
         const sum = totals[t].reduce((a,b) => a + b, 0);
-        return `<th>${sum}</th>`;
-    }).join('');
+       th.textContent = sum;
+        totalRow.appendChild(th);
+    });
     const grand = standTotals.reduce((a,b) => a + b, 0);
-    tbody.innerHTML += `<tr><th>Total Sheep</th>${totalCells}<th>${grand}</th></tr>`;
+    const grandTh = document.createElement('th');
+    grandTh.textContent = grand;
+    totalRow.appendChild(grandTh);
+    tbody.appendChild(totalRow);
 
     const staffBody = document.getElementById('summaryShedStaff');
     if (staffBody) {
@@ -1257,7 +1296,14 @@ function buildSummary() {
             const name = row.querySelector('td:nth-child(1) input')?.value || '';
             const hours = row.querySelector('td:nth-child(2) input')?.value || '';
             if (name.trim() || hours.trim()) {
-                staffBody.innerHTML += `<tr><td>${name}</td><td>${hours}</td></tr>`;
+                const tr = document.createElement('tr');
+                const nameTd = document.createElement('td');
+                nameTd.textContent = name;
+                const hoursTd = document.createElement('td');
+                hoursTd.textContent = hours;
+                tr.appendChild(nameTd);
+                tr.appendChild(hoursTd);
+                staffBody.appendChild(tr);
             }
         });
     }
@@ -1269,7 +1315,16 @@ function populateStationDropdown() {
     const sessions = getStoredSessions();
     const current = select.value;
     const names = Array.from(new Set(sessions.map(s => s.stationName).filter(Boolean)));
-    select.innerHTML = '<option value=""></option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
+   select.innerHTML = '';
+    const blank = document.createElement('option');
+    blank.value = '';
+    select.appendChild(blank);
+    names.forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        select.appendChild(opt);
+    });
     if (current) select.value = current;
 }
 
@@ -1365,44 +1420,113 @@ function buildStationSummary() {
     const shearHead = document.querySelector('#stationShearerTable thead tr');
     const shearBody = document.querySelector('#stationShearerTable tbody');
     if (shearHead && shearBody) {
-        shearHead.innerHTML = '<th>Shearer</th>' + activeTypes.map(t=>`<th>${t}</th>`).join('') + '<th>Total</th>';
+       shearHead.innerHTML = '';
+        const sTh = document.createElement('th');
+        sTh.textContent = 'Shearer';
+        shearHead.appendChild(sTh);
+        activeTypes.forEach(t => {
+            const th = document.createElement('th');
+            th.textContent = t;
+            shearHead.appendChild(th);
+        });
+        const totTh = document.createElement('th');
+        totTh.textContent = 'Total';
+        shearHead.appendChild(totTh);
+
+        shearBody.innerHTML = ''; 
         const rows = Object.entries(shearerData).sort((a,b)=>b[1].total-a[1].total);
-        shearBody.innerHTML = rows.map(([name,data]) => {
-            const cells = activeTypes.map(t=>`<td>${data[t]}</td>`).join('');
-            return `<tr><td>${name}</td>${cells}<td>${data.total}</td></tr>`;
-        }).join('');
+       rows.forEach(([name,data]) => {
+            const tr = document.createElement('tr');
+            const nameTd = document.createElement('td');
+            nameTd.textContent = name;
+            tr.appendChild(nameTd);
+            activeTypes.forEach(t => {
+                const td = document.createElement('td');
+                td.textContent = data[t];
+                tr.appendChild(td);
+            });
+            const totalTd = document.createElement('td');
+            totalTd.textContent = data.total;
+            tr.appendChild(totalTd);
+            shearBody.appendChild(tr);
+        });
     }
 
     const staffBody = document.querySelector('#stationStaffTable tbody');
     if (staffBody) {
+       staffBody.innerHTML = ''; 
         const rows = Object.entries(staffData).sort((a,b)=>b[1]-a[1]);
-        staffBody.innerHTML = rows.map(([n,h])=>`<tr><td>${n}</td><td>${h}</td></tr>`).join('');
+        rows.forEach(([n,h])=>{
+            const tr = document.createElement('tr');
+            const nameTd = document.createElement('td');
+            nameTd.textContent = n;
+            const hoursTd = document.createElement('td');
+            hoursTd.textContent = h;
+            tr.appendChild(nameTd);
+            tr.appendChild(hoursTd);
+            staffBody.appendChild(tr);
+        });
     }
 
     const leaderBody = document.querySelector('#stationLeaderTable tbody');
     if (leaderBody) {
+         leaderBody.innerHTML = '';
         const rows = Object.entries(leaders).sort((a,b)=>b[1].total-a[1].total);
-        leaderBody.innerHTML = rows.map(([n,o])=>{
-            const dates = Array.from(o.dates).map(formatDateNZ).join(', ');
-            return `<tr><td>${n}</td><td>${o.total}</td><td>${dates}</td></tr>`;
-        }).join('');
+         rows.forEach(([n,o])=>{
+            const tr = document.createElement('tr');
+            const nameTd = document.createElement('td');
+            nameTd.textContent = n;
+            const totalTd = document.createElement('td');
+            totalTd.textContent = o.total;
+            const datesTd = document.createElement('td');
+            datesTd.textContent = Array.from(o.dates).map(formatDateNZ).join(', ');
+            tr.appendChild(nameTd);
+            tr.appendChild(totalTd);
+            tr.appendChild(datesTd);
+            leaderBody.appendChild(tr);
+        });
     }
 
     const combBody = document.querySelector('#stationCombTable tbody');
     if (combBody) {
+       combBody.innerHTML = '';
         const rows = Object.entries(combs);
-        combBody.innerHTML = rows.map(([c,set])=>{
-            const dates = Array.from(set).map(formatDateNZ).join(', ');
-            return `<tr><td>${c}</td><td>${dates}</td></tr>`;
-        }).join('');
+        rows.forEach(([c,set])=>{
+            const tr = document.createElement('tr');
+            const combTd = document.createElement('td');
+            combTd.textContent = c;
+            const datesTd = document.createElement('td');
+            datesTd.textContent = Array.from(set).map(formatDateNZ).join(', ');
+            tr.appendChild(combTd);
+            tr.appendChild(datesTd);
+            combBody.appendChild(tr);
+        });
     }
 
     const totalHead = document.querySelector('#stationTotalTable thead tr');
     const totalBody = document.querySelector('#stationTotalTable tbody');
     if (totalHead && totalBody) {
-        totalHead.innerHTML = activeTypes.map(t=>`<th>${t}</th>`).join('') + '<th>Grand Total</th>';
-        const cells = activeTypes.map(t=>`<td>${totalByType[t]||0}</td>`).join('');
-        totalBody.innerHTML = `<tr>${cells}<td>${grandTotal}</td></tr>`;
+       totalHead.innerHTML = '';
+        activeTypes.forEach(t=>{
+            const th = document.createElement('th');
+            th.textContent = t;
+            totalHead.appendChild(th);
+        });
+        const grandTh = document.createElement('th');
+        grandTh.textContent = 'Grand Total';
+        totalHead.appendChild(grandTh);
+
+        totalBody.innerHTML = '';
+        const tr = document.createElement('tr');
+        activeTypes.forEach(t=>{
+            const td = document.createElement('td');
+            td.textContent = totalByType[t] || 0;
+            tr.appendChild(td);
+        });
+        const totalTd = document.createElement('td');
+        totalTd.textContent = grandTotal;
+        tr.appendChild(totalTd);
+        totalBody.appendChild(tr);  
     }
 }
 
