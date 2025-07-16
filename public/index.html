@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="styles.css">
    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="firebase-init.js"></script>
   <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json" />
 
@@ -180,18 +181,7 @@
 <script src="xlsx.full.min.js"></script>  
 <script src="main.js"></script>
 <script>
-  const firebaseConfig = { 
-  apiKey: "AIzaSyCuQh49AgKbrMvrxcuwsR8Svy86aP3Fg2Q",
-  authDomain: "sheariq-tally-app.firebaseapp.com",
-  projectId: "sheariq-tally-app",
-  storageBucket: "sheariq-tally-app.firebasestorage.app",
-  messagingSenderId: "201669876235",
-  appId: "1:201669876235:web:379fc4035da99f4b09450e"
-};
-
-    // ...other config
   
-  firebase.initializeApp(firebaseConfig);
   firebase.auth().onAuthStateChanged(user => {
     const info = document.getElementById('userInfo');
     if (user) {
