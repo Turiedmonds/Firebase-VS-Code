@@ -1,19 +1,19 @@
  // Firebase is initialized in firebase-init.js
  
  document.addEventListener("DOMContentLoaded", () => {
-     const observer = new MutationObserver(() => {
-         computeShearerTotals();
-         computeSheepTypeTotals();
-     });
- 
-     observer.observe(document.getElementById("tallyTable"), { childList: true, subtree: true });
-     observer.observe(document.getElementById("sheepTypeTotals"), { childList: true, subtree: true });
- 
-     document.getElementById("tallyTable").addEventListener("input", () => {
-         computeShearerTotals();
-         computeSheepTypeTotals();
-     });
- });
+    const observer = new MutationObserver(() => {
+        updateTotals();
+        updateSheepTypeTotals();
+    });
+
+    observer.observe(document.getElementById("tallyTable"), { childList: true, subtree: true });
+    observer.observe(document.getElementById("sheepTypeTotalsTable"), { childList: true, subtree: true });
+
+    document.getElementById("tallyTable").addEventListener("input", () => {
+        updateTotals();
+        updateSheepTypeTotals();
+    });
+});
  
  
  const defaultStands = 6;
