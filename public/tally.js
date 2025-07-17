@@ -822,33 +822,37 @@
  }
  
  export function buildStationSummary() {
-    // --- gather filter values ---
-    const stationInput = document.getElementById('stationSelect');
-    const startInput   = document.getElementById('summaryStart');
-    const endInput     = document.getElementById('summaryEnd');
+     const stationInput = document.getElementById('stationSelect');
+     const startInput = document.getElementById('summaryStart');
+     const endInput = document.getElementById('summaryEnd');
+ 
+     const station = stationInput?.value.trim() || '';
+     const start = startInput?.value;
+     const end = endInput?.value;
+ 
+     console.log('Selected station:', station);
+     console.log('Selected start:', start, 'end:', end);
+ 
+     const allSessions = getStoredSessions();
 
-    const stationName = (stationInput?.value || '').trim().toLowerCase();
-    const startDate   = startInput?.value ? new Date(startInput.value) : null;
-    const endDateRaw  = endInput?.value ? new Date(endInput.value) : null;
-    const endDate     = endDateRaw ? new Date(endDateRaw.getTime()) : null;
-    if (endDate) endDate.setHours(23,59,59,999); // inclusive range
-
-    // --- filter sessions ---
-    const sessions = getStoredSessions().filter(sess => {
-        const sStation = (sess.stationName || '').trim().toLowerCase();
-        if (stationName && sStation !== stationName) return false;
-
-        const sDate = new Date(sess.date);
-        if (startDate && sDate < startDate) return false;
-        if (endDate && sDate > endDate) return false;
+    // Normalize station names for comparison
+    const targetStation = station.toLowerCase();
+    const startDate = start ? new Date(start) : null;
+    const endDate = end ? new Date(end) : null;
+    const sessions = allSessions.filter(s => {
+        const storedStation = (s.stationName || '').trim().toLowerCase();
+        if (station && storedStation !== targetStation) return false;
+        const sessionDate = new Date(s.date);
+        if (startDate && sessionDate < startDate) return false;
+        if (endDate && sessionDate > endDate) return false;
         return true;
     });
-
-    // --- update no-data message ---
-    const msg = document.getElementById('stationNoData');
-    if (msg) msg.style.display = sessions.length ? 'none' : 'block';
-
-    const { shearerData, staffData, leaders, combs, totalByType, grandTotal } = aggregateStationData(sessions);
+     
+     console.log('Filtered sessions:', sessions);
+ 
+     const msg = document.getElementById('stationNoData');
+     if (msg) msg.style.display = sessions.length ? 'none' : 'block';
+     const { shearerData, staffData, leaders, combs, totalByType, grandTotal } = aggregateStationData(sessions);
  
      const optionOrder = Array.from(document.querySelectorAll('#sheepTypes option')).map(o => o.value);
      const activeTypes = optionOrder.filter(t => totalByType[t] > 0);
