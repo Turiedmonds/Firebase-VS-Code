@@ -262,6 +262,67 @@ firebase.auth().onAuthStateChanged(function(user) {
   }
 });
 </script>
+<!-- Reset Confirmation Modal -->
+<div id="resetModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>New Day Reset</h3>
+    <p>What type of reset do you want to perform?</p>
+    <div class="modal-buttons">
+      <button id="partialResetBtn">🔁 Partial Reset</button>
+      <button id="fullResetBtn">🗑 Full Reset</button>
+      <button id="cancelResetBtn">❌ Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var modal = document.getElementById('resetModal');
+  var openBtn = document.getElementById('newDayResetBtn');
+  var partialBtn = document.getElementById('partialResetBtn');
+  var fullBtn = document.getElementById('fullResetBtn');
+  var cancelBtn = document.getElementById('cancelResetBtn');
+
+  function showModal() {
+    if (modal) modal.style.display = 'flex';
+  }
+  function hideModal() {
+    if (modal) modal.style.display = 'none';
+  }
+
+  function clearCommonFields() {
+    document.querySelectorAll('#tallyBody input').forEach(function (el) { el.value = ''; });
+    document.querySelectorAll('#tallyBody select').forEach(function (el) { el.value = ''; });
+    ['date','startTime','finishTime','hoursWorked'].forEach(function(id){
+      var e = document.getElementById(id);
+      if (e) e.value = '';
+    });
+    var totalsBody = document.querySelector('#sheepTypeTotalsTable tbody');
+    if (totalsBody) totalsBody.innerHTML = '';
+    document.querySelectorAll('#shedStaffTable tr td:nth-child(2) input').forEach(function(el){ el.value = ''; });
+  }
+
+  function performReset(full) {
+    clearCommonFields();
+    if (full) {
+      ['stationName','teamLeader','combType'].forEach(function(id){
+        var e = document.getElementById(id);
+        if (e) e.value = '';
+      });
+      document.querySelectorAll('#headerRow input[type="text"]').forEach(function(el){ el.value = ''; });
+      document.querySelectorAll('#shedStaffTable tr td:nth-child(1) input').forEach(function(el){ el.value = ''; });
+    }
+    var table = document.getElementById('tallyTable');
+    if (table) table.dispatchEvent(new Event('input', { bubbles: true }));
+    hideModal();
+  }
+
+  if (openBtn) openBtn.addEventListener('click', showModal);
+  if (partialBtn) partialBtn.addEventListener('click', function(){ performReset(false); });
+  if (fullBtn) fullBtn.addEventListener('click', function(){ performReset(true); });
+  if (cancelBtn) cancelBtn.addEventListener('click', hideModal);
+});
+</script>
 
 </body>
 </html>
