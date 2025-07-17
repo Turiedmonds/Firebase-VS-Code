@@ -474,74 +474,10 @@ export function showExportPrompt() {
     if (useExcel) exportDailySummaryExcel();
     else exportDailySummaryCSV();
 }
-export function exportStationSummaryToCSV() {
-    buildStationSummary();
-    const g = id => document.getElementById(id);
-
-    const metadata = [
-        ['Station Name', g('stationName')?.value || ''],
-        ['Date', g('date')?.value || ''],
-        ['Team Leader', g('teamLeader')?.value || ''],
-        ['Comb Type', g('combType')?.value || ''],
-        ['Start Time', g('startTime')?.value || ''],
-        ['Finish Time', g('finishTime')?.value || ''],
-        ['Hours Worked', g('hoursWorked')?.value || ''],
-        ['Time System', isNineHourDay ? '9-Hour Day' : '8-Hour Day'],
-        ['Exported', new Date().toLocaleString()]
-    ];
-
-    const rows = metadata.map(r => r.slice());
-    rows.push([]);
-
-    const addTable = (title, tableId) => {
-        const table = g(tableId);
-        if (!table) return;
-        rows.push([title]);
-        const header = Array.from(table.querySelectorAll('thead tr th')).map(th => th.textContent.trim());
-        if (header.length) rows.push(header);
-        table.querySelectorAll('tbody tr').forEach(tr => {
-            const cells = Array.from(tr.children).map(td => td.textContent.trim());
-            rows.push(cells);
-        });
-        rows.push([]);
-    };
-
-    addTable('Shearers', 'stationShearerTable');
-    addTable('Shed Staff', 'stationStaffTable');
-    addTable('Team Leader', 'stationLeaderTable');
-    addTable('Comb Types', 'stationCombTable');
-    addTable('Totals', 'stationTotalTable');
-
-    if (rows[rows.length - 1].length === 0) rows.pop();
-
-    const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\r\n');
-
-    let stationName = metadata[0][1] || 'Station';
-    let date = metadata[1][1];
-    if (date && date.includes('-')) {
-        const parts = date.split('-');
-        if (parts.length === 3) date = `${parts[2]}-${parts[1]}-${parts[0]}`;
-    } else {
-        date = new Date().toISOString().split('T')[0];
-    }
-
-    const fileName = `${stationName}_${date}_StationSummary.csv`;
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-   const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
 
 // Expose functions used by inline handlers
 window.showExportPrompt = showExportPrompt;
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('stationSummaryExport')?.addEventListener('click', exportStationSummaryToCSV);
   document.getElementById('stationSummaryApply')?.addEventListener('click', buildStationSummary);
 });
