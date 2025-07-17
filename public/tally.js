@@ -980,6 +980,18 @@
     document.dispatchEvent(new CustomEvent('station-summary-updated'));
 }
  
+export function clearStationSummaryView() {
+    document.querySelector('#stationShearerTable thead')?.replaceChildren();
+    document.querySelector('#stationShearerTable tbody')?.replaceChildren();
+    document.querySelector('#stationStaffTable tbody')?.replaceChildren();
+    document.querySelector('#stationLeaderTable tbody')?.replaceChildren();
+    document.querySelector('#stationCombTable tbody')?.replaceChildren();
+    document.querySelector('#stationTotalTable thead')?.replaceChildren();
+    document.querySelector('#stationTotalTable tbody')?.replaceChildren();
+    const msg = document.getElementById('stationNoData');
+    if (msg) msg.style.display = 'block';
+}
+
  export function collectExportData() {
      const data = {
          date: document.getElementById('date')?.value || '',

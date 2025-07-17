@@ -314,6 +314,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     var table = document.getElementById('tallyTable');
     if (table) table.dispatchEvent(new Event('input', { bubbles: true }));
+    if (full && window.clearStationSummaryView) window.clearStationSummaryView();
     hideModal();
   }
 
@@ -325,7 +326,8 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <script type="module">
-import { buildStationSummary } from './tally.js';
+import { buildStationSummary, clearStationSummaryView } from './tally.js';
+window.clearStationSummaryView = clearStationSummaryView;
 
 document.addEventListener('DOMContentLoaded', () => {
     const applyBtn = document.getElementById('stationSummaryApply');
