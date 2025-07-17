@@ -1101,3 +1101,73 @@
 window.saveData = saveData;
 window.loadPreviousSession = loadPreviousSession;
 
+// ===== New Day Reset Modal =====
+let resetModal;
+
+function createResetModal() {
+    resetModal = document.createElement('div');
+    resetModal.id = 'resetModal';
+    resetModal.className = 'modal-overlay';
+    resetModal.innerHTML = `
+        <div class="modal-box">
+            <h3>New Day Reset</h3>
+            <p>What type of reset do you want to perform?</p>
+            <div class="modal-buttons">
+                <button id="partialReset">🔁 Partial Reset</button>
+                <button id="fullReset">🗑 Full Reset</button>
+                <button id="cancelReset">❌ Cancel</button>
+            </div>
+        </div>`;
+    document.body.appendChild(resetModal);
+
+    resetModal.querySelector('#partialReset').addEventListener('click', () => {
+        performReset(false);
+    });
+    resetModal.querySelector('#fullReset').addEventListener('click', () => {
+        performReset(true);
+    });
+    resetModal.querySelector('#cancelReset').addEventListener('click', closeResetModal);
+}
+
+function openResetModal() {
+    if (resetModal) resetModal.style.display = 'flex';
+}
+
+function closeResetModal() {
+    if (resetModal) resetModal.style.display = 'none';
+}
+
+function performReset(full) {
+    document.querySelectorAll('#tallyBody input').forEach(i => i.value = '');
+    document.querySelectorAll('#tallyBody select').forEach(s => s.value = '');
+
+    ['date','startTime','finishTime','hoursWorked'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+
+    document.querySelectorAll('#shedStaffTable tr td:nth-child(2) input').forEach(i => i.value = '');
+
+    const totalsBody = document.querySelector('#sheepTypeTotalsTable tbody');
+    if (totalsBody) totalsBody.innerHTML = '';
+
+    if (full) {
+        ['stationName','teamLeader','combType'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        document.querySelectorAll('#headerRow input[type="text"]').forEach(i => i.value = '');
+        document.querySelectorAll('#shedStaffTable tr td:nth-child(1) input').forEach(i => i.value = '');
+    }
+
+    const table = document.getElementById('tallyTable');
+    if (table) table.dispatchEvent(new Event('input', { bubbles: true }));
+
+    closeResetModal();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    createResetModal();
+    const btn = document.getElementById('newDayResetBtn');
+    if (btn) btn.addEventListener('click', openResetModal);
+});
