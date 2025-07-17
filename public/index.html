@@ -24,7 +24,6 @@
 <body>
 
    <div style="position:absolute; top:10px; right:10px; font-size:14px; display: flex; gap: 8px; align-items: center;">
-  <div id="userInfo" style="color: white; font-weight: bold;"></div>
   <button id="logoutBtn" class="tab-button">Logout</button>
 </div>
 
@@ -251,6 +250,17 @@
     <tbody></tbody>
   </table>
 </div>
-   
+ 
+<footer id="footer">Logged in as: <span id="userEmail">loading...</span></footer>
+<script>
+firebase.auth().onAuthStateChanged(function(user) {
+  if (user) {
+    document.getElementById("userEmail").textContent = user.email;
+  } else {
+    document.getElementById("userEmail").textContent = "Not logged in";
+  }
+});
+</script>
+
 </body>
 </html>

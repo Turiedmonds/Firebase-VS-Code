@@ -1,8 +1,5 @@
 firebase.auth().onAuthStateChanged(user => {
-  const info = document.getElementById('userInfo');
-  if (user) {
-    if (info) info.textContent = `Logged in as: ${user.email}`;
-  } else {
+  if (!user) {
     window.location.href = 'login.html';
   }
 });
