@@ -332,6 +332,13 @@ document.addEventListener('DOMContentLoaded', function () {
     var table = document.getElementById('tallyTable');
     if (table) table.dispatchEvent(new Event('input', { bubbles: true }));
     if (full && window.clearStationSummaryView) window.clearStationSummaryView();
+   if (full) {
+      var ssView = document.getElementById('stationSummaryView');
+      if (ssView && ssView.style.display === 'block') {
+        var apply = document.getElementById('stationSummaryApply');
+        if (apply) apply.click();
+      }
+    }
     hideModal();
   }
 
