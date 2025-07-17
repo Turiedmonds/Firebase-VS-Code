@@ -324,5 +324,18 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<script type="module">
+import { buildStationSummary } from './tally.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('stationApply');
+  btn?.addEventListener('click', () => {
+    alert('📊 Building Station Summary...');
+    buildStationSummary?.();
+  });
+});
+</script>
+
+
 </body>
 </html>
