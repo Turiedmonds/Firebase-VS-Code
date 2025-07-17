@@ -1098,9 +1098,6 @@
  window.removeCount = removeCount;
  window.addShedStaff = addShedStaff;
  window.removeShedStaff = removeShedStaff;
- window.saveData = saveData;
- window.loadPreviousSession = loadPreviousSession;
- window.resetApp = resetApp;
- 
- 
- 
+window.saveData = saveData;
+window.loadPreviousSession = loadPreviousSession;
+

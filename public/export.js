@@ -283,6 +283,10 @@ function resetApp() {
     updateSheepTypeTotals();
 }
 
+// Make resetApp available globally for the Reset button
+window.resetApp = resetApp;
+
+
 // Register service worker for PWA functionality
 if ('serviceWorker' in navigator) {
  window.addEventListener('load', () => {
