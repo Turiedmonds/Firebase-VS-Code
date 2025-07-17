@@ -858,91 +858,99 @@
      const activeTypes = optionOrder.filter(t => totalByType[t] > 0);
      Object.keys(totalByType).forEach(t => { if (!activeTypes.includes(t)) activeTypes.push(t); });
  
-     const shearHead = document.querySelector('#stationShearerTable thead tr');
-     const shearBody = document.querySelector('#stationShearerTable tbody');
-     if (shearHead && shearBody) {
+      const shearHead = document.querySelector('#stationShearerTable thead tr');
+    const shearBody = document.querySelector('#stationShearerTable tbody');
+    if (shearHead && shearBody) {
         shearHead.innerHTML = '';
          const sTh = document.createElement('th');
-         sTh.textContent = 'Shearer';
-         shearHead.appendChild(sTh);
-         activeTypes.forEach(t => {
-             const th = document.createElement('th');
-             th.textContent = t;
-             shearHead.appendChild(th);
-         });
-         const totTh = document.createElement('th');
-         totTh.textContent = 'Total';
-         shearHead.appendChild(totTh);
- 
-         shearBody.innerHTML = ''; 
-         const rows = Object.entries(shearerData).sort((a,b)=>b[1].total-a[1].total);
+        sTh.textContent = 'Shearer';
+        shearHead.appendChild(sTh);
+        activeTypes.forEach(t => {
+            const th = document.createElement('th');
+            th.textContent = t;
+            shearHead.appendChild(th);
+        });
+        const totTh = document.createElement('th');
+        totTh.textContent = 'Total';
+        shearHead.appendChild(totTh);
+
+        shearBody.innerHTML = '';
+        const rows = Object.entries(shearerData).sort((a,b)=>b[1].total-a[1].total);
         rows.forEach(([name,data]) => {
-             const tr = document.createElement('tr');
-             const nameTd = document.createElement('td');
-             nameTd.textContent = name;
-             tr.appendChild(nameTd);
-             activeTypes.forEach(t => {
-                 const td = document.createElement('td');
-                 td.textContent = data[t];
-                 tr.appendChild(td);
-             });
-             const totalTd = document.createElement('td');
-             totalTd.textContent = data.total;
-             tr.appendChild(totalTd);
-             shearBody.appendChild(tr);
-         });
-     }
- 
-     const staffBody = document.querySelector('#stationStaffTable tbody');
-     if (staffBody) {
-        staffBody.innerHTML = ''; 
-         const rows = Object.entries(staffData).sort((a,b)=>b[1]-a[1]);
-         rows.forEach(([n,h])=>{
-             const tr = document.createElement('tr');
-             const nameTd = document.createElement('td');
-             nameTd.textContent = n;
-             const hoursTd = document.createElement('td');
-             hoursTd.textContent = h;
-             tr.appendChild(nameTd);
-             tr.appendChild(hoursTd);
-             staffBody.appendChild(tr);
-         });
-     }
- 
-     const leaderBody = document.querySelector('#stationLeaderTable tbody');
-     if (leaderBody) {
-          leaderBody.innerHTML = '';
-         const rows = Object.entries(leaders).sort((a,b)=>b[1].total-a[1].total);
-          rows.forEach(([n,o])=>{
-             const tr = document.createElement('tr');
-             const nameTd = document.createElement('td');
-             nameTd.textContent = n;
-             const totalTd = document.createElement('td');
-             totalTd.textContent = o.total;
-             const datesTd = document.createElement('td');
-             datesTd.textContent = Array.from(o.dates).map(formatDateNZ).join(', ');
-             tr.appendChild(nameTd);
+             const trimmed = name?.trim() || '';
+            if (!trimmed) return;
+            const tr = document.createElement('tr');
+            const nameTd = document.createElement('td');
+            nameTd.textContent = trimmed;
+            tr.appendChild(nameTd);
+            activeTypes.forEach(t => {
+                const td = document.createElement('td');
+                td.textContent = data[t];
+                tr.appendChild(td);
+            });
+            const totalTd = document.createElement('td');
+            totalTd.textContent = data.total;
+            tr.appendChild(totalTd);
+            shearBody.appendChild(tr);
+        });
+    }
+
+    const staffBody = document.querySelector('#stationStaffTable tbody');
+    if (staffBody) {
+        staffBody.innerHTML = '';
+        const rows = Object.entries(staffData).sort((a,b)=>b[1]-a[1]);
+        rows.forEach(([n,h])=>{
+            const trimmed = n?.trim() || '';
+            if (!trimmed) return;
+            const tr = document.createElement('tr');
+            const nameTd = document.createElement('td');
+            nameTd.textContent = trimmed;
+            const hoursTd = document.createElement('td');
+            hoursTd.textContent = h;
+            tr.appendChild(nameTd);
+            tr.appendChild(hoursTd);
+            staffBody.appendChild(tr);
+        });
+    }
+
+    const leaderBody = document.querySelector('#stationLeaderTable tbody');
+    if (leaderBody) {
+        leaderBody.innerHTML = '';
+        const rows = Object.entries(leaders).sort((a,b)=>b[1].total-a[1].total);
+        rows.forEach(([n,o])=>{
+            const trimmed = n?.trim() || '';
+            if (!trimmed) return;
+            const tr = document.createElement('tr');
+            const nameTd = document.createElement('td');
+            nameTd.textContent = trimmed;
+            const totalTd = document.createElement('td');
+            totalTd.textContent = o.total;
+            const datesTd = document.createElement('td');
+            datesTd.textContent = Array.from(o.dates).map(formatDateNZ).join(', ');
+            tr.appendChild(nameTd);
              tr.appendChild(totalTd);
              tr.appendChild(datesTd);
              leaderBody.appendChild(tr);
          });
      }
  
-     const combBody = document.querySelector('#stationCombTable tbody');
-     if (combBody) {
+      const combBody = document.querySelector('#stationCombTable tbody');
+    if (combBody) {
         combBody.innerHTML = '';
          const rows = Object.entries(combs);
-         rows.forEach(([c,set])=>{
-             const tr = document.createElement('tr');
-             const combTd = document.createElement('td');
-             combTd.textContent = c;
-             const datesTd = document.createElement('td');
-             datesTd.textContent = Array.from(set).map(formatDateNZ).join(', ');
-             tr.appendChild(combTd);
-             tr.appendChild(datesTd);
-             combBody.appendChild(tr);
-         });
-     }
+        rows.forEach(([c,set])=>{
+            const trimmed = c?.trim() || '';
+            if (!trimmed) return;
+            const tr = document.createElement('tr');
+            const combTd = document.createElement('td');
+            combTd.textContent = trimmed;
+            const datesTd = document.createElement('td');
+            datesTd.textContent = Array.from(set).map(formatDateNZ).join(', ');
+            tr.appendChild(combTd);
+            tr.appendChild(datesTd);
+            combBody.appendChild(tr);
+        });
+    }
  
      const totalHead = document.querySelector('#stationTotalTable thead tr');
      const totalBody = document.querySelector('#stationTotalTable tbody');
@@ -967,9 +975,10 @@
          const totalTd = document.createElement('td');
          totalTd.textContent = grandTotal;
          tr.appendChild(totalTd);
-         totalBody.appendChild(tr);  
-     }
- }
+         totalBody.appendChild(tr);
+    }
+    document.dispatchEvent(new CustomEvent('station-summary-updated'));
+}
  
  export function collectExportData() {
      const data = {
