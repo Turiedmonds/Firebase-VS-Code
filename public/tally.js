@@ -822,35 +822,33 @@
  }
  
  export function buildStationSummary() {
-     const stationInput = document.getElementById('stationSelect');
-     const startInput = document.getElementById('summaryStart');
-     const endInput = document.getElementById('summaryEnd');
- 
-     const station = stationInput?.value.trim() || '';
-     const start = startInput?.value;
-     const end = endInput?.value;
- 
-     console.log('Selected station:', station);
-     console.log('Selected start:', start, 'end:', end);
- 
-     const allSessions = getStoredSessions();
-     console.log('Stored station names:', allSessions.map(s => s.stationName));
-     console.log('Stored session dates:', allSessions.map(s => s.date));
- 
-     const sessions = allSessions.filter(s => {
-         const storedStation = (s.stationName || '').trim().toLowerCase();
-         const targetStation = station.toLowerCase();
-         if (station && storedStation !== targetStation) return false;
-         if (start && s.date < start) return false;
-         if (end && s.date > end) return false;
-         return true;
-     });
-     
-     console.log('Filtered sessions:', sessions);
- 
-     const msg = document.getElementById('stationNoData');
-     if (msg) msg.style.display = sessions.length ? 'none' : 'block';
-     const { shearerData, staffData, leaders, combs, totalByType, grandTotal } = aggregateStationData(sessions);
+    // --- gather filter values ---
+    const stationInput = document.getElementById('stationSelect');
+    const startInput   = document.getElementById('summaryStart');
+    const endInput     = document.getElementById('summaryEnd');
+
+    const stationName = (stationInput?.value || '').trim().toLowerCase();
+    const startDate   = startInput?.value ? new Date(startInput.value) : null;
+    const endDateRaw  = endInput?.value ? new Date(endInput.value) : null;
+    const endDate     = endDateRaw ? new Date(endDateRaw.getTime()) : null;
+    if (endDate) endDate.setHours(23,59,59,999); // inclusive range
+
+    // --- filter sessions ---
+    const sessions = getStoredSessions().filter(sess => {
+        const sStation = (sess.stationName || '').trim().toLowerCase();
+        if (stationName && sStation !== stationName) return false;
+
+        const sDate = new Date(sess.date);
+        if (startDate && sDate < startDate) return false;
+        if (endDate && sDate > endDate) return false;
+        return true;
+    });
+
+    // --- update no-data message ---
+    const msg = document.getElementById('stationNoData');
+    if (msg) msg.style.display = sessions.length ? 'none' : 'block';
+
+    const { shearerData, staffData, leaders, combs, totalByType, grandTotal } = aggregateStationData(sessions);
  
      const optionOrder = Array.from(document.querySelectorAll('#sheepTypes option')).map(o => o.value);
      const activeTypes = optionOrder.filter(t => totalByType[t] > 0);
