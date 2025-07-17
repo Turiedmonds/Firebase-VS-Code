@@ -303,44 +303,19 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function performReset(full) {
-    clearCommonFields();
-    if (full) {
-      ['stationName','teamLeader','combType'].forEach(function(id){
-        var e = document.getElementById(id);
-        if (e) e.value = '';
-      });
-      document.querySelectorAll('#headerRow input[type="text"]').forEach(function(el){ el.value = ''; });
-      document.querySelectorAll('#shedStaffTable tr td:nth-child(1) input').forEach(function(el){ el.value = ''; });
-    var el;
-      el = document.querySelector('#stationShearerTable thead tr');
-      if (el) el.innerHTML = '';
-      el = document.querySelector('#stationShearerTable tbody');
-      if (el) el.innerHTML = '';
-      el = document.querySelector('#stationStaffTable tbody');
-      if (el) el.innerHTML = '';
-      el = document.querySelector('#stationLeaderTable tbody');
-      if (el) el.innerHTML = '';
-      el = document.querySelector('#stationCombTable tbody');
-      if (el) el.innerHTML = '';
-      el = document.querySelector('#stationTotalTable thead tr');
-      if (el) el.innerHTML = '';
-      el = document.querySelector('#stationTotalTable tbody');
-      if (el) el.innerHTML = '';
-      var noData = document.getElementById('stationNoData');
-      if (noData) noData.style.display = 'none';
-    }
-    var table = document.getElementById('tallyTable');
-    if (table) table.dispatchEvent(new Event('input', { bubbles: true }));
-    if (full && window.clearStationSummaryView) window.clearStationSummaryView();
-   if (full) {
-      var ssView = document.getElementById('stationSummaryView');
-      if (ssView && ssView.style.display === 'block') {
-        var apply = document.getElementById('stationSummaryApply');
-        if (apply) apply.click();
-      }
-    }
-    hideModal();
+  clearCommonFields();
+  if (full) {
+    ['stationName','teamLeader','combType'].forEach(function(id){
+      var e = document.getElementById(id);
+      if (e) e.value = '';
+    });
+    document.querySelectorAll('#headerRow input[type="text"]').forEach(function(el){ el.value = ''; });
+    document.querySelectorAll('#shedStaffTable tr td:nth-child(1) input').forEach(function(el){ el.value = ''; });
   }
+  var table = document.getElementById('tallyTable');
+  if (table) table.dispatchEvent(new Event('input', { bubbles: true }));
+  hideModal();
+}
 
   if (openBtn) openBtn.addEventListener('click', showModal);
   if (partialBtn) partialBtn.addEventListener('click', function(){ performReset(false); });
