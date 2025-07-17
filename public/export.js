@@ -543,4 +543,5 @@ window.showExportPrompt = showExportPrompt;
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('stationSummaryExport')?.addEventListener('click', exportStationSummaryToCSV);
+  document.getElementById('stationSummaryApply')?.addEventListener('click', buildStationSummary);
 });
