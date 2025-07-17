@@ -296,3 +296,22 @@ button {
   background-color: #111;
   border-top: 1px solid #333;
 }
+
+/* Fixed position for the logout button */
+#logoutBtn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 6px;
+  z-index: 999;
+}
+
+@media (max-width: 600px) {
+  #logoutBtn {
+    bottom: 80px;
+  }
+}
