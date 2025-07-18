@@ -1,4 +1,11 @@
 body { font-family: Arial, sans-serif; background: #000; color: #fff; padding: 20px; overflow-x: auto; }
+/* Prevent mobile browsers from zooming when focusing inputs */
+input,
+select,
+textarea {
+  font-size: 16px !important;
+}
+
 /* Ensure all labels share the same base font size */
 label {
   font-size: 14px;
