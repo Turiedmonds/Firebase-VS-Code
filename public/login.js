@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await auth.signInWithEmailAndPassword(email, password);
       console.log("Login success");
-      window.location.href = 'index.html';
+      window.location.href = 'tally.html';
     } catch (err) {
       console.error("Login error:", err);
       alert("Login failed: " + err.message);
