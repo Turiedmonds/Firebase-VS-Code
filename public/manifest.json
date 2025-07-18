@@ -1,7 +1,7 @@
 {
   "name": "SHEΔR iQ Tally Processor",
   "short_name": "SHEΔR iQ",
-  "start_url": "index.html",
+  "start_url": "auth-check.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#000000",
