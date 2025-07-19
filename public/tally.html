@@ -319,6 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (table) table.dispatchEvent(new Event('input', { bubbles: true }));
   hideModal();
   if (window.unlockSession) window.unlockSession();
+if (window.setLayoutBuilt) window.setLayoutBuilt(false);
 }
 
   if (openBtn) openBtn.addEventListener('click', showModal);

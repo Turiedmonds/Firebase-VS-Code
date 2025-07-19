@@ -22,6 +22,10 @@ export let isNineHourDay = false;
 let promptedNineHour = false;
 let layoutBuilt = false
  
+function setLayoutBuilt(value) {
+    layoutBuilt = !!value;
+}
+
  // Dynamic sheep type list will be saved to localStorage under 'sheep_types'
  function getSheepTypes() {
      try {
@@ -1447,6 +1451,7 @@ window.unlockSession = unlockSession;
  window.saveData = saveData;
 window.showLoadSessionModal = showLoadSessionModal;
 window.enforceSessionLock = enforceSessionLock;
+window.setLayoutBuilt = setLayoutBuilt;
 
 // === Rebuild tally rows from saved session data ===
 
