@@ -109,7 +109,6 @@ function getLastSession() {
 }
 
 function showSetupPrompt() {
-    if (layoutBuilt) return;
     const shearers = Math.min(50, parseInt(prompt('How many shearers today?', '')) || 0);
     const counts = parseInt(prompt('How many tally rows (runs) today?', '4')) || 0;
     const staff = parseInt(prompt('How many shed staff today?', '4')) || 0;
