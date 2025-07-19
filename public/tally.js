@@ -79,6 +79,19 @@
     }
 }
 
+function hasUnsavedChanges() {
+    const selectors = [
+        '#stationName', '#teamLeader', '#combType',
+        '#startTime', '#finishTime', '#hoursWorked',
+        '#headerRow input', '#tallyBody input', '#shedStaffTable input'
+    ];
+    return selectors.some(sel =>
+        Array.from(document.querySelectorAll(sel)).some(el => el.value && el.value.trim())
+    );
+}
+
+
+
 function isoFromNZDate(str) {
     if (!str) return '';
     const parts = str.split(/[\/]/);
@@ -1258,10 +1271,54 @@ export function clearStationSummaryView() {
  
      add(['Sheep Type Totals'], true);
      add(['Sheep Type', 'Total'], true);
-     data.sheepTypeTotals.forEach(t => add([t.type, t.total]));
- 
-     return { rows, boldRows };
- }
+   data.sheepTypeTotals.forEach(t => add([t.type, t.total]));
+
+    return { rows, boldRows };
+}
+
+function confirmUnsavedChanges(next) {
+    if (!hasUnsavedChanges()) { next(); return; }
+    const modal = document.getElementById('unsavedModal');
+    const saveBtn = document.getElementById('unsavedSaveBtn');
+    const discardBtn = document.getElementById('unsavedDiscardBtn');
+    const cancelBtn = document.getElementById('unsavedCancelBtn');
+    if (modal && saveBtn && discardBtn && cancelBtn) {
+        modal.style.display = 'flex';
+        const cleanup = () => {
+            modal.style.display = 'none';
+            saveBtn.removeEventListener('click', onSave);
+            discardBtn.removeEventListener('click', onDiscard);
+            cancelBtn.removeEventListener('click', onCancel);
+        };
+        const onSave = () => { cleanup(); saveData(); next(); };
+        const onDiscard = () => { cleanup(); next(); };
+        const onCancel = () => { cleanup(); };
+        saveBtn.addEventListener('click', onSave);
+        discardBtn.addEventListener('click', onDiscard);
+        cancelBtn.addEventListener('click', onCancel);
+    } else {
+        if (confirm('You have unsaved work. Save before loading?')) {
+            saveData();
+            next();
+        } else if (confirm('Continue without saving?')) {
+            next();
+        }
+    }
+}
+
+function loadSessionObject(session) {
+    populateSessionData(session);
+    enforceSessionLock(session.date);
+}
+
+function startSessionLoader(session) {
+    confirmUnsavedChanges(() => {
+        const summary = `Station: ${session.stationName}\nDate: ${formatDateNZ(session.date)}\nTeam Leader: ${session.teamLeader || ''}\n\nDo you want to load this session?`;
+        if (confirm(summary)) {
+            loadSessionObject(session);
+        }
+    });
+} 
  
  document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.tab-button').forEach(btn => {
@@ -1284,10 +1341,7 @@ export function clearStationSummaryView() {
         const session = getLastSession();
         hideLoadSessionModal();
         if (!session) { alert('No saved sessions found.'); return; }
-        if (confirm('Load the last saved session? This will replace current data.')) {
-            populateSessionData(session);
-            enforceSessionLock(session.date);
-        }
+        startSessionLoader(session);
     });
     otherBtn?.addEventListener('click', () => {
         populateStationOptions();
@@ -1310,10 +1364,7 @@ export function clearStationSummaryView() {
             s.stationName.trim().toLowerCase() === station.toLowerCase() && s.date === iso);
         if (!session) { alert('Session not found'); return; }
         hideLoadSessionModal();
-        if (confirm('Load selected session? This will replace current data.')) {
-            populateSessionData(session);
-            enforceSessionLock(session.date);
-        }
+      startSessionLoader(session);   
     });
 
     document.addEventListener('focusin', (e) => {
