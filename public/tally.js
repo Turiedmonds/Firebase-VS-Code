@@ -1398,7 +1398,9 @@ function startSessionLoader(session) {
  window.removeCount = removeCount;
  window.addShedStaff = addShedStaff;
  window.removeShedStaff = removeShedStaff;
-window.saveData = saveData;
+ window.lockSession = lockSession;
+window.unlockSession = unlockSession;
+ window.saveData = saveData;
 window.showLoadSessionModal = showLoadSessionModal;
 
 // === Rebuild tally rows from saved session data ===

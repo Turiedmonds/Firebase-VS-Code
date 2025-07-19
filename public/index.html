@@ -353,6 +353,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var table = document.getElementById('tallyTable');
   if (table) table.dispatchEvent(new Event('input', { bubbles: true }));
   hideModal();
+  if (window.unlockSession) window.unlockSession();
 }
 
   if (openBtn) openBtn.addEventListener('click', showModal);
