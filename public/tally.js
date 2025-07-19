@@ -1318,9 +1318,11 @@ function confirmUnsavedChanges(next) {
 }
 
 function loadSessionObject(session) {
+    // Always enforce locking first so any subsequent DOM manipulation
+    // doesn't accidentally trigger focus events while unlocked
+    enforceSessionLock(session.date);
     populateSessionData(session);
     rebuildRowsFromSession(session);
-    enforceSessionLock(session.date);
 }
 
 function startSessionLoader(session) {
@@ -1402,6 +1404,7 @@ function startSessionLoader(session) {
 window.unlockSession = unlockSession;
  window.saveData = saveData;
 window.showLoadSessionModal = showLoadSessionModal;
+window.enforceSessionLock = enforceSessionLock;
 
 // === Rebuild tally rows from saved session data ===
 

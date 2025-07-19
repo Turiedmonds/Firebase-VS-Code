@@ -202,6 +202,8 @@ function loadPreviousSession() {
 
     updateTotals();
     updateSheepTypeTotals();
+    // Ensure the session is locked if it's not for today
+    if (window.enforceSessionLock) window.enforceSessionLock(data.date);
 }
 
 // Register service worker for PWA functionality
