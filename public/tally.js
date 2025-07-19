@@ -135,7 +135,7 @@ function setupDailyLayout(shearers, counts, staff) {
         for (let i = 0; i < counts; i++) addCount();
     }, 100);
     setTimeout(() => {
-  for (let i = 0; i < shedstaff; i++) addShedStaff();
+  for (let i = 0; i < staff; i++) addShedStaff();
 }, 200);
 
     updateTotals();
