@@ -137,6 +137,7 @@ function setupDailyLayout(shearers, counts, staff) {
     for (let i = 0; i < shearers; i++) {
         addStand();
     }
+     // Add all requested tally rows
     for (let i = 0; i < counts; i++) {
         addCount();
     }
