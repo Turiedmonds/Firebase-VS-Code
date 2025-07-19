@@ -11,15 +11,16 @@
 });
  
  
- const defaultStands = 6;
- const defaultRuns = 4;
+ const defaultStands = 0;
+ const defaultRuns = 0;
  const minStands = 1;
  const minRuns = 1;
  let numStands = defaultStands;
- let runs = defaultRuns;
- let is24HourFormat = true;
- export let isNineHourDay = false;
- let promptedNineHour = false;
+let runs = defaultRuns;
+let is24HourFormat = true;
+export let isNineHourDay = false;
+let promptedNineHour = false;
+let layoutBuilt = false
  
  // Dynamic sheep type list will be saved to localStorage under 'sheep_types'
  function getSheepTypes() {
@@ -106,6 +107,38 @@ function getLastSession() {
     sessions.sort((a,b)=> (a.date > b.date ? -1 : a.date < b.date ? 1 : 0));
     return sessions[0];
 }
+
+function showSetupPrompt() {
+    if (layoutBuilt) return;
+    const shearers = Math.min(50, parseInt(prompt('How many shearers today?', '')) || 0);
+    const counts = parseInt(prompt('How many tally rows (runs) today?', '4')) || 0;
+    const staff = parseInt(prompt('How many shed staff today?', '4')) || 0;
+    setupDailyLayout(shearers, counts, staff);
+}
+
+function setupDailyLayout(shearers, counts, staff) {
+    const headerRowEl = document.getElementById('headerRow');
+    const bodyEl = document.getElementById('tallyBody');
+    const subtotalRowEl = document.getElementById('subtotalRow');
+    const staffTableEl = document.getElementById('shedStaffTable');
+
+    if (headerRowEl) headerRowEl.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
+    if (bodyEl) bodyEl.innerHTML = '';
+    if (subtotalRowEl) subtotalRowEl.innerHTML = '<th>Shearer Totals</th>';
+    if (staffTableEl) staffTableEl.innerHTML = '';
+
+    numStands = 0;
+    runs = 0;
+
+    for (let i = 0; i < shearers; i++) addStand();
+    for (let i = 0; i < counts; i++) addCount();
+    for (let i = 0; i < staff; i++) addShedStaff();
+
+    updateTotals();
+    layoutBuilt = true;
+}
+
+
 
 function populateSessionData(data) {
     if (!data) return;
@@ -196,6 +229,7 @@ function populateSessionData(data) {
 
     updateTotals();
     updateSheepTypeTotals();
+    layoutBuilt = true;
 }
 
 let sessionLocked = false;
@@ -1323,6 +1357,7 @@ function loadSessionObject(session) {
     enforceSessionLock(session.date);
     populateSessionData(session);
     rebuildRowsFromSession(session);
+    layoutBuilt = true;
 }
 
 function startSessionLoader(session) {
@@ -1348,6 +1383,13 @@ function startSessionLoader(session) {
     const backBtn = document.getElementById('loadSessionBackBtn');
     const stationInput = document.getElementById('loadStationInput');
     const dateInput = document.getElementById('loadDateInput');
+const stationNameInput = document.getElementById('stationName');
+    stationNameInput?.addEventListener('blur', () => {
+        if (stationNameInput.value.trim() && !layoutBuilt) {
+            showSetupPrompt();
+        }
+    });
+
 
     loadBtn?.addEventListener('click', showLoadSessionModal);
     cancelBtn?.addEventListener('click', hideLoadSessionModal);
