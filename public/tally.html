@@ -148,7 +148,7 @@
 </table>
 <div class="button-row">
     <button id="saveButton" onclick="saveData()">Save</button>
-<button id="loadPrevButton" onclick="loadPreviousSession()">Load Previous</button>
+<button id="loadSessionBtn">Load Session</button>
     <button onclick="showExportPrompt()">Export Data</button>
   </div>
    
@@ -270,6 +270,33 @@ firebase.auth().onAuthStateChanged(function(user) {
       <button id="partialResetBtn">🔁 Partial Reset</button>
       <button id="fullResetBtn">🗑 Full Reset</button>
       <button id="cancelResetBtn">❌ Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Load Session Modal -->
+<div id="loadSessionModal" class="modal-overlay">
+  <div class="modal-box">
+    <div id="loadSessionStep1">
+      <h3>Load Session</h3>
+      <p>Select a session to load:</p>
+      <div class="modal-buttons">
+        <button id="loadLastBtn">Last Session</button>
+        <button id="loadOtherBtn">Other Session</button>
+        <button id="cancelLoadBtn">❌ Cancel</button>
+      </div>
+    </div>
+    <div id="loadSessionStep2" style="display:none;">
+      <label for="loadStationInput">Station:</label><br/>
+      <input list="loadStationList" id="loadStationInput" class="small-input"/><br/><br/>
+      <label for="loadDateInput">Date (DD/MM/YYYY):</label><br/>
+      <input list="loadDateList" id="loadDateInput" class="small-input"/><br/>
+      <datalist id="loadStationList"></datalist>
+      <datalist id="loadDateList"></datalist>
+      <div class="modal-buttons" style="margin-top:10px;">
+        <button id="confirmLoadBtn">Load</button>
+        <button id="loadSessionBackBtn">Back</button>
+      </div>
     </div>
   </div>
 </div>

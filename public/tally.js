@@ -71,13 +71,169 @@
  }
  
  function getStoredSessions() {
-     try {
-         const arr = JSON.parse(localStorage.getItem('sheariq_sessions') || '[]');
-         return Array.isArray(arr) ? arr : [];
-     } catch (e) {
-         return [];
-     }
- }
+    try {
+        const arr = JSON.parse(localStorage.getItem('sheariq_sessions') || '[]');
+        return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function isoFromNZDate(str) {
+    if (!str) return '';
+    const parts = str.split(/[\/]/);
+    if (parts.length !== 3) return str;
+    const [dd, mm, yy] = parts;
+    return `${yy.padStart(4,'0')}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+}
+
+function getLastSession() {
+    const sessions = getStoredSessions();
+    if (!sessions.length) return null;
+    sessions.sort((a,b)=> (a.date > b.date ? -1 : a.date < b.date ? 1 : 0));
+    return sessions[0];
+}
+
+function populateSessionData(data) {
+    if (!data) return;
+    const targetRuns = Array.isArray(data.shearerCounts) ? data.shearerCounts.length : runs;
+    const targetStands = data.shearerCounts && data.shearerCounts[0] ? data.shearerCounts[0].stands.length : numStands;
+    while (numStands < targetStands) addStand();
+    while (numStands > targetStands) removeStand();
+    while (runs < targetRuns) addCount();
+    while (runs > targetRuns) removeCount();
+
+    document.querySelectorAll('#tallyBody input').forEach(inp => inp.value = '');
+    document.querySelectorAll('#shedStaffTable input').forEach(inp => inp.value = '');
+
+    const headerRow = document.getElementById('headerRow');
+    if (headerRow && Array.isArray(data.stands)) {
+        data.stands.forEach((st, idx) => {
+            const input = headerRow.children[idx + 1]?.querySelector('input');
+            if (input) {
+                input.value = st.name || '';
+                adjustStandNameWidth(input);
+                applyInputHistory(input);
+            }
+        });
+    }
+
+    const assign = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    assign('date', data.date);
+    assign('stationName', data.stationName);
+    assign('teamLeader', data.teamLeader);
+    assign('combType', data.combType);
+    assign('startTime', data.startTime);
+    assign('finishTime', data.finishTime);
+    assign('hoursWorked', data.hoursWorked);
+
+    setWorkdayType(data.timeSystem === '9-hr');
+    updateShedStaffHours(data.hoursWorked || '');
+
+    const body = document.getElementById('tallyBody');
+    if (body && Array.isArray(data.shearerCounts)) {
+        data.shearerCounts.forEach((run, idx) => {
+            const row = body.children[idx];
+            if (!row) return;
+            run.stands.forEach((val, sIdx) => {
+                const input = row.children[sIdx + 1]?.querySelector('input[type="number"]');
+                if (input) input.value = val;
+            });
+            const typeInput = row.querySelector('.sheep-type input');
+            if (typeInput) {
+                typeInput.value = run.sheepType || '';
+                adjustSheepTypeWidth(typeInput);
+            }
+        });
+    }
+
+    const staffTable = document.getElementById('shedStaffTable');
+    if (staffTable) {
+        staffTable.innerHTML = '';
+        if (Array.isArray(data.shedStaff)) {
+            data.shedStaff.forEach(staff => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td><input placeholder="Staff Name" type="text"/></td><td><input min="0" placeholder="0" step="0.1" type="number"/></td>';
+                const nameInput = tr.querySelector('td:nth-child(1) input');
+                const hoursInput = tr.querySelector('td:nth-child(2) input');
+                if (nameInput) {
+                    nameInput.value = staff.name || '';
+                    adjustShedStaffNameWidth(nameInput);
+                    applyInputHistory(nameInput);
+                }
+                if (hoursInput) {
+                    hoursInput.value = staff.hours || '';
+                    adjustShedStaffHoursWidth(hoursInput);
+                }
+                staffTable.appendChild(tr);
+            });
+        }
+    }
+
+    updateTotals();
+    updateSheepTypeTotals();
+}
+
+let sessionLocked = false;
+function lockSession() {
+    sessionLocked = true;
+    document.querySelectorAll('#tallySheetView input').forEach(inp => inp.readOnly = true);
+    document.querySelectorAll('#tallySheetView select').forEach(sel => sel.disabled = true);
+}
+
+function unlockSession() {
+    sessionLocked = false;
+    document.querySelectorAll('#tallySheetView input').forEach(inp => inp.readOnly = false);
+    document.querySelectorAll('#tallySheetView select').forEach(sel => sel.disabled = false);
+}
+
+function enforceSessionLock(dateStr) {
+    const today = new Date().toISOString().split('T')[0];
+    if (dateStr !== today) lockSession();
+    else unlockSession();
+}
+
+function populateStationOptions() {
+    const list = document.getElementById('loadStationList');
+    if (!list) return;
+    list.innerHTML = '';
+    const names = Array.from(new Set(getStoredSessions().map(s => s.stationName).filter(Boolean)));
+    names.forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n;
+        list.appendChild(opt);
+    });
+}
+
+function populateDateOptions(station) {
+    const list = document.getElementById('loadDateList');
+    if (!list) return;
+    list.innerHTML = '';
+    const dates = getStoredSessions()
+        .filter(s => s.stationName.trim().toLowerCase() === station.trim().toLowerCase())
+        .map(s => s.date);
+    Array.from(new Set(dates)).forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = formatDateNZ(d);
+        list.appendChild(opt);
+    });
+}
+
+function showLoadSessionModal() {
+    const modal = document.getElementById('loadSessionModal');
+    const step1 = document.getElementById('loadSessionStep1');
+    const step2 = document.getElementById('loadSessionStep2');
+    if (modal && step1 && step2) {
+        step1.style.display = 'block';
+        step2.style.display = 'none';
+        modal.style.display = 'flex';
+    }
+}
+
+function hideLoadSessionModal() {
+    const modal = document.getElementById('loadSessionModal');
+    if (modal) modal.style.display = 'none';
+}
  
  function adjustStandNameWidth(input) {
      const len = input.value.length || input.placeholder.length || 1;
@@ -1108,11 +1264,69 @@ export function clearStationSummaryView() {
  }
  
  document.addEventListener('DOMContentLoaded', () => {
-     document.querySelectorAll('.tab-button').forEach(btn => {
-         btn.addEventListener('click', () => showView(btn.dataset.view));
-     });
-     showView('tallySheetView');
- });
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.addEventListener('click', () => showView(btn.dataset.view));
+    });
+    showView('tallySheetView');
+
+    const loadBtn = document.getElementById('loadSessionBtn');
+    const lastBtn = document.getElementById('loadLastBtn');
+    const otherBtn = document.getElementById('loadOtherBtn');
+    const cancelBtn = document.getElementById('cancelLoadBtn');
+    const confirmBtn = document.getElementById('confirmLoadBtn');
+    const backBtn = document.getElementById('loadSessionBackBtn');
+    const stationInput = document.getElementById('loadStationInput');
+    const dateInput = document.getElementById('loadDateInput');
+
+    loadBtn?.addEventListener('click', showLoadSessionModal);
+    cancelBtn?.addEventListener('click', hideLoadSessionModal);
+    lastBtn?.addEventListener('click', () => {
+        const session = getLastSession();
+        hideLoadSessionModal();
+        if (!session) { alert('No saved sessions found.'); return; }
+        if (confirm('Load the last saved session? This will replace current data.')) {
+            populateSessionData(session);
+            enforceSessionLock(session.date);
+        }
+    });
+    otherBtn?.addEventListener('click', () => {
+        populateStationOptions();
+        stationInput.value = '';
+        dateInput.value = '';
+        document.getElementById('loadSessionStep1').style.display = 'none';
+        document.getElementById('loadSessionStep2').style.display = 'block';
+    });
+    backBtn?.addEventListener('click', () => {
+        document.getElementById('loadSessionStep2').style.display = 'none';
+        document.getElementById('loadSessionStep1').style.display = 'block';
+    });
+    stationInput?.addEventListener('input', () => populateDateOptions(stationInput.value));
+    confirmBtn?.addEventListener('click', () => {
+        const station = stationInput.value.trim();
+        const dateNZ = dateInput.value.trim();
+        if (!station || !dateNZ) { alert('Please enter station and date'); return; }
+        const iso = isoFromNZDate(dateNZ);
+        const session = getStoredSessions().find(s =>
+            s.stationName.trim().toLowerCase() === station.toLowerCase() && s.date === iso);
+        if (!session) { alert('Session not found'); return; }
+        hideLoadSessionModal();
+        if (confirm('Load selected session? This will replace current data.')) {
+            populateSessionData(session);
+            enforceSessionLock(session.date);
+        }
+    });
+
+    document.addEventListener('focusin', (e) => {
+        if (sessionLocked && e.target.matches('#tallySheetView input, #tallySheetView select')) {
+            const pin = prompt('\uD83D\uDD10 Enter Contractor PIN to unlock editing:');
+            if (pin === '1234') {
+                unlockSession();
+            } else if (pin !== null) {
+                alert('Incorrect PIN');
+            }
+        }
+    });
+});
  
  // Expose functions for inline handlers
  window.addStand = addStand;
@@ -1122,4 +1336,4 @@ export function clearStationSummaryView() {
  window.addShedStaff = addShedStaff;
  window.removeShedStaff = removeShedStaff;
 window.saveData = saveData;
-window.loadPreviousSession = loadPreviousSession;
+window.showLoadSessionModal = showLoadSessionModal;
