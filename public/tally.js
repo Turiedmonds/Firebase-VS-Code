@@ -1319,6 +1319,7 @@ function confirmUnsavedChanges(next) {
 
 function loadSessionObject(session) {
     populateSessionData(session);
+    rebuildRowsFromSession(session);
     enforceSessionLock(session.date);
 }
 
@@ -1399,3 +1400,42 @@ function startSessionLoader(session) {
  window.removeShedStaff = removeShedStaff;
 window.saveData = saveData;
 window.showLoadSessionModal = showLoadSessionModal;
+
+// === New: rebuild tally rows per stand from saved session data ===
+
+function addCountRow(standIndex) {
+    const body = document.getElementById(`tallyBody-${standIndex}`);
+    if (!body) return null;
+    const rowIndex = body.children.length;
+    const tr = document.createElement('tr');
+    let html = `<td><select id="sheepType-${standIndex}-${rowIndex}"></select></td>`;
+    for (let r = 0; r < 4; r++) {
+        html += `<td><input id="run-${standIndex}-${rowIndex}-${r}" type="number"></td>`;
+    }
+    tr.innerHTML = html;
+    body.appendChild(tr);
+    return tr;
+}
+
+function rebuildRowsFromSession(session) {
+    if (!session || !Array.isArray(session.shearerCounts)) return;
+    session.shearerCounts.forEach((rows, standIdx) => {
+        const body = document.getElementById(`tallyBody-${standIdx}`);
+        if (!body) return;
+        body.innerHTML = '';
+        rows.forEach((row, rowIdx) => {
+            addCountRow(standIdx);
+            const sel = document.getElementById(`sheepType-${standIdx}-${rowIdx}`);
+            if (sel) sel.value = row.sheepType || '';
+            if (Array.isArray(row.counts)) {
+                row.counts.forEach((val, runIdx) => {
+                    const inp = document.getElementById(`run-${standIdx}-${rowIdx}-${runIdx}`);
+                    if (inp) inp.value = val;
+                });
+            }
+        });
+    });
+}
+
+window.addCountRow = addCountRow;
+window.rebuildRowsFromSession = rebuildRowsFromSession;
