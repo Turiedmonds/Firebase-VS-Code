@@ -1401,41 +1401,33 @@ function startSessionLoader(session) {
 window.saveData = saveData;
 window.showLoadSessionModal = showLoadSessionModal;
 
-// === New: rebuild tally rows per stand from saved session data ===
-
-function addCountRow(standIndex) {
-    const body = document.getElementById(`tallyBody-${standIndex}`);
-    if (!body) return null;
-    const rowIndex = body.children.length;
-    const tr = document.createElement('tr');
-    let html = `<td><select id="sheepType-${standIndex}-${rowIndex}"></select></td>`;
-    for (let r = 0; r < 4; r++) {
-        html += `<td><input id="run-${standIndex}-${rowIndex}-${r}" type="number"></td>`;
-    }
-    tr.innerHTML = html;
-    body.appendChild(tr);
-    return tr;
-}
+// === Rebuild tally rows from saved session data ===
 
 function rebuildRowsFromSession(session) {
-    if (!session || !Array.isArray(session.shearerCounts)) return;
-    session.shearerCounts.forEach((rows, standIdx) => {
-        const body = document.getElementById(`tallyBody-${standIdx}`);
-        if (!body) return;
-        body.innerHTML = '';
-        rows.forEach((row, rowIdx) => {
-            addCountRow(standIdx);
-            const sel = document.getElementById(`sheepType-${standIdx}-${rowIdx}`);
-            if (sel) sel.value = row.sheepType || '';
-            if (Array.isArray(row.counts)) {
-                row.counts.forEach((val, runIdx) => {
-                    const inp = document.getElementById(`run-${standIdx}-${rowIdx}-${runIdx}`);
-                    if (inp) inp.value = val;
-                });
-            }
+const body = document.getElementById('tallyBody');
+    if (!body || !session || !Array.isArray(session.shearerCounts)) return;
+    body.innerHTML = '';
+    runs = 0;
+    session.shearerCounts.forEach((row, idx) => {
+        const tr = createRow(idx);
+        const values = Array.isArray(row.counts)
+            ? row.counts
+            : Array.isArray(row.stands)
+                ? row.stands
+                : [];
+        values.forEach((val, sIdx) => {
+            const inp = tr.children[sIdx + 1]?.querySelector('input[type="number"]');
+            if (inp) inp.value = val;
         });
+        const typeInput = tr.querySelector('.sheep-type input');
+        if (typeInput) {
+            typeInput.value = row.sheepType || '';
+            adjustSheepTypeWidth(typeInput);
+        }
+        body.appendChild(tr);
+        runs++;
     });
+ updateTotals();   
 }
 
-window.addCountRow = addCountRow;
 window.rebuildRowsFromSession = rebuildRowsFromSession;

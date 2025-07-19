@@ -12,7 +12,8 @@ export function exportDailySummaryCSV() {
     data.shearerCounts.forEach(run => {
         const type = optionSet.has(run.sheepType) ? run.sheepType : 'Other';
         if (!totalsByType[type]) totalsByType[type] = new Array(shearerNames.length).fill(0);
-        run.stands.forEach((val, idx) => {
+        const values = Array.isArray(run.stands) ? run.stands : Array.isArray(run.counts) ? run.counts : [];
+        values.forEach((val, idx) => {
             const num = parseInt(val) || 0;
             totalsByType[type][idx] += num;
             standTotals[idx] += num;
@@ -113,7 +114,13 @@ function loadPreviousSession() {
 
     // Determine required stands and runs
     const targetRuns = Array.isArray(data.shearerCounts) ? data.shearerCounts.length : runs;
-    const targetStands = data.shearerCounts && data.shearerCounts[0] ? data.shearerCounts[0].stands.length : numStands;
+    const targetStands = data.shearerCounts && data.shearerCounts[0]
+        ? (Array.isArray(data.shearerCounts[0].stands)
+            ? data.shearerCounts[0].stands.length
+            : Array.isArray(data.shearerCounts[0].counts)
+                ? data.shearerCounts[0].counts.length
+                : numStands)
+        : numStands;
 
     while (numStands < targetStands) addStand();
     while (numStands > targetStands) removeStand();
@@ -156,7 +163,8 @@ function loadPreviousSession() {
         data.shearerCounts.forEach((run, idx) => {
             const row = body.children[idx];
             if (!row) return;
-            run.stands.forEach((val, sIdx) => {
+            const values = Array.isArray(run.stands) ? run.stands : Array.isArray(run.counts) ? run.counts : [];
+            values.forEach((val, sIdx) => {
                 const input = row.children[sIdx + 1]?.querySelector('input[type="number"]');
                 if (input) input.value = val;
             });
@@ -300,8 +308,11 @@ function buildExportRows(data) {
     add(['Shearer Tallies'], true);
     const headerRow = ['Count #', ...data.stands.map(s => s.name), 'Total', 'Sheep Type'];
     add(headerRow, true);
-    data.shearerCounts.forEach(run => {
-        const row = [run.count, ...run.stands, run.total, run.sheepType];
+    data.shearerCounts.forEach((run, idx) => {
+        const values = Array.isArray(run.stands) ? run.stands : Array.isArray(run.counts) ? run.counts : [];
+        const total = run.total ?? values.reduce((a, b) => a + (parseInt(b) || 0), 0);
+        const countNum = run.count ?? (idx + 1);
+        const row = [countNum, ...values, total, run.sheepType];
         add(row);
     });
     add([]);
@@ -354,7 +365,8 @@ export function exportDailySummaryExcel() {
     data.shearerCounts.forEach(run => {
         const type = optionSet.has(run.sheepType) ? run.sheepType : 'Other';
         if (!totalsByType[type]) totalsByType[type] = new Array(shearerNames.length).fill(0);
-        run.stands.forEach((val, idx) => {
+        const values = Array.isArray(run.stands) ? run.stands : Array.isArray(run.counts) ? run.counts : [];
+        values.forEach((val, idx) => {
             const num = parseInt(val) || 0;
             totalsByType[type][idx] += num;
             standTotals[idx] += num;
