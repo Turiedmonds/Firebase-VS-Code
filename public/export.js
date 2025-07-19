@@ -199,6 +199,8 @@ function loadPreviousSession() {
             });
         }
     }
+} else {
+        console.error('shedStaffTable not found');
 
     updateTotals();
     updateSheepTypeTotals();

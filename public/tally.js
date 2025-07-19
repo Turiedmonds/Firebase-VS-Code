@@ -121,38 +121,35 @@ function showSetupPrompt() {
 }
 
 function setupDailyLayout(shearers, counts, staff) {
-   const headerRow = document.getElementById('headerRow');
-  const tallyBody = document.getElementById('tallyBody');
-  const subtotalRow = document.getElementById('subtotalRow');
-  const staffTable = document.getElementById('shedStaffTable');
+  const headerRow = document.getElementById('headerRow');
+    const tallyBody = document.getElementById('tallyBody');
+    const subtotalRow = document.getElementById('subtotalRow');
+    const staffTable = document.getElementById('shedStaffTable');   
 
-   if (!headerRow || !tallyBody || !subtotalRow || !staffTable) return; 
+   if (!headerRow || !tallyBody || !subtotalRow || !staffTable) return;
 
     // Reset everything
-  headerRow.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
-  tallyBody.innerHTML = '';
-  subtotalRow.innerHTML = '<th>Shearer Totals</th><td></td><td></td>';
-  staffTable.innerHTML = '';
-
+   headerRow.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
+    tallyBody.innerHTML = '';
+    subtotalRow.innerHTML = '<th>Shearer Totals</th><td></td><td></td>';
+    staffTable.innerHTML = '';
     // Reset state
-  numStands = 0;
-  runs = 0;
+   numStands = 0;
+   runs = 0;
 
-   // Build layout
-  for (let i = 0; i < shearers; i++) {
-    addStand();
-  }
+    // Build layout
+    for (let i = 0; i < shearers; i++) {
+        addStand();
+    }
 
-  // Set correct run count before adding rows
-  runs = counts;
-  for (let i = 0; i < runs; i++) {
-    addCount();
-  }
+  for (let i = 0; i < counts; i++) {
+        addCount(); // addCount increments 'runs'
+    }
 
-  for (let i = 0; i < staff; i++) {
-    addShedStaff();
-  }
-
+    for (let i = 0; i < staff; i++) {
+        addShedStaff();
+    }
+  
   // Update totals
   updateTotals();
   updateSheepTypeTotals();
@@ -245,7 +242,9 @@ function populateSessionData(data) {
             });
         }
     }
-
+} else {    
+    console.error('shedStaffTable not found');
+    }
     updateTotals();
     updateSheepTypeTotals();
     layoutBuilt = true;
@@ -543,64 +542,82 @@ function hideLoadSessionModal() {
  }
  
  function addStand() {
-     numStands++;
-     const header = document.getElementById("headerRow");
-     const newHeader = document.createElement("th");
-     newHeader.innerHTML = `Stand ${numStands}<br><input type="text" placeholder="Name">`;
-     const input = newHeader.querySelector('input');
+    numStands++;
+    const header = document.getElementById("headerRow");
+    const tallyBody = document.getElementById("tallyBody");
+    const subtotalRow = document.getElementById("subtotalRow");
+    if (!header || !tallyBody || !subtotalRow) {
+        console.error('Required table elements missing for addStand');
+        return;
+    }
+    const newHeader = document.createElement("th");
+    newHeader.innerHTML = `Stand ${numStands}<br><input type="text" placeholder="Name">`;
+    const input = newHeader.querySelector('input');
     if (input) {
-         adjustStandNameWidth(input);
-         applyInputHistory(input);
-     }
-     header.insertBefore(newHeader, header.children[header.children.length - 2]);
- 
-     const tallyBody = document.getElementById("tallyBody");
-     for (let i = 0; i < runs; i++) {
-         const row = tallyBody.children[i];
-         const cell = document.createElement("td");
+     adjustStandNameWidth(input);
+        applyInputHistory(input);
+    }
+    header.insertBefore(newHeader, header.children[header.children.length - 2]);
+
+    for (let i = 0; i < runs; i++) {
+        const row = tallyBody.children[i];
+        if (!row) continue;
+        const cell = document.createElement("td");   
         cell.innerHTML = `<input type="number" value="" onchange="updateTotals()">`;
-         row.insertBefore(cell, row.children[row.children.length - 2]);
-     }
+        row.insertBefore(cell, row.children[row.children.length - 2]);
+    }
+
+    const cell = document.createElement("td");
+    cell.innerText = "0";
+    subtotalRow.insertBefore(cell, subtotalRow.children[subtotalRow.children.length - 2]);
+}
+
+function addCount() {
+    const body = document.getElementById("tallyBody");
+    if (!body) {
+        console.error('tallyBody not found when adding count');
+        return;
+    }
+    body.appendChild(createRow(runs));
+    runs++;
+    updateTotals();
+} 
  
-     const subtotalRow = document.getElementById("subtotalRow");
-     const cell = document.createElement("td");
-     cell.innerText = "0";
-     subtotalRow.insertBefore(cell, subtotalRow.children[subtotalRow.children.length - 2]);
- }
- 
- function addCount() {
-     const body = document.getElementById("tallyBody");
-     body.appendChild(createRow(runs));
-     runs++;
-     updateTotals();
- }
- 
- function removeCount() {
-   if (runs <= minRuns) return;  
- 
-     const body = document.getElementById("tallyBody");
-     if (body.lastElementChild) {
-         body.removeChild(body.lastElementChild);
-     }
-     runs--;
-     updateTotals();
- }
+   function removeCount() {
+  if (runs <= minRuns) return;
+
+    const body = document.getElementById("tallyBody");
+    if (!body) {
+        console.error('tallyBody not found when removing count');
+        return;
+    }
+    if (body.lastElementChild) {
+        body.removeChild(body.lastElementChild);
+    }
+    runs--;
+    updateTotals();
+}  
  
  
  function removeStand() {
       if (numStands <= minStands) return;
  
-     const header = document.getElementById("headerRow");
-     header.removeChild(header.children[numStands]);
- 
-     const tallyBody = document.getElementById("tallyBody");
-     for (let i = 0; i < runs; i++) {
-         const row = tallyBody.children[i];
-         row.removeChild(row.children[numStands]);
-     }
- 
-     const subtotalRow = document.getElementById("subtotalRow");
-     subtotalRow.removeChild(subtotalRow.children[numStands]);
+      const header = document.getElementById("headerRow");
+    const tallyBody = document.getElementById("tallyBody");
+    const subtotalRow = document.getElementById("subtotalRow");
+    if (!header || !tallyBody || !subtotalRow) {
+        console.error('Required table elements missing for removeStand');
+        return;
+    }
+
+    header.removeChild(header.children[numStands]);
+
+    for (let i = 0; i < runs; i++) {
+        const row = tallyBody.children[i];
+        if (row) row.removeChild(row.children[numStands]);
+    }
+
+    subtotalRow.removeChild(subtotalRow.children[numStands]);
  
      numStands--;
      updateTotals();
@@ -780,11 +797,15 @@ function hideLoadSessionModal() {
  });
  
  function addShedStaff() {
-     const body = document.getElementById('shedStaffTable');
-     const row = document.createElement('tr');
-     row.innerHTML = `<td><input placeholder="Staff Name" type="text"/></td><td><input min="0" placeholder="0" step="0.1" type="number"/></td>`;
-     body.appendChild(row);
-     const hours = document.getElementById('hoursWorked');
+    const body = document.getElementById('shedStaffTable');
+    if (!body) {
+        console.error('shedStaffTable not found');
+        return;
+    }
+    const row = document.createElement('tr');
+    row.innerHTML = `<td><input placeholder="Staff Name" type="text"/></td><td><input min="0" placeholder="0" step="0.1" type="number"/></td>`;
+    body.appendChild(row);
+    const hours = document.getElementById('hoursWorked');
      const nameInput = row.querySelector('td:nth-child(1) input');
      const hoursInput = row.querySelector('td:nth-child(2) input');
      if (hours && hoursInput) {
@@ -798,11 +819,15 @@ function hideLoadSessionModal() {
  }
  
  function removeShedStaff() {
-     const body = document.getElementById('shedStaffTable');
-     if (body.lastElementChild) {
-         body.removeChild(body.lastElementChild);
-     }
- }
+    const body = document.getElementById('shedStaffTable');
+    if (!body) {
+        console.error('shedStaffTable not found');
+        return;
+    }
+    if (body.lastElementChild) {
+        body.removeChild(body.lastElementChild);
+    }
+}
  
  function clearHighlights() {
      document.querySelectorAll('.highlight-error').forEach(el => el.classList.remove('highlight-error'));
