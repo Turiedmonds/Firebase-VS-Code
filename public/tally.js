@@ -109,20 +109,33 @@ function getLastSession() {
 
 function populateSessionData(data) {
     if (!data) return;
-    const targetRuns = Array.isArray(data.shearerCounts) ? data.shearerCounts.length : runs;
-    const targetStands = data.shearerCounts && data.shearerCounts[0] ? data.shearerCounts[0].stands.length : numStands;
-    while (numStands < targetStands) addStand();
-    while (numStands > targetStands) removeStand();
-    while (runs < targetRuns) addCount();
-    while (runs > targetRuns) removeCount();
+  const runCount = Array.isArray(data.shearerCounts) ? data.shearerCounts.length : 0;
+    const standCount = Array.isArray(data.stands) ? data.stands.length : (runCount && data.shearerCounts[0] ? data.shearerCounts[0].stands.length : 0);
+
+    const headerRowEl = document.getElementById('headerRow');
+    const bodyEl = document.getElementById('tallyBody');
+    const subtotalRowEl = document.getElementById('subtotalRow');
+    const staffTableEl = document.getElementById('shedStaffTable');
+
+    if (headerRowEl) headerRowEl.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
+    if (bodyEl) bodyEl.innerHTML = '';
+    if (subtotalRowEl) subtotalRowEl.innerHTML = '<th>Shearer Totals</th><td></td><td></td>';
+
+    numStands = 0;
+    runs = 0;
+
+    setWorkdayType(data.timeSystem === '9-hr');
+
+    for (let i = 0; i < standCount; i++) addStand();
+    while (runs < runCount) addCount();
+    while (runs > runCount) removeCount();  
 
     document.querySelectorAll('#tallyBody input').forEach(inp => inp.value = '');
     document.querySelectorAll('#shedStaffTable input').forEach(inp => inp.value = '');
 
-    const headerRow = document.getElementById('headerRow');
-    if (headerRow && Array.isArray(data.stands)) {
+    if (headerRowEl && Array.isArray(data.stands)) {
         data.stands.forEach((st, idx) => {
-            const input = headerRow.children[idx + 1]?.querySelector('input');
+         const input = headerRowEl.children[idx + 1]?.querySelector('input');   
             if (input) {
                 input.value = st.name || '';
                 adjustStandNameWidth(input);
@@ -143,10 +156,9 @@ function populateSessionData(data) {
     setWorkdayType(data.timeSystem === '9-hr');
     updateShedStaffHours(data.hoursWorked || '');
 
-    const body = document.getElementById('tallyBody');
-    if (body && Array.isArray(data.shearerCounts)) {
+    if (bodyEl && Array.isArray(data.shearerCounts)) {
         data.shearerCounts.forEach((run, idx) => {
-            const row = body.children[idx];
+            const row = bodyEl.children[idx];
             if (!row) return;
             run.stands.forEach((val, sIdx) => {
                 const input = row.children[sIdx + 1]?.querySelector('input[type="number"]');
@@ -160,9 +172,8 @@ function populateSessionData(data) {
         });
     }
 
-    const staffTable = document.getElementById('shedStaffTable');
-    if (staffTable) {
-        staffTable.innerHTML = '';
+    if (staffTableEl) {
+        staffTableEl.innerHTML = '';
         if (Array.isArray(data.shedStaff)) {
             data.shedStaff.forEach(staff => {
                 const tr = document.createElement('tr');
@@ -178,7 +189,7 @@ function populateSessionData(data) {
                     hoursInput.value = staff.hours || '';
                     adjustShedStaffHoursWidth(hoursInput);
                 }
-                staffTable.appendChild(tr);
+                staffTableEl.appendChild(tr);
             });
         }
     }
