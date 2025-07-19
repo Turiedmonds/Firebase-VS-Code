@@ -124,19 +124,25 @@ function setupDailyLayout(shearers, counts, staff) {
     const headerRowEl = document.getElementById('headerRow');
     const bodyEl = document.getElementById('tallyBody');
     const subtotalRowEl = document.getElementById('subtotalRow');
-    const staffTableEl = document.getElementById('shedStaffTable');
+    const staffTable = document.getElementById('shedStaffTable');
 
     if (headerRowEl) headerRowEl.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
     if (bodyEl) bodyEl.innerHTML = '';
     if (subtotalRowEl) subtotalRowEl.innerHTML = '<th>Shearer Totals</th>';
-    if (staffTableEl) staffTableEl.innerHTML = '';
+     if (staffTable) staffTable.innerHTML = '';
 
     numStands = 0;
     runs = 0;
 
-    for (let i = 0; i < shearers; i++) addStand();
-    for (let i = 0; i < counts; i++) addCount();
-    for (let i = 0; i < staff; i++) addShedStaff();
+    for (let i = 0; i < shearers; i++) {
+        addStand();
+    }
+    for (let i = 0; i < counts; i++) {
+        addCount();
+    }
+    for (let i = 0; i < staff; i++) {
+        addShedStaff();
+    }
 
     updateTotals();
     layoutBuilt = true;
