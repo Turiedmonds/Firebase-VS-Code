@@ -102,15 +102,30 @@
 </div>
    <table>
     <thead>
-      <tr>
-        <th>Name</th>
-        <th>Hours Worked</th>
-      </tr>
-    </thead>
-    <tbody id="shedStaffTable">
-      <!-- Shed staff rows will be added dynamically -->
-    </tbody>
-  </table>
+<tr>
+<th>Name</th>
+<th>Hours Worked</th>
+</tr>
+</thead>
+<tbody id="shedStaffTable">
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+</tbody>
+</table>
 </div>
 
 <table id="sheepTypeTotalsTable">
@@ -331,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (table) table.dispatchEvent(new Event('input', { bubbles: true }));
   hideModal();
   if (window.unlockSession) window.unlockSession();
-  if (window.setLayoutBuilt) window.setLayoutBuilt(false);
+  
 }
 
   if (openBtn) openBtn.addEventListener('click', showModal);

@@ -75,12 +75,18 @@
 <thead>
 <tr id="headerRow">
 <th>Count #</th>
-  <th>Count Total</th>
-  <th class="sheep-type">Sheep Type</th>
+  <th>Stand 1<br/><input placeholder="Name" type="text"/></th>
+<th>Stand 2<br/><input placeholder="Name" type="text"/></th>
+<th>Stand 3<br/><input placeholder="Name" type="text"/></th>
+<th>Stand 4<br/><input placeholder="Name" type="text"/></th>
+<th>Stand 5<br/><input placeholder="Name" type="text"/></th>
+<th>Stand 6<br/><input placeholder="Name" type="text"/></th> 
+<th>Count Total</th>
+<th class="sheep-type">Sheep Type</th>
 </tr>
 </thead>
 <tbody id="tallyBody">
-<!-- Run rows will be added dynamically -->
+<!-- Run rows -->
 </tbody>
 <tfoot>
 <tr id="subtotalRow">
@@ -94,17 +100,32 @@
   <button id="add-shedstaff-btn" onclick="addShedStaff()">Add Shed Staff</button>
 <button id="remove-shedstaff-btn" onclick="removeShedStaff()">Remove Shed Staff</button>
 </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Hours Worked</th>
-      </tr>
-    </thead>
-    <tbody id="shedStaffTable">
-      <!-- Shed staff rows will be added dynamically -->
-    </tbody>
-  </table>
+ <table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Hours Worked</th>
+</tr>
+</thead>
+<tbody id="shedStaffTable">
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+<tr>
+<td><input placeholder="Staff Name" type="text"/></td>
+<td><input min="0" placeholder="0" step="0.1" type="number"/></td>
+</tr>
+</tbody>
+</table> 
 </div>
 
 <table id="sheepTypeTotalsTable">
@@ -322,7 +343,6 @@ document.addEventListener('DOMContentLoaded', function () {
   if (table) table.dispatchEvent(new Event('input', { bubbles: true }));
   hideModal();
   if (window.unlockSession) window.unlockSession();
-if (window.setLayoutBuilt) window.setLayoutBuilt(false);
 }
 
   if (openBtn) openBtn.addEventListener('click', showModal);
