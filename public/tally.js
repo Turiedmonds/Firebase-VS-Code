@@ -131,8 +131,12 @@ function setupDailyLayout(shearers, counts, staff) {
     runs = 0;
 
     for (let i = 0; i < shearers; i++) addStand();
-    for (let i = 0; i < counts; i++) addCount();
-    for (let i = 0; i < staff; i++) addShedStaff();
+    setTimeout(() => {
+        for (let i = 0; i < counts; i++) addCount();
+    }, 50);
+    setTimeout(() => {
+  for (let i = 0; i < shedstaff; i++) addShedStaff();
+}, 75);
 
     updateTotals();
     layoutBuilt = true;
@@ -550,11 +554,12 @@ function hideLoadSessionModal() {
  }
  
  function addCount() {
-     const body = document.getElementById("tallyBody");
-     body.appendChild(createRow(runs));
-     runs++;
-     updateTotals();
- }
+    const body = document.getElementById("tallyBody");
+    const row = createRow(runs); // Use current count
+    body.appendChild(row);
+    runs++; // Now safely increment
+    updateTotals();
+}
  
  function removeCount() {
    if (runs <= minRuns) return;  
