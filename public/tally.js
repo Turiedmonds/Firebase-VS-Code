@@ -11,16 +11,17 @@
 });
  
  
- const defaultStands = 6;
- const defaultRuns = 4;
+ const defaultStands = 0;
+ const defaultRuns = 0;
  const minStands = 1;
  const minRuns = 1;
  let numStands = defaultStands;
 let runs = defaultRuns;
- let is24HourFormat = true;
- export let isNineHourDay = false;
- let promptedNineHour = false;
-
+let is24HourFormat = true;
+export let isNineHourDay = false;
+let promptedNineHour = false;
+let layoutBuilt = false
+ 
  // Dynamic sheep type list will be saved to localStorage under 'sheep_types'
  function getSheepTypes() {
      try {
@@ -106,6 +107,38 @@ function getLastSession() {
     sessions.sort((a,b)=> (a.date > b.date ? -1 : a.date < b.date ? 1 : 0));
     return sessions[0];
 }
+
+function showSetupPrompt() {
+    if (layoutBuilt) return;
+    const shearers = Math.min(50, parseInt(prompt('How many shearers today?', '')) || 0);
+    const counts = parseInt(prompt('How many tally rows (runs) today?', '4')) || 0;
+    const staff = parseInt(prompt('How many shed staff today?', '4')) || 0;
+    setupDailyLayout(shearers, counts, staff);
+}
+
+function setupDailyLayout(shearers, counts, staff) {
+    const headerRowEl = document.getElementById('headerRow');
+    const bodyEl = document.getElementById('tallyBody');
+    const subtotalRowEl = document.getElementById('subtotalRow');
+    const staffTableEl = document.getElementById('shedStaffTable');
+
+    if (headerRowEl) headerRowEl.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
+    if (bodyEl) bodyEl.innerHTML = '';
+    if (subtotalRowEl) subtotalRowEl.innerHTML = '<th>Shearer Totals</th>';
+    if (staffTableEl) staffTableEl.innerHTML = '';
+
+    numStands = 0;
+    runs = 0;
+
+    for (let i = 0; i < shearers; i++) addStand();
+    for (let i = 0; i < counts; i++) addCount();
+    for (let i = 0; i < staff; i++) addShedStaff();
+
+    updateTotals();
+    layoutBuilt = true;
+}
+
+
 
 function populateSessionData(data) {
     if (!data) return;
@@ -196,7 +229,7 @@ function populateSessionData(data) {
 
     updateTotals();
     updateSheepTypeTotals();
-    
+    layoutBuilt = true;
 }
 
 let sessionLocked = false;
@@ -491,13 +524,13 @@ function hideLoadSessionModal() {
  }
  
  function addStand() {
- numStands++;
+     numStands++;
      const header = document.getElementById("headerRow");
      const newHeader = document.createElement("th");
      newHeader.innerHTML = `Stand ${numStands}<br><input type="text" placeholder="Name">`;
-     const input = newHeader.querySelector('input');   
+     const input = newHeader.querySelector('input');
     if (input) {
-     adjustStandNameWidth(input);
+         adjustStandNameWidth(input);
          applyInputHistory(input);
      }
      header.insertBefore(newHeader, header.children[header.children.length - 2]);
@@ -505,12 +538,12 @@ function hideLoadSessionModal() {
      const tallyBody = document.getElementById("tallyBody");
      for (let i = 0; i < runs; i++) {
          const row = tallyBody.children[i];
-         const cell = document.createElement("td"); 
+         const cell = document.createElement("td");
         cell.innerHTML = `<input type="number" value="" onchange="updateTotals()">`;
-    row.insertBefore(cell, row.children[row.children.length - 2]);
-     }    
+         row.insertBefore(cell, row.children[row.children.length - 2]);
+     }
  
-   const subtotalRow = document.getElementById("subtotalRow");
+     const subtotalRow = document.getElementById("subtotalRow");
      const cell = document.createElement("td");
      cell.innerText = "0";
      subtotalRow.insertBefore(cell, subtotalRow.children[subtotalRow.children.length - 2]);
@@ -526,7 +559,19 @@ function hideLoadSessionModal() {
  function removeCount() {
    if (runs <= minRuns) return;  
  
-    const header = document.getElementById("headerRow");
+     const body = document.getElementById("tallyBody");
+     if (body.lastElementChild) {
+         body.removeChild(body.lastElementChild);
+     }
+     runs--;
+     updateTotals();
+ }
+ 
+ 
+ function removeStand() {
+      if (numStands <= minStands) return;
+ 
+     const header = document.getElementById("headerRow");
      header.removeChild(header.children[numStands]);
  
      const tallyBody = document.getElementById("tallyBody");
@@ -536,7 +581,7 @@ function hideLoadSessionModal() {
      }
  
      const subtotalRow = document.getElementById("subtotalRow");
-     subtotalRow.removeChild(subtotalRow.children[numStands]); 
+     subtotalRow.removeChild(subtotalRow.children[numStands]);
  
      numStands--;
      updateTotals();
@@ -716,11 +761,11 @@ function hideLoadSessionModal() {
  });
  
  function addShedStaff() {
-   const body = document.getElementById('shedStaffTable');
+     const body = document.getElementById('shedStaffTable');
      const row = document.createElement('tr');
      row.innerHTML = `<td><input placeholder="Staff Name" type="text"/></td><td><input min="0" placeholder="0" step="0.1" type="number"/></td>`;
      body.appendChild(row);
-     const hours = document.getElementById('hoursWorked'); 
+     const hours = document.getElementById('hoursWorked');
      const nameInput = row.querySelector('td:nth-child(1) input');
      const hoursInput = row.querySelector('td:nth-child(2) input');
      if (hours && hoursInput) {
@@ -734,7 +779,7 @@ function hideLoadSessionModal() {
  }
  
  function removeShedStaff() {
-    const body = document.getElementById('shedStaffTable');
+     const body = document.getElementById('shedStaffTable');
      if (body.lastElementChild) {
          body.removeChild(body.lastElementChild);
      }
@@ -1312,7 +1357,8 @@ function loadSessionObject(session) {
     enforceSessionLock(session.date);
     populateSessionData(session);
     rebuildRowsFromSession(session);
-    
+    layoutBuilt = true;
+}
 
 function startSessionLoader(session) {
     confirmUnsavedChanges(() => {
@@ -1337,6 +1383,13 @@ function startSessionLoader(session) {
     const backBtn = document.getElementById('loadSessionBackBtn');
     const stationInput = document.getElementById('loadStationInput');
     const dateInput = document.getElementById('loadDateInput');
+const stationNameInput = document.getElementById('stationName');
+    stationNameInput?.addEventListener('blur', () => {
+        if (stationNameInput.value.trim() && !layoutBuilt) {
+            showSetupPrompt();
+        }
+    });
+
 
     loadBtn?.addEventListener('click', showLoadSessionModal);
     cancelBtn?.addEventListener('click', hideLoadSessionModal);
