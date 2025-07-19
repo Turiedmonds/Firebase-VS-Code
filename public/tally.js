@@ -115,39 +115,47 @@ function getLastSession() {
 function showSetupPrompt() {
     if (layoutBuilt) return;
     const shearers = Math.min(50, parseInt(prompt('How many shearers today?', '')) || 0);
-    const counts = parseInt(prompt('How many tally rows (runs) today?', '4')) || 0;
-    const staff = parseInt(prompt('How many shed staff today?', '4')) || 0;
+    const counts = parseInt(prompt('How many tally runs today? (e.g. 4 for 8-hour, 5 for 9-hour)', '0')) || 0;
+    const staff = parseInt(prompt('How many shed staff today?', '0')) || 0;
     setupDailyLayout(shearers, counts, staff);
 }
 
 function setupDailyLayout(shearers, counts, staff) {
-    const headerRowEl = document.getElementById('headerRow');
-    const bodyEl = document.getElementById('tallyBody');
-    const subtotalRowEl = document.getElementById('subtotalRow');
-    const staffTable = document.getElementById('shedStaffTable');
+   const headerRow = document.getElementById('headerRow');
+  const tallyBody = document.getElementById('tallyBody');
+  const subtotalRow = document.getElementById('subtotalRow');
+  const staffTable = document.getElementById('shedStaffTable');
 
-    if (headerRowEl) headerRowEl.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
-    if (bodyEl) bodyEl.innerHTML = '';
-    if (subtotalRowEl) subtotalRowEl.innerHTML = '<th>Shearer Totals</th>';
-     if (staffTable) staffTable.innerHTML = '';
+   if (!headerRow || !tallyBody || !subtotalRow || !staffTable) return; 
 
-    numStands = 0;
-    runs = 0;
+    // Reset everything
+  headerRow.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
+  tallyBody.innerHTML = '';
+  subtotalRow.innerHTML = '<th>Shearer Totals</th><td></td><td></td>';
+  staffTable.innerHTML = '';
 
-    for (let i = 0; i < shearers; i++) {
-        addStand();
-    }
-     // Add all requested tally rows
-    for (let i = 0; i < counts; i++) {
-        addCount();
-    }
-    for (let i = 0; i < staff; i++) {
-        addShedStaff();
-    }
+    // Reset state
+  numStands = 0;
+  runs = 0;
 
-    updateTotals();
-    layoutBuilt = true;
-}
+   // Build layout
+  for (let i = 0; i < shearers; i++) {
+    addStand();
+  }
+
+  // Set correct run count before adding rows
+  runs = counts;
+  for (let i = 0; i < runs; i++) {
+    addCount();
+  }
+
+  for (let i = 0; i < staff; i++) {
+    addShedStaff();
+  }
+
+  // Update totals
+  updateTotals();
+  updateSheepTypeTotals();
 
 
 
