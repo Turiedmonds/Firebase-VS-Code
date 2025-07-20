@@ -130,10 +130,15 @@ function setupDailyLayout(shearers, counts, staff) {
     runs = 0;
 
     for (let i = 0; i < shearers; i++) addStand();
-    for (let i = 0; i < counts; i++) addCount();
-    for (let i = 0; i < staff; i++) addShedStaff();
-    updateTotals();
-    layoutBuilt = true;
+
+    // ✅ Schedule count + shed staff generation after layout
+    requestAnimationFrame(() => {
+       console.log("numStands ready:", numStands);
+        for (let i = 0; i < counts; i++) addCount();
+        for (let i = 0; i < staff; i++) addShedStaff();
+        updateTotals();
+        layoutBuilt = true;
+    });
 }
 
 
