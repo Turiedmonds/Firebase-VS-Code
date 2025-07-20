@@ -145,6 +145,13 @@ function setupDailyLayout(shearers, counts, staff) {
 
         updateTotals();
         layoutBuilt = true;
+        showView('tallySheetView');
+
+        const stationName = document.getElementById('stationName')?.value.trim();
+        const titleEl = document.getElementById('summaryTitle');
+        if (titleEl && stationName) {
+          titleEl.textContent = `${stationName} \u2014 Daily Summary`;
+        }
     });
 }
 
