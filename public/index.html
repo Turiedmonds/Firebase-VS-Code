@@ -374,9 +374,6 @@ document.addEventListener('DOMContentLoaded', function () {
 import { buildStationSummary, clearStationSummaryView } from './tally.js';
 window.clearStationSummaryView = clearStationSummaryView;
 
-// ✅ Track if a full reset was done (so we can show the setup prompt later)
-window.awaitingSetupPrompt = false;
-
 document.addEventListener('DOMContentLoaded', () => {
   // ✅ STEP 3: Listen for station name change and trigger prompt
   const stationInput = document.getElementById('stationName');

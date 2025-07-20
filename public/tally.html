@@ -329,8 +329,7 @@ document.addEventListener('DOMContentLoaded', function () {
     runs = 0;
     layoutBuilt = false;
 
-    // ✅ Now safely trigger the prompt
-    showSetupPrompt();
+    window.awaitingSetupPrompt = true;
   }
 
   const table = document.getElementById('tallyTable');
