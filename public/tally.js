@@ -1483,6 +1483,7 @@ function startSessionLoader(session) {
             }
         }
     });
+   window.showSetupPrompt = showSetupPrompt; 
 });
  
  // Expose functions for inline handlers
