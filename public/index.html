@@ -438,5 +438,19 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const stationNameInput = document.getElementById('stationName');
+    if (!stationNameInput) return;
+
+    stationNameInput.addEventListener('change', () => {
+      if (window.awaitingSetupPrompt && stationNameInput.value.trim()) {
+        window.awaitingSetupPrompt = false;
+        if (window.showSetupPrompt) window.showSetupPrompt();
+      }
+    });
+  });
+</script>
+
   </body>
 </html>
