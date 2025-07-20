@@ -130,13 +130,8 @@ function setupDailyLayout(shearers, counts, staff) {
     runs = 0;
 
     for (let i = 0; i < shearers; i++) addStand();
-    setTimeout(() => {
-        for (let i = 0; i < counts; i++) addCount();
-    }, 100);
-    setTimeout(() => {
-  for (let i = 0; i < staff; i++) addShedStaff();
-}, 200);
-
+    for (let i = 0; i < counts; i++) addCount();
+    for (let i = 0; i < staff; i++) addShedStaff();
     updateTotals();
     layoutBuilt = true;
 }
