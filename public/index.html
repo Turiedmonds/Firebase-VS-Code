@@ -306,6 +306,27 @@ firebase.auth().onAuthStateChanged(function(user) {
 </div>   <!-- closes unsavedModal -->
 
 <script>
+const setupModalHTML = `
+<div id="setupModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>Daily Setup</h3>
+    <p>Select the number of shearers, tally rows (runs), and shed staff:</p>
+    <label>Shearers:</label><br/>
+    <select id="shearerSelect">${Array.from({length: 50}, (_, i) => `<option value="${i+1}">${i+1}</option>`).join('')}</select><br/><br/>
+    <label>Tally Rows:</label><br/>
+    <select id="countSelect">${Array.from({length: 10}, (_, i) => `<option value="${i+1}">${i+1}</option>`).join('')}</select><br/><br/>
+    <label>Shed Staff:</label><br/>
+    <select id="shedStaffSelect">${Array.from({length: 20}, (_, i) => `<option value="${i+1}">${i+1}</option>`).join('')}</select><br/><br/>
+    <div class="modal-buttons">
+      <button id="confirmSetupBtn">Start</button>
+    </div>
+  </div>
+</div>
+`;
+document.body.insertAdjacentHTML('beforeend', setupModalHTML);
+</script>
+
+<script>
 document.addEventListener('DOMContentLoaded', function () {
   var modal = document.getElementById('resetModal');
   var openBtn = document.getElementById('newDayResetBtn');
