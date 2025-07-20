@@ -1466,28 +1466,11 @@ function startSessionLoader(session) {
     });
 
 function showSetupPrompt() {
-        const modal = document.getElementById("setupModal");
-        const startBtn = document.getElementById("confirmSetupBtn");
-        const shearerSelect = document.getElementById("shearerSelect");
-        const countSelect = document.getElementById("countSelect");
-        const shedSelect = document.getElementById("shedStaffSelect");
-
-        if (!modal || !startBtn || !shearerSelect || !countSelect || !shedSelect) {
-            console.error("\u26A0\uFE0F Missing setup modal elements.");
-            return;
-        }
-
-        modal.style.display = "flex";
-
-        startBtn.onclick = () => {
-            const shearers = parseInt(shearerSelect.value);
-            const counts = parseInt(countSelect.value);
-            const staff = parseInt(shedSelect.value);
-
-            modal.style.display = "none";
-            setupDailyLayout(shearers, counts, staff);
-        };
-    }
+     const shearers = Math.min(50, parseInt(prompt('How many shearers today?', '')) || 0);
+    const counts = parseInt(prompt('How many tally rows (runs) today?', '')) || 0;
+    const staff = parseInt(prompt('How many shed staff today?', '')) || 0;
+    setupDailyLayout(shearers, counts, staff);
+}   
 
     window.showSetupPrompt = showSetupPrompt;
 });
