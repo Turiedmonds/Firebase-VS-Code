@@ -1409,12 +1409,16 @@ function startSessionLoader(session) {
     const backBtn = document.getElementById('loadSessionBackBtn');
     const stationInput = document.getElementById('loadStationInput');
     const dateInput = document.getElementById('loadDateInput');
-const stationNameInput = document.getElementById('stationName');
-    stationNameInput?.addEventListener('blur', () => {
-        if (stationNameInput.value.trim() && !layoutBuilt) {
-            showSetupPrompt();
-        }
-    });
+    const stationNameInput = document.getElementById('stationName');
+    if (stationNameInput) {
+  stationNameInput.addEventListener('change', () => {
+    if (window.awaitingSetupPrompt && stationNameInput.value.trim()) {
+      window.awaitingSetupPrompt = false;
+      showSetupPrompt();
+    }
+  });
+}
+
 
 
     loadBtn?.addEventListener('click', showLoadSessionModal);
