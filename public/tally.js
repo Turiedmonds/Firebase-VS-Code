@@ -1410,14 +1410,17 @@ function startSessionLoader(session) {
     const stationInput = document.getElementById('loadStationInput');
     const dateInput = document.getElementById('loadDateInput');
    const stationNameInput = document.getElementById('stationName');
-if (stationNameInput) {
-     stationNameInput.addEventListener('change', () => {
-       if (window.awaitingSetupPrompt && stationNameInput.value.trim()) {
-         window.awaitingSetupPrompt = false;
-         showSetupPrompt();
-       }
-     });
-   }
+  if (!layoutBuilt && !getLastSession()) {
+    window.awaitingSetupPrompt = true;
+  }
+  if (stationNameInput) {
+      stationNameInput.addEventListener('change', () => {
+        if (window.awaitingSetupPrompt && stationNameInput.value.trim()) {
+          window.awaitingSetupPrompt = false;
+          showSetupPrompt();
+        }
+      });
+    }
 
 
 
