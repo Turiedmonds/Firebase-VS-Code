@@ -108,25 +108,6 @@ function getLastSession() {
     return sessions[0];
 }
 
-function showSetupPrompt() {
-    const modal = document.getElementById("setupModal");
-    const startBtn = document.getElementById("confirmSetupBtn");
-    const shearerSelect = document.getElementById("shearerSelect");
-    const countSelect = document.getElementById("countSelect");
-    const shedSelect = document.getElementById("shedStaffSelect");
-
-    if (!modal || !startBtn || !shearerSelect || !countSelect || !shedSelect) return;
-
-    modal.style.display = "flex";
-
-    startBtn.onclick = () => {
-        const shearers = parseInt(shearerSelect.value);
-        const counts = parseInt(countSelect.value);
-        const staff = parseInt(shedSelect.value);
-        modal.style.display = "none";
-        setupDailyLayout(shearers, counts, staff);
-    };
-}
 
 function setupDailyLayout(shearers, counts, staff) {
     console.log("Setup called with:", shearers, "shearers,", counts, "counts,", staff, "shed staff");
@@ -1483,7 +1464,32 @@ function startSessionLoader(session) {
             }
         }
     });
-   window.showSetupPrompt = showSetupPrompt; 
+
+function showSetupPrompt() {
+        const modal = document.getElementById("setupModal");
+        const startBtn = document.getElementById("confirmSetupBtn");
+        const shearerSelect = document.getElementById("shearerSelect");
+        const countSelect = document.getElementById("countSelect");
+        const shedSelect = document.getElementById("shedStaffSelect");
+
+        if (!modal || !startBtn || !shearerSelect || !countSelect || !shedSelect) {
+            console.error("\u26A0\uFE0F Missing setup modal elements.");
+            return;
+        }
+
+        modal.style.display = "flex";
+
+        startBtn.onclick = () => {
+            const shearers = parseInt(shearerSelect.value);
+            const counts = parseInt(countSelect.value);
+            const staff = parseInt(shedSelect.value);
+
+            modal.style.display = "none";
+            setupDailyLayout(shearers, counts, staff);
+        };
+    }
+
+    window.showSetupPrompt = showSetupPrompt;
 });
  
  // Expose functions for inline handlers
