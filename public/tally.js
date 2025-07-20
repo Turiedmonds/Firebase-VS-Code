@@ -116,6 +116,8 @@ function showSetupPrompt() {
 }
 
 function setupDailyLayout(shearers, counts, staff) {
+    console.log("Setup called with:", shearers, "shearers,", counts, "counts,", staff, "shed staff");
+
     const headerRowEl = document.getElementById('headerRow');
     const bodyEl = document.getElementById('tallyBody');
     const subtotalRowEl = document.getElementById('subtotalRow');
@@ -129,17 +131,29 @@ function setupDailyLayout(shearers, counts, staff) {
     numStands = 0;
     runs = 0;
 
-    for (let i = 0; i < shearers; i++) addStand();
+    for (let i = 0; i < shearers; i++) {
+        addStand();
+    }
 
-    // ✅ Schedule count + shed staff generation after layout
+    // Wait until after layout is stable
     requestAnimationFrame(() => {
-       console.log("numStands ready:", numStands);
-        for (let i = 0; i < counts; i++) addCount();
-        for (let i = 0; i < staff; i++) addShedStaff();
+        console.log("Adding", counts, "count rows");
+        for (let i = 0; i < counts; i++) {
+            console.log("Adding count row:", i + 1);
+            addCount();
+        }
+
+        console.log("Adding", staff, "shed staff rows");
+        for (let i = 0; i < staff; i++) {
+            console.log("Adding shed staff row:", i + 1);
+            addShedStaff();
+        }
+
         updateTotals();
         layoutBuilt = true;
     });
 }
+
 
 
 
