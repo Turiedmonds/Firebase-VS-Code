@@ -622,6 +622,10 @@ function hideLoadSessionModal() {
 
     const subtotalRow = document.getElementById("subtotalRow");
     if (!subtotalRow) return;
+    // Ensure the first cell always shows the label and is not overwritten
+    if (subtotalRow.children[0]) {
+        subtotalRow.children[0].innerText = "Shearer Totals";
+    }
 
     for (let i = 1; i <= numStands; i++) {
         let colTotal = 0;
