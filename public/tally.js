@@ -1502,5 +1502,5 @@ const body = document.getElementById('tallyBody');
     });
  updateTotals();   
 }
-
+window.showSetupPrompt = showSetupPrompt;
 window.rebuildRowsFromSession = rebuildRowsFromSession;
