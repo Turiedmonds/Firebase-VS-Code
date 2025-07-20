@@ -310,6 +310,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function performReset(full) {
   clearCommonFields();
+
   if (full) {
     ['stationName','teamLeader','combType'].forEach(function(id){
       var e = document.getElementById(id);
@@ -317,12 +318,18 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     document.querySelectorAll('#headerRow input[type="text"]').forEach(function(el){ el.value = ''; });
     document.querySelectorAll('#shedStaffTable tr td:nth-child(1) input').forEach(function(el){ el.value = ''; });
+
+    // 🧠 Add these lines to fully reset layout and re-prompt
+    if (window.layoutBuilt !== undefined) layoutBuilt = false;
+    if (window.showSetupPrompt) showSetupPrompt();
   }
+
   var table = document.getElementById('tallyTable');
   if (table) table.dispatchEvent(new Event('input', { bubbles: true }));
   hideModal();
   if (window.unlockSession) window.unlockSession();
 }
+
 
   if (openBtn) openBtn.addEventListener('click', showModal);
   if (partialBtn) partialBtn.addEventListener('click', function(){ performReset(false); });
