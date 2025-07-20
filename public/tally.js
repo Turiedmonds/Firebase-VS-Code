@@ -571,7 +571,6 @@ function hideLoadSessionModal() {
     const row = createRow(runs); // Use current count
     body.appendChild(row);
     runs++; // Now safely increment
-    updateTotals();
 }
  
  function removeCount() {
@@ -607,29 +606,38 @@ function hideLoadSessionModal() {
  
  
  function updateTotals() {
-     const tbody = document.getElementById("tallyBody");
-     let dailyTotal = 0;
-     for (let i = 0; i < tbody.children.length; i++) {
-         const row = tbody.children[i];
-         let total = 0;
-         for (let j = 1; j <= numStands; j++) {
-             total += Number(row.children[j].children[0].value);
-         }
-         row.querySelector(".run-total").innerText = total;
-         dailyTotal += total;
-     }
- 
-     const subtotalRow = document.getElementById("subtotalRow");
-     for (let i = 1; i <= numStands; i++) {
-         let colTotal = 0;
-         for (let j = 0; j < tbody.children.length; j++) {
-             colTotal += Number(tbody.children[j].children[i].children[0].value);
-         }
-         subtotalRow.children[i].innerText = colTotal;
-     }
-     subtotalRow.children[numStands + 1].innerText = dailyTotal;
-     updateSheepTypeTotals();
- }
+    const tbody = document.getElementById("tallyBody");
+    let dailyTotal = 0;
+
+    for (let i = 0; i < tbody.children.length; i++) {
+        const row = tbody.children[i];
+        let total = 0;
+        for (let j = 1; j <= numStands; j++) {
+            total += Number(row.children[j].children[0].value);
+        }
+        const runTotalCell = row.querySelector(".run-total");
+        if (runTotalCell) runTotalCell.innerText = total;
+        dailyTotal += total;
+    }
+
+    const subtotalRow = document.getElementById("subtotalRow");
+    if (!subtotalRow) return;
+
+    for (let i = 1; i <= numStands; i++) {
+        let colTotal = 0;
+        for (let j = 0; j < tbody.children.length; j++) {
+            colTotal += Number(tbody.children[j].children[i].children[0].value);
+        }
+        const cell = subtotalRow.children[i];
+        if (cell) cell.innerText = colTotal;
+    }
+
+    const finalCell = subtotalRow.children[numStands + 1];
+    if (finalCell) finalCell.innerText = dailyTotal;
+
+    updateSheepTypeTotals();
+}
+
  
  function updateSheepTypeTotals() {
      const tbody = document.getElementById('tallyBody');
