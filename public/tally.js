@@ -143,7 +143,7 @@ function setupDailyLayout(shearers, counts, staff) {
             addShedStaff();
         }
 
-        updateTotals();
+updateTotals();
         layoutBuilt = true;
         showView('tallySheetView');
 
@@ -245,7 +245,7 @@ function populateSessionData(data) {
         }
     }
 
-    updateTotals();
+updateTotals();
     updateSheepTypeTotals();
     layoutBuilt = true;
 }
@@ -688,16 +688,23 @@ function hideLoadSessionModal() {
  }
  
  // Init subtotal row
- const subtotalRow = document.getElementById("subtotalRow");
- for (let i = 0; i < numStands; i++) {
-     const cell = document.createElement("td");
-     cell.innerText = "0";
-     subtotalRow.appendChild(cell);
- }
- subtotalRow.innerHTML += `<td></td><td></td>`;
- updateTotals();
- 
- function calculateHoursWorked() {
+const subtotalRow = document.getElementById("subtotalRow");
+subtotalRow.innerHTML = '<th>Shearer Totals</th>';
+for (let i = 0; i < numStands; i++) {
+    const cell = document.createElement("td");
+    cell.innerText = "0";
+    subtotalRow.appendChild(cell);
+}
+// Final daily total (sum of all shearer counts)
+const totalCell = document.createElement("td");
+totalCell.innerText = "0";
+subtotalRow.appendChild(totalCell);
+// Empty cell under "Sheep Type"
+const spacerCell = document.createElement("td");
+subtotalRow.appendChild(spacerCell);
+updateTotals();
+
+function calculateHoursWorked() {
      const startInput = document.getElementById("startTime");
      const endInput = document.getElementById("finishTime");
      const output = document.getElementById("hoursWorked");
