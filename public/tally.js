@@ -1537,6 +1537,19 @@ function startSessionLoader(session) {
         if (!confirmSwitch) return;
 
         loadSessionObject(session);
+
+         const todayISO = new Date().toISOString().split("T")[0];
+        const sessionISO = isoFromNZDate(session.date);
+        const returnBtn = document.getElementById("returnTodayBtn");
+
+        if (returnBtn) {
+          console.log("Session Date:", sessionISO, "Today:", todayISO);
+          if (sessionISO !== todayISO && localStorage.getItem("session_today_backup")) {
+            returnBtn.style.display = "inline-block";
+          } else {
+            returnBtn.style.display = "none";
+          }
+        } 
     });
  }
 
