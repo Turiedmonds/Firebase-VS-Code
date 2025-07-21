@@ -363,6 +363,10 @@ document.addEventListener('DOMContentLoaded', function () {
   if (window.unlockSession) window.unlockSession();
 }
 
+  // expose for other scripts (e.g., tally.js)
+  window.performReset = performReset;
+
+
     if (openBtn) openBtn.addEventListener('click', showModal);
   if (partialBtn) partialBtn.addEventListener('click', function(){ performReset(false); });
   if (fullBtn) fullBtn.addEventListener('click', function(){ performReset(true); });
