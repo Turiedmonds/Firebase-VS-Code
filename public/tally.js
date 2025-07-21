@@ -152,9 +152,6 @@ function setupDailyLayout(shearers, counts, staff) {
 
         const spacerCell = document.createElement("td");
         spacerCell.innerText = "Total Today";
-        spacerCell.style.fontSize = "0.8em";
-        spacerCell.style.textAlign = "center";
-        spacerCell.style.color = "#ccc"; // Light grey
         subtotalRowEl.appendChild(spacerCell);
 
         updateTotals();
@@ -195,9 +192,6 @@ function populateSessionData(data) {
 
     const spacerCell = document.createElement("td");
     spacerCell.innerText = "Total Today";
-    spacerCell.style.fontSize = "0.8em";
-    spacerCell.style.textAlign = "center";
-    spacerCell.style.color = "#ccc";
     subtotalRowEl.appendChild(spacerCell);
 
     numStands = 0;
