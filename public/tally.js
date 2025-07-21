@@ -1496,6 +1496,24 @@ function confirmSaveReset(full) {
     }
 }
 
+// Clears the current tally layout and counters without prompting
+function resetTallySheet() {
+    const headerRowEl = document.getElementById('headerRow');
+    const bodyEl = document.getElementById('tallyBody');
+    const subtotalRowEl = document.getElementById('subtotalRow');
+    const staffTableEl = document.getElementById('shedStaffTable');
+    const totalsBodyEl = document.querySelector('#sheepTypeTotalsTable tbody');
+
+    if (headerRowEl) headerRowEl.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
+    if (bodyEl) bodyEl.innerHTML = '';
+    if (subtotalRowEl) subtotalRowEl.innerHTML = '<th>Shearer Totals</th>';
+    if (staffTableEl) staffTableEl.innerHTML = '';
+    if (totalsBodyEl) totalsBodyEl.innerHTML = '';
+
+    numStands = 0;
+    runs = 0;
+    layoutBuilt = false;
+}
 
 function loadSessionObject(session) {
     // Always enforce locking first so any subsequent DOM manipulation
@@ -1567,7 +1585,7 @@ function startSessionLoader(session) {
     if (retBtn) retBtn.style.display = "none"; 
 }
 
- function returnToTodaysSession() {
+function returnToTodaysSession() {
   try {
     const backupData = localStorage.getItem("session_today_backup");
     
@@ -1589,6 +1607,7 @@ function startSessionLoader(session) {
     // Optional: Delay load to avoid UI lock
     setTimeout(() => {
       console.log("🔁 Restoring today’s session from backup:", sessionData);
+      resetTallySheet(); // 🧼 This prevents duplicate rows and event stacking
       startSessionLoader(sessionData); // use your existing session loader
     }, 300); // 300ms cooldown to prevent UI freezing
 
