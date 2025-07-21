@@ -143,7 +143,21 @@ function setupDailyLayout(shearers, counts, staff) {
             addShedStaff();
         }
 
-updateTotals();
+        const totalCell = document.createElement("td");
+        totalCell.innerHTML = `<div style="display: flex; flex-direction: column; align-items: center;">
+  <div style="font-size: 0.75em;">Total</div>
+  <div id="grandTotalValue">0</div>
+</div>`;
+        subtotalRowEl.appendChild(totalCell);
+
+        const spacerCell = document.createElement("td");
+        spacerCell.innerText = "Total Today";
+        spacerCell.style.fontSize = "0.8em";
+        spacerCell.style.textAlign = "center";
+        spacerCell.style.color = "#ccc"; // Light grey
+        subtotalRowEl.appendChild(spacerCell);
+
+        updateTotals();
         layoutBuilt = true;
         showView('tallySheetView');
 
@@ -171,6 +185,20 @@ function populateSessionData(data) {
     if (headerRowEl) headerRowEl.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
     if (bodyEl) bodyEl.innerHTML = '';
     if (subtotalRowEl) subtotalRowEl.innerHTML = '<th>Shearer Totals</th><td></td><td></td>';
+
+    const totalCell = document.createElement("td");
+    totalCell.innerHTML = `<div style="display: flex; flex-direction: column; align-items: center;">
+  <div style="font-size: 0.75em;">Total</div>
+  <div id="grandTotalValue">0</div>
+</div>`;
+    subtotalRowEl.appendChild(totalCell);
+
+    const spacerCell = document.createElement("td");
+    spacerCell.innerText = "Total Today";
+    spacerCell.style.fontSize = "0.8em";
+    spacerCell.style.textAlign = "center";
+    spacerCell.style.color = "#ccc";
+    subtotalRowEl.appendChild(spacerCell);
 
     numStands = 0;
     runs = 0;
