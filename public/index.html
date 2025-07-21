@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
     stationInput.addEventListener('change', () => {
       if (window.awaitingSetupPrompt) {
         window.awaitingSetupPrompt = false;
-        if (window.showSetupPrompt) showSetupPrompt();
+            if (window.showSetupModal) showSetupModal();
       }
     });
   }

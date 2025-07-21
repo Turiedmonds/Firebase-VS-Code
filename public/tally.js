@@ -583,7 +583,7 @@ function hideLoadSessionModal() {
      const row = document.createElement("tr");
      row.innerHTML = `<td>Count ${runIndex + 1}</td>`;
      for (let i = 0; i < numStands; i++) {
-         row.innerHTML += `<td><input type="number" value="" onchange="updateTotals()"></td>`;
+        row.innerHTML += `<td><input type="number" value=""></td>`; 
      }
      row.innerHTML += `<td class="run-total">0</td>`;
      row.innerHTML += `<td class="sheep-type"><input type="text" list="sheepTypes" placeholder="Sheep Type"></td>`;
@@ -611,7 +611,7 @@ function hideLoadSessionModal() {
      for (let i = 0; i < runs; i++) {
          const row = tallyBody.children[i];
          const cell = document.createElement("td");
-        cell.innerHTML = `<input type="number" value="" onchange="updateTotals()">`;
+         cell.innerHTML = `<input type="number" value="">`;
          row.insertBefore(cell, row.children[row.children.length - 2]);
      }
  
@@ -1626,7 +1626,7 @@ function startSessionLoader(session) {
       stationNameInput.addEventListener('change', () => {
         if (window.awaitingSetupPrompt && stationNameInput.value.trim()) {
           window.awaitingSetupPrompt = false;
-         // showSetupPrompt(); // Disabled due to undefined function during restore
+        showSetupModal(); // safer version that works
         }
       });
     }
@@ -1684,9 +1684,17 @@ function showSetupPrompt() {
     const counts = parseInt(prompt('How many tally rows (runs) today?', '')) || 0;
     const staff = parseInt(prompt('How many shed staff today?', '')) || 0;
     setupDailyLayout(shearers, counts, staff);
-}   
+}
+
+function showSetupModal() {
+    const shearers = Math.min(50, parseInt(prompt('How many shearers today?', '')) || 0);
+    const counts = parseInt(prompt('How many tally rows (runs) today?', '')) || 0;
+    const staff = parseInt(prompt('How many shed staff today?', '')) || 0;
+    setupDailyLayout(shearers, counts, staff);
+}
 
     window.showSetupPrompt = showSetupPrompt;
+    window.showSetupModal = showSetupModal;
 });
  
  // Expose functions for inline handlers
@@ -1733,4 +1741,5 @@ const body = document.getElementById('tallyBody');
  updateTotals();   
 }
 window.showSetupPrompt = showSetupPrompt;
+window.showSetupModal = showSetupModal;
 window.rebuildRowsFromSession = rebuildRowsFromSession;
