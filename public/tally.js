@@ -1459,10 +1459,7 @@ function loadSessionObject(session) {
     // doesn't accidentally trigger focus events while unlocked
     enforceSessionLock(session.date);
     if (session.viewOnly) {
-        lockSession();
-        if (typeof promptForPinUnlock === 'function') {
-            promptForPinUnlock();
-        }
+       lockSession(); // Let focusin listener handle PIN prompt if needed
     }
     populateSessionData(session);
     rebuildRowsFromSession(session);
