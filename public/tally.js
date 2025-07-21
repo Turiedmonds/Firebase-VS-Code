@@ -308,6 +308,15 @@ function unlockSession() {
     document.querySelectorAll('#tallySheetView select').forEach(sel => sel.disabled = false);
 }
 
+function promptForPinUnlock() {
+    const pin = prompt('\uD83D\uDD10 Enter Contractor PIN to unlock editing:');
+    if (pin === '1234') {
+        unlockSession();
+    } else if (pin !== null) {
+        alert('Incorrect PIN');
+    }
+}
+
 function enforceSessionLock(dateStr) {
     const today = new Date().toISOString().split('T')[0];
     if (dateStr !== today) lockSession();
@@ -931,8 +940,9 @@ function calculateHoursWorked() {
  
     // Collect current session data
      const data = collectExportData();
- 
-     const json = JSON.stringify(data, null, 2);
+    data.viewOnly = true; // Lock session by default
+
+    const json = JSON.stringify(data, null, 2);
      localStorage.setItem('sheariq_saved_session', json);
      saveSessionToStorage(data);
  
@@ -1448,6 +1458,12 @@ function loadSessionObject(session) {
     // Always enforce locking first so any subsequent DOM manipulation
     // doesn't accidentally trigger focus events while unlocked
     enforceSessionLock(session.date);
+    if (session.viewOnly) {
+        lockSession();
+        if (typeof promptForPinUnlock === 'function') {
+            promptForPinUnlock();
+        }
+    }
     populateSessionData(session);
     rebuildRowsFromSession(session);
     layoutBuilt = true;
@@ -1525,12 +1541,7 @@ function startSessionLoader(session) {
 
     document.addEventListener('focusin', (e) => {
         if (sessionLocked && e.target.matches('#tallySheetView input, #tallySheetView select')) {
-            const pin = prompt('\uD83D\uDD10 Enter Contractor PIN to unlock editing:');
-            if (pin === '1234') {
-                unlockSession();
-            } else if (pin !== null) {
-                alert('Incorrect PIN');
-            }
+           promptForPinUnlock(); 
         }
     });
 
@@ -1552,8 +1563,9 @@ function showSetupPrompt() {
  window.addShedStaff = addShedStaff;
  window.removeShedStaff = removeShedStaff;
  window.lockSession = lockSession;
-window.unlockSession = unlockSession;
- window.saveData = saveData;
+ window.unlockSession = unlockSession;
+ window.promptForPinUnlock = promptForPinUnlock;
+window.saveData = saveData;
 window.showLoadSessionModal = showLoadSessionModal;
 window.enforceSessionLock = enforceSessionLock;
 

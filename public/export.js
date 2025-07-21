@@ -204,6 +204,10 @@ function loadPreviousSession() {
     updateSheepTypeTotals();
     // Ensure the session is locked if it's not for today
     if (window.enforceSessionLock) window.enforceSessionLock(data.date);
+    if (data.viewOnly && window.lockSession) {
+        window.lockSession();
+        if (window.promptForPinUnlock) window.promptForPinUnlock();
+    }
 }
 
 
