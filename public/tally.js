@@ -1563,21 +1563,39 @@ function startSessionLoader(session) {
         }, 500); // Delay to ensure all DOM updates complete
     
     });
+   const retBtn = document.getElementById("returnTodayBtn");
+    if (retBtn) retBtn.style.display = "none"; 
 }
 
  function returnToTodaysSession() {
+  try {
     const backupData = localStorage.getItem("session_today_backup");
+    
     if (!backupData) {
-        alert("No backup of today\u2019s session found.");
-        return;
+        alert("No backup of today’s session found.");
+      return;
     }
 
-    const sessionData = JSON.parse(backupData);
-    loadSessionObject(sessionData);
-    alert("Today\u2019s session has been restored.");
+    // Try parsing the session
+    let sessionData;
+    try {
+      sessionData = JSON.parse(backupData);
+    } catch (e) {
+      console.error("❌ Failed to parse backup data:", e);
+      alert("Backup data is corrupted. Cannot restore session.");
+      return;
+    }
 
-    const btn = document.getElementById("returnTodayBtn");
-    if (btn) btn.style.display = "none";
+    // Optional: Delay load to avoid UI lock
+    setTimeout(() => {
+      console.log("🔁 Restoring today’s session from backup:", sessionData);
+      startSessionLoader(sessionData); // use your existing session loader
+    }, 300); // 300ms cooldown to prevent UI freezing
+
+    } catch (err) {
+    console.error("💥 Failed to restore today’s session:", err);
+    alert("Something went wrong when restoring today’s session.");
+  }
 }
  
  document.addEventListener('DOMContentLoaded', () => {
