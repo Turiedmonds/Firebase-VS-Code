@@ -1740,6 +1740,5 @@ const body = document.getElementById('tallyBody');
     });
  updateTotals();   
 }
-window.showSetupPrompt = showSetupPrompt;
 window.showSetupModal = showSetupModal;
 window.rebuildRowsFromSession = rebuildRowsFromSession;
