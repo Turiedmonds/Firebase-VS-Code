@@ -1509,10 +1509,11 @@ function loadSessionObject(session) {
     layoutBuilt = true;
 
     const todayISO = new Date().toISOString().split("T")[0];
+    const sessionISO = isoFromNZDate(session.date); // Converts DD/MM/YYYY to YYYY-MM-DD
     const returnBtn = document.getElementById("returnTodayBtn");
 
     if (returnBtn) {
-        if (session.date !== todayISO && localStorage.getItem("session_today_backup")) {
+        if (sessionISO !== todayISO && localStorage.getItem("session_today_backup")) {
             returnBtn.style.display = "inline-block";
         } else {
             returnBtn.style.display = "none";
