@@ -21,7 +21,10 @@ let is24HourFormat = true;
 export let isNineHourDay = false;
 let promptedNineHour = false;
 let layoutBuilt = false
- 
+
+let currentlyRestoringSession = false;
+let hasRestoredToday = false;
+
  // Dynamic sheep type list will be saved to localStorage under 'sheep_types'
  function getSheepTypes() {
      try {
@@ -1586,35 +1589,41 @@ function startSessionLoader(session) {
 }
 
 function returnToTodaysSession() {
-  try {
-    const backupData = localStorage.getItem("session_today_backup");
-    
-    if (!backupData) {
-        alert("No backup of today’s session found.");
-      return;
-    }
+   if (currentlyRestoringSession || hasRestoredToday) {
+    console.warn("Restore already in progress or complete. Skipping.");
+    return;
+  }
 
-    // Try parsing the session
-    let sessionData;
+  currentlyRestoringSession = true;
+
+   setTimeout(() => {
     try {
-      sessionData = JSON.parse(backupData);
-    } catch (e) {
-      console.error("❌ Failed to parse backup data:", e);
-      alert("Backup data is corrupted. Cannot restore session.");
-      return;
-    }
+ const backupData = localStorage.getItem("session_today_backup");
 
-    // Optional: Delay load to avoid UI lock
-    setTimeout(() => {
+      if (!backupData) {
+        alert("No backup of today’s session found.");
+        currentlyRestoringSession = false;
+        return;
+      }
+
+      const sessionData = JSON.parse(backupData);    
+
+    
       console.log("🔁 Restoring today’s session from backup:", sessionData);
-      resetTallySheet(); // 🧼 This prevents duplicate rows and event stacking
-      startSessionLoader(sessionData); // use your existing session loader
-    }, 300); // 300ms cooldown to prevent UI freezing
+      
+      resetTallySheet();  // Clear current screen cleanly
+      startSessionLoader(sessionData); // Load saved session
+
+      hasRestoredToday = true; // Don’t restore again
+      currentlyRestoringSession = false; // Reset flag
+      document.getElementById("returnTodayBtn").style.display = "none";
 
     } catch (err) {
-    console.error("💥 Failed to restore today’s session:", err);
-    alert("Something went wrong when restoring today’s session.");
-  }
+    console.error("💥 Failed to restore session:", err);
+      currentlyRestoringSession = false;
+      alert("Could not restore session.");
+    }
+  }, 200);
 }
  
  document.addEventListener('DOMContentLoaded', () => {
