@@ -1509,7 +1509,7 @@ function loadSessionObject(session) {
     layoutBuilt = true;
 
     const todayISO = new Date().toISOString().split("T")[0];
-    const sessionISO = isoFromNZDate(session.date); // Converts DD/MM/YYYY to YYYY-MM-DD
+    const sessionISO = session.date.includes('/') ? isoFromNZDate(session.date) : session.date;
     const returnBtn = document.getElementById("returnTodayBtn");
 
     if (returnBtn) {
