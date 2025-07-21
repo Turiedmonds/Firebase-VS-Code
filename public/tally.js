@@ -891,7 +891,7 @@ function calculateHoursWorked() {
      document.querySelectorAll('.highlight-error').forEach(el => el.classList.remove('highlight-error'));
  }
  
- function saveData() {
+function saveData() {
      clearHighlights();
      const issues = [];
      const tbody = document.getElementById('tallyBody');
@@ -939,9 +939,11 @@ function calculateHoursWorked() {
      }
  
     // Collect current session data
-     const data = collectExportData();
+    const data = collectExportData();
     data.viewOnly = true; // Lock session by default
-
+    data.meta = data.meta || {};
+    data.meta.date = new Date().toLocaleDateString("en-NZ");
+   
     const json = JSON.stringify(data, null, 2);
      localStorage.setItem('sheariq_saved_session', json);
      saveSessionToStorage(data);
@@ -1505,16 +1507,52 @@ function loadSessionObject(session) {
     populateSessionData(session);
     rebuildRowsFromSession(session);
     layoutBuilt = true;
+
+    const todayStr = new Date().toLocaleDateString("en-NZ");
+    const sessionDate = session.meta?.date || formatDateNZ(session.date);
+    const btn = document.getElementById("returnTodayBtn");
+    if (btn) {
+        if (sessionDate !== todayStr && localStorage.getItem("session_today_backup")) {
+            btn.style.display = "inline-block";
+        } else {
+            btn.style.display = "none";
+        }
+    }
 }
 
 function startSessionLoader(session) {
     confirmUnsavedChanges(() => {
         const summary = `Station: ${session.stationName}\nDate: ${formatDateNZ(session.date)}\nTeam Leader: ${session.teamLeader || ''}\n\nDo you want to load this session?`;
-        if (confirm(summary)) {
-            loadSessionObject(session);
+        if (!confirm(summary)) return;
+
+        const todayStr = new Date().toLocaleDateString("en-NZ");
+        const current = collectExportData();
+        if (current && formatDateNZ(current.date) === todayStr) {
+            current.meta = current.meta || {};
+            current.meta.date = todayStr;
+            localStorage.setItem("session_today_backup", JSON.stringify(current));
         }
+        const confirmSwitch = confirm("This will temporarily replace your current session. It will be backed up so you can return to it. Continue?");
+        if (!confirmSwitch) return;
+
+        loadSessionObject(session);
     });
-} 
+ }
+
+ function returnToTodaysSession() {
+    const backupData = localStorage.getItem("session_today_backup");
+    if (!backupData) {
+        alert("No backup of today\u2019s session found.");
+        return;
+    }
+
+    const sessionData = JSON.parse(backupData);
+    loadSessionObject(sessionData);
+    alert("Today\u2019s session has been restored.");
+
+    const btn = document.getElementById("returnTodayBtn");
+    if (btn) btn.style.display = "none";
+}
  
  document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.tab-button').forEach(btn => {
@@ -1532,8 +1570,12 @@ function startSessionLoader(session) {
     const dateInput = document.getElementById('loadDateInput');
     const partialResetBtn = document.getElementById('partialResetBtn');
     const fullResetBtn = document.getElementById('fullResetBtn');
+    const returnBtn = document.getElementById('returnTodayBtn');
    const stationNameInput = document.getElementById('stationName');
-  if (!layoutBuilt && !getLastSession()) {
+   if (returnBtn && !localStorage.getItem('session_today_backup')) {
+       returnBtn.style.display = 'none';
+   }
+    if (!layoutBuilt && !getLastSession()) {
     window.awaitingSetupPrompt = true;
   }
   if (stationNameInput) {
@@ -1616,6 +1658,7 @@ function showSetupPrompt() {
 window.saveData = saveData;
 window.showLoadSessionModal = showLoadSessionModal;
 window.enforceSessionLock = enforceSessionLock;
+window.returnToTodaysSession = returnToTodaysSession;
 
 // === Rebuild tally rows from saved session data ===
 
