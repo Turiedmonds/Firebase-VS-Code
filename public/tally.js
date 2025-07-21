@@ -24,6 +24,7 @@ let layoutBuilt = false
 
 let currentlyRestoringSession = false;
 let hasRestoredToday = false;
+let isSessionLoading = false;
 
  // Dynamic sheep type list will be saved to localStorage under 'sheep_types'
  function getSheepTypes() {
@@ -1532,60 +1533,78 @@ function loadSessionObject(session) {
 }
 
 function startSessionLoader(session) {
-    confirmUnsavedChanges(() => {
-        const summary = `Station: ${session.stationName}\nDate: ${formatDateNZ(session.date)}\nTeam Leader: ${session.teamLeader || ''}\n\nDo you want to load this session?`;
-        if (!confirm(summary)) return;
+  if (isSessionLoading) {
+        console.warn("⏳ Session is already loading. Skipping duplicate call.");
+        return;
+    }
+    isSessionLoading = true;
+    try {
+        confirmUnsavedChanges(() => {
+            try {
+                const summary = `Station: ${session.stationName}\nDate: ${formatDateNZ(session.date)}\nTeam Leader: ${session.teamLeader || ''}\n\nDo you want to load this session?`;
+                if (!confirm(summary)) { isSessionLoading = false; return; }
 
-        const todayStr = new Date().toLocaleDateString("en-NZ");
-        const current = collectExportData();
-        if (current && formatDateNZ(current.date) === todayStr) {
-            current.meta = current.meta || {};
-            current.meta.date = todayStr;
-            localStorage.setItem("session_today_backup", JSON.stringify(current));
-        }
-        const confirmSwitch = confirm("This will temporarily replace your current session. It will be backed up so you can return to it. Continue?");
-        if (!confirmSwitch) return;
+                const todayStr = new Date().toLocaleDateString("en-NZ");
+                const current = collectExportData();
+                if (current && formatDateNZ(current.date) === todayStr) {
+                    current.meta = current.meta || {};
+                    current.meta.date = todayStr;
+                    localStorage.setItem("session_today_backup", JSON.stringify(current));
+                }
+                const confirmSwitch = confirm("This will temporarily replace your current session. It will be backed up so you can return to it. Continue?");
+                if (!confirmSwitch) { isSessionLoading = false; return; }
 
-        loadSessionObject(session);
+                loadSessionObject(session);
 
-        const todayISO = new Date().toISOString().split("T")[0];
-        const sessionISO = session.date.includes('/') ? isoFromNZDate(session.date) : session.date; 
-        const returnBtn = document.getElementById("returnTodayBtn");
+                const todayISO = new Date().toISOString().split("T")[0];
+                const sessionISO = session.date.includes('/') ? isoFromNZDate(session.date) : session.date;
+                const returnBtn = document.getElementById("returnTodayBtn");
 
-        if (returnBtn) {
-        console.log("Checking return button → session:", sessionISO, "today:", todayISO);
-            if (sessionISO !== todayISO && localStorage.getItem("session_today_backup")) {
-                returnBtn.style.display = "inline-block";
-            } else {
-                returnBtn.style.display = "none";
-            }
-        }
+                if (returnBtn) {
+                    console.log("Checking return button → session:", sessionISO, "today:", todayISO);
+                    if (sessionISO !== todayISO && localStorage.getItem("session_today_backup")) {
+                        returnBtn.style.display = "inline-block";
+                    } else {
+                        returnBtn.style.display = "none";
+                    }
+                }  
+
         setTimeout(() => {
-          const todayISO = new Date().toISOString().split("T")[0];
-          const sessionISO = session.date.includes('/') ? isoFromNZDate(session.date) : session.date;
-          const returnBtn = document.getElementById("returnTodayBtn");
+                    const todayISO = new Date().toISOString().split("T")[0];
+                    const sessionISO = session.date.includes('/') ? isoFromNZDate(session.date) : session.date;
+                    const returnBtn = document.getElementById("returnTodayBtn");
 
-          console.log("🧪 Checking if return button should show:", { todayISO, sessionISO });
+                    console.log("🧪 Checking if return button should show:", { todayISO, sessionISO });
 
-          if (returnBtn) {
-              if (sessionISO !== todayISO && localStorage.getItem("session_today_backup")) {
-                 returnBtn.style.display = "inline-block";
-                returnBtn.style.outline = "";
-                returnBtn.style.background = "";
-                returnBtn.textContent = "🔁 Return to Today’s Session";
-                  console.log("✅ Return button is now visible");
-              } else {
-                  returnBtn.style.display = "none";
-                  console.log("❌ Return button hidden: same day or no backup");
-              }
-          } else {
-              console.log("🚨 Could not find Return button in DOM");
-          }
-        }, 500); // Delay to ensure all DOM updates complete
-    
-    });
-   const retBtn = document.getElementById("returnTodayBtn");
-    if (retBtn) retBtn.style.display = "none"; 
+                    if (returnBtn) {
+                        if (sessionISO !== todayISO && localStorage.getItem("session_today_backup")) {
+                            returnBtn.style.display = "inline-block";
+                            returnBtn.style.outline = "";
+                            returnBtn.style.background = "";
+                            returnBtn.textContent = "🔁 Return to Today’s Session";
+                            console.log("✅ Return button is now visible");
+                        } else {
+                            returnBtn.style.display = "none";
+                            console.log("❌ Return button hidden: same day or no backup");
+                        }
+                    } else {
+                        console.log("🚨 Could not find Return button in DOM");
+                    }
+                    isSessionLoading = false;
+                }, 500);
+            } catch (err) {
+                console.error("💥 Error during session load:", err);
+                alert("Something went wrong while loading this session.");
+                isSessionLoading = false;
+            }
+      });
+    } catch (err) {
+        console.error("💥 Error during session load:", err);
+        alert("Something went wrong while loading this session.");
+        isSessionLoading = false;
+    }
+    const retBtn = document.getElementById("returnTodayBtn");
+    if (retBtn) retBtn.style.display = "none";  
 }
 
 function returnToTodaysSession() {
@@ -1612,6 +1631,7 @@ function returnToTodaysSession() {
       console.log("🔁 Restoring today’s session from backup:", sessionData);
       
       resetTallySheet();  // Clear current screen cleanly
+      layoutBuilt = false;
       startSessionLoader(sessionData); // Load saved session
 
       hasRestoredToday = true; // Don’t restore again
