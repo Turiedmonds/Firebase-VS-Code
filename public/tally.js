@@ -1508,12 +1508,11 @@ function loadSessionObject(session) {
     rebuildRowsFromSession(session);
     layoutBuilt = true;
 
-    const todayStr = new Date().toLocaleDateString("en-NZ");
-    const sessionDateStr = formatDateNZ(session.date);
+    const todayISO = new Date().toISOString().split("T")[0];
     const returnBtn = document.getElementById("returnTodayBtn");
 
     if (returnBtn) {
-        if (sessionDateStr !== todayStr && localStorage.getItem("session_today_backup")) {
+        if (session.date !== todayISO && localStorage.getItem("session_today_backup")) {
             returnBtn.style.display = "inline-block";
         } else {
             returnBtn.style.display = "none";
