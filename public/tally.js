@@ -148,10 +148,18 @@ function setupDailyLayout(shearers, counts, staff) {
   <div style="font-size: 0.75em;">Total</div>
   <div id="grandTotalValue">0</div>
 </div>`;
+        totalCell.style.backgroundColor = "#000";
+        totalCell.style.color = "#fff";
+        totalCell.style.textAlign = "center";
+        subtotalRowEl.appendChild(totalCell)
+
         subtotalRowEl.appendChild(totalCell);
 
         const spacerCell = document.createElement("td");
         spacerCell.innerText = "Total Today";
+         spacerCell.style.backgroundColor = "#000";
+        spacerCell.style.color = "#fff";
+        spacerCell.style.textAlign = "center";
         subtotalRowEl.appendChild(spacerCell);
 
         updateTotals();
@@ -188,10 +196,17 @@ function populateSessionData(data) {
   <div style="font-size: 0.75em;">Total</div>
   <div id="grandTotalValue">0</div>
 </div>`;
+    totalCell.style.backgroundColor = "#000";
+    totalCell.style.color = "#fff";
+    totalCell.style.textAlign = "center";
     subtotalRowEl.appendChild(totalCell);
+
 
     const spacerCell = document.createElement("td");
     spacerCell.innerText = "Total Today";
+    spacerCell.style.backgroundColor = "#000";
+    spacerCell.style.color = "#fff";
+    spacerCell.style.textAlign = "center";
     subtotalRowEl.appendChild(spacerCell);
 
     numStands = 0;
@@ -584,10 +599,13 @@ function hideLoadSessionModal() {
      }
  
      const subtotalRow = document.getElementById("subtotalRow");
-     const cell = document.createElement("td");
-     cell.innerText = "0";
-     subtotalRow.insertBefore(cell, subtotalRow.children[subtotalRow.children.length - 2]);
- }
+    const cell = document.createElement("td");
+    cell.innerText = "0";
+    cell.style.backgroundColor = "#000";
+    cell.style.color = "#fff";
+    cell.style.textAlign = "center";
+    subtotalRow.insertBefore(cell, subtotalRow.children[subtotalRow.children.length - 2]);
+}
  
  function addCount() {
     const body = document.getElementById("tallyBody");
@@ -715,11 +733,17 @@ subtotalRow.innerHTML = '<th>Shearer Totals</th>';
 for (let i = 0; i < numStands; i++) {
     const cell = document.createElement("td");
     cell.innerText = "0";
+    cell.style.backgroundColor = "#000";
+    cell.style.color = "#fff";
+    cell.style.textAlign = "center";
     subtotalRow.appendChild(cell);
 }
 // Final daily total (sum of all shearer counts)
 const totalCell = document.createElement("td");
 totalCell.innerText = "0";
+totalCell.style.backgroundColor = "#000";
+totalCell.style.color = "#fff";
+totalCell.style.textAlign = "center";
 subtotalRow.appendChild(totalCell);
 // Empty cell under "Sheep Type" labelled with "Total Today"
 const spacerCell = document.createElement("td");
