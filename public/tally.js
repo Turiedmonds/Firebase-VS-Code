@@ -1454,6 +1454,47 @@ function confirmUnsavedChanges(next) {
     }
 }
 
+function confirmSaveReset(full) {
+    const modal = document.getElementById('unsavedModal');
+    const saveBtn = document.getElementById('unsavedSaveBtn');
+    const discardBtn = document.getElementById('unsavedDiscardBtn');
+    const cancelBtn = document.getElementById('unsavedCancelBtn');
+    const msgEl = modal?.querySelector('p');
+    if (modal && saveBtn && discardBtn && cancelBtn && msgEl) {
+        const originalText = msgEl.textContent;
+        const origSave = saveBtn.textContent;
+        const origDiscard = discardBtn.textContent;
+        msgEl.textContent = 'Do you want to save the current session before resetting?';
+        saveBtn.textContent = 'Save & Reset';
+        discardBtn.textContent = 'Just Reset';
+        modal.style.display = 'flex';
+        const cleanup = () => {
+            modal.style.display = 'none';
+            msgEl.textContent = originalText;
+            saveBtn.textContent = origSave;
+            discardBtn.textContent = origDiscard;
+            saveBtn.removeEventListener('click', onSave);
+            discardBtn.removeEventListener('click', onDiscard);
+            cancelBtn.removeEventListener('click', onCancel);
+        };
+        const onSave = () => { cleanup(); saveData(); if (typeof performReset === 'function') performReset(full); };
+        const onDiscard = () => { cleanup(); if (typeof performReset === 'function') performReset(full); };
+        const onCancel = () => { cleanup(); };
+        saveBtn.addEventListener('click', onSave);
+        discardBtn.addEventListener('click', onDiscard);
+        cancelBtn.addEventListener('click', onCancel);
+    } else {
+        const save = confirm('Do you want to save the current session before resetting?');
+        if (save) {
+            saveData();
+            if (typeof performReset === 'function') performReset(full);
+        } else if (confirm('Reset without saving?')) {
+            if (typeof performReset === 'function') performReset(full);
+        }
+    }
+}
+
+
 function loadSessionObject(session) {
     // Always enforce locking first so any subsequent DOM manipulation
     // doesn't accidentally trigger focus events while unlocked
@@ -1489,6 +1530,8 @@ function startSessionLoader(session) {
     const backBtn = document.getElementById('loadSessionBackBtn');
     const stationInput = document.getElementById('loadStationInput');
     const dateInput = document.getElementById('loadDateInput');
+    const partialResetBtn = document.getElementById('partialResetBtn');
+    const fullResetBtn = document.getElementById('fullResetBtn');
    const stationNameInput = document.getElementById('stationName');
   if (!layoutBuilt && !getLastSession()) {
     window.awaitingSetupPrompt = true;
@@ -1501,6 +1544,14 @@ function startSessionLoader(session) {
         }
       });
     }
+
+const interceptReset = (full) => (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        confirmSaveReset(full);
+    };
+    partialResetBtn?.addEventListener('click', interceptReset(false), true);
+    fullResetBtn?.addEventListener('click', interceptReset(true), true);
 
 
 
