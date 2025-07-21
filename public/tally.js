@@ -1509,13 +1509,14 @@ function loadSessionObject(session) {
     layoutBuilt = true;
 
     const todayStr = new Date().toLocaleDateString("en-NZ");
-    const sessionDate = session.meta?.date || formatDateNZ(session.date);
-    const btn = document.getElementById("returnTodayBtn");
-    if (btn) {
-        if (sessionDate !== todayStr && localStorage.getItem("session_today_backup")) {
-            btn.style.display = "inline-block";
+    const sessionDateStr = formatDateNZ(session.date);
+    const returnBtn = document.getElementById("returnTodayBtn");
+
+    if (returnBtn) {
+        if (sessionDateStr !== todayStr && localStorage.getItem("session_today_backup")) {
+            returnBtn.style.display = "inline-block";
         } else {
-            btn.style.display = "none";
+            returnBtn.style.display = "none";
         }
     }
 }
