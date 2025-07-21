@@ -1539,8 +1539,31 @@ function startSessionLoader(session) {
                 returnBtn.style.display = "none";
             }
         }
+        setTimeout(() => {
+          const todayISO = new Date().toISOString().split("T")[0];
+          const sessionISO = session.date.includes('/') ? isoFromNZDate(session.date) : session.date;
+          const returnBtn = document.getElementById("returnTodayBtn");
+
+          console.log("🧪 Checking if return button should show:", { todayISO, sessionISO });
+
+          if (returnBtn) {
+              if (sessionISO !== todayISO && localStorage.getItem("session_today_backup")) {
+                  returnBtn.style.display = "inline-block";
+                  returnBtn.style.outline = "3px solid red";
+                  returnBtn.style.background = "yellow";
+                  returnBtn.textContent = "🔁 Return to Today’s Session (Visible)";
+                  console.log("✅ Return button is now visible");
+              } else {
+                  returnBtn.style.display = "none";
+                  console.log("❌ Return button hidden: same day or no backup");
+              }
+          } else {
+              console.log("🚨 Could not find Return button in DOM");
+          }
+        }, 500); // Delay to ensure all DOM updates complete
+    
     });
- }
+}
 
  function returnToTodaysSession() {
     const backupData = localStorage.getItem("session_today_backup");
