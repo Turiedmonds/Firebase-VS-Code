@@ -119,7 +119,12 @@ function setupDailyLayout(shearers, counts, staff) {
 
     if (headerRowEl) headerRowEl.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
     if (bodyEl) bodyEl.innerHTML = '';
-    if (subtotalRowEl) subtotalRowEl.innerHTML = '<th>Shearer Totals</th>';
+    if (subtotalRowEl) {
+        while (subtotalRowEl.firstChild) {
+            subtotalRowEl.removeChild(subtotalRowEl.firstChild);
+        }
+        subtotalRowEl.appendChild(document.createElement("th")).innerText = "Shearer Totals";
+    }
     if (staffTableEl) staffTableEl.innerHTML = '';
 
     numStands = 0;
@@ -151,8 +156,6 @@ function setupDailyLayout(shearers, counts, staff) {
         totalCell.style.backgroundColor = "#000";
         totalCell.style.color = "#fff";
         totalCell.style.textAlign = "center";
-        subtotalRowEl.appendChild(totalCell)
-
         subtotalRowEl.appendChild(totalCell);
 
         const spacerCell = document.createElement("td");
@@ -189,7 +192,12 @@ function populateSessionData(data) {
 
     if (headerRowEl) headerRowEl.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
     if (bodyEl) bodyEl.innerHTML = '';
-    if (subtotalRowEl) subtotalRowEl.innerHTML = '<th>Shearer Totals</th><td></td><td></td>';
+    if (subtotalRowEl) {
+        while (subtotalRowEl.firstChild) {
+            subtotalRowEl.removeChild(subtotalRowEl.firstChild);
+        }
+        subtotalRowEl.appendChild(document.createElement("th")).innerText = "Shearer Totals";
+    }
 
     const totalCell = document.createElement("td");
     totalCell.innerHTML = `<div style="display: flex; flex-direction: column; align-items: center;">
