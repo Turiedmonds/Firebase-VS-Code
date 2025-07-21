@@ -1548,10 +1548,10 @@ function startSessionLoader(session) {
 
           if (returnBtn) {
               if (sessionISO !== todayISO && localStorage.getItem("session_today_backup")) {
-                  returnBtn.style.display = "inline-block";
-                  returnBtn.style.outline = "3px solid red";
-                  returnBtn.style.background = "yellow";
-                  returnBtn.textContent = "🔁 Return to Today’s Session (Visible)";
+                 returnBtn.style.display = "inline-block";
+                returnBtn.style.outline = "";
+                returnBtn.style.background = "";
+                returnBtn.textContent = "🔁 Return to Today’s Session";
                   console.log("✅ Return button is now visible");
               } else {
                   returnBtn.style.display = "none";
