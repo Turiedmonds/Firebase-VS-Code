@@ -699,8 +699,9 @@ for (let i = 0; i < numStands; i++) {
 const totalCell = document.createElement("td");
 totalCell.innerText = "0";
 subtotalRow.appendChild(totalCell);
-// Empty cell under "Sheep Type"
+// Empty cell under "Sheep Type" labelled with "Total Today"
 const spacerCell = document.createElement("td");
+spacerCell.innerText = "Total Today";
 subtotalRow.appendChild(spacerCell);
 updateTotals();
 
