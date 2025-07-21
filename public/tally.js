@@ -1740,5 +1740,5 @@ const body = document.getElementById('tallyBody');
     });
  updateTotals();   
 }
-window.showSetupModal = showSetupModal;
+
 window.rebuildRowsFromSession = rebuildRowsFromSession;
