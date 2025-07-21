@@ -1626,7 +1626,7 @@ function startSessionLoader(session) {
       stationNameInput.addEventListener('change', () => {
         if (window.awaitingSetupPrompt && stationNameInput.value.trim()) {
           window.awaitingSetupPrompt = false;
-          showSetupPrompt();
+         // showSetupPrompt(); // Disabled due to undefined function during restore
         }
       });
     }
