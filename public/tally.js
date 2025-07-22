@@ -15,6 +15,14 @@ function getTimeDiffInHours(startStr, endStr) {
   return diffMs / (1000 * 60 * 60);
 }
 
+// Detect if a time falls within the standard morning break window (9:00-9:30)
+function isDuringMorningBreak(timeStr) {
+  const t = new Date(`1970-01-01T${timeStr}`);
+  const breakStart = new Date('1970-01-01T09:00');
+  const breakEnd = new Date('1970-01-01T09:30');
+  return t >= breakStart && t <= breakEnd;
+}
+
  document.addEventListener("DOMContentLoaded", () => {
     const table = document.getElementById("tallyTable");
     if (table) {
@@ -874,7 +882,7 @@ function calculateHoursWorked() {
 
         const minExpectedHours = timeSystem === '9' ? 6.5 : 5.5;
 
-        if (diff > 0 && diff < minExpectedHours) {
+         if (diff > 0 && diff < minExpectedHours && isDuringMorningBreak(finishTime)) {
             const confirmWorkedThroughBreak = confirm(
                 `This day looks shorter than expected for a ${timeSystem}-hour system.\n\nDid you work through break(s)?\n\nClick OK to auto-fill hours worked as ${diff.toFixed(2)}h.`
             );
