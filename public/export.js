@@ -1,4 +1,4 @@
-import { collectExportData, buildExportRows, buildStationSummary, isNineHourDay } from './tally.js';
+import { collectExportData, buildExportRows, buildStationSummary, isNineHourDay, formatHoursWorked } from './tally.js';
 
 export function exportDailySummaryCSV() {
     const data = collectExportData();
@@ -53,7 +53,7 @@ export function exportDailySummaryCSV() {
         ['Comb Type', data.combType],
         ['Start Time', data.startTime],
         ['Finish Time', data.finishTime],
-        ['Hours Worked', data.hoursWorked],
+        ['Hours Worked', formatHoursWorked(parseFloat(data.hoursWorked))],
         ['Time System', data.timeSystem]
     ];
     metadataRows.forEach(r => rows.push(r));
@@ -71,7 +71,10 @@ export function exportDailySummaryCSV() {
 
     rows.push(['Shed Staff']);
     rows.push(['Name', 'Hours Worked']);
-    data.shedStaff.forEach(s => rows.push([s.name, s.hours]));
+    data.shedStaff.forEach(s => {
+        const h = parseFloat(s.hours);
+        rows.push([s.name, formatHoursWorked(h)]);
+    });
 
     const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\r\n');
 
@@ -296,7 +299,7 @@ export function exportDailySummaryExcel() {
         ['Comb Type', data.combType],
         ['Start Time', data.startTime],
         ['Finish Time', data.finishTime],
-        ['Hours Worked', data.hoursWorked],
+        ['Hours Worked', formatHoursWorked(parseFloat(data.hoursWorked))],
         ['Time System', data.timeSystem]
    ];
     metadataRows.forEach(r => rows.push(r));
@@ -327,7 +330,10 @@ export function exportDailySummaryExcel() {
 
     headerRows.push(rows.length);
     rows.push(['Name', 'Hours Worked']);
-    data.shedStaff.forEach(s => rows.push([s.name, s.hours]));
+    data.shedStaff.forEach(s => {
+        const h = parseFloat(s.hours);
+        rows.push([s.name, formatHoursWorked(h)]);
+    });
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!merges'] = merges;

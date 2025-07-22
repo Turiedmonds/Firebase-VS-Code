@@ -1,4 +1,11 @@
  // Firebase is initialized in firebase-init.js
+
+export function formatHoursWorked(decimal) {
+  if (isNaN(decimal)) return "";
+  const hours = Math.floor(decimal);
+  const minutes = Math.round((decimal - hours) * 60);
+  return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+}
  
  document.addEventListener("DOMContentLoaded", () => {
     const table = document.getElementById("tallyTable");
@@ -1131,17 +1138,17 @@ function saveData() {
          staffBody.innerHTML = '';
          document.querySelectorAll('#shedStaffTable tr').forEach(row => {
              const name = row.querySelector('td:nth-child(1) input')?.value || '';
-             const hours = row.querySelector('td:nth-child(2) input')?.value || '';
-             if (name.trim() || hours.trim()) {
-                 const tr = document.createElement('tr');
-                 const nameTd = document.createElement('td');
-                 nameTd.textContent = name;
-                 const hoursTd = document.createElement('td');
-                 hoursTd.textContent = hours;
-                 tr.appendChild(nameTd);
-                 tr.appendChild(hoursTd);
-                 staffBody.appendChild(tr);
-             }
+           const hoursVal = parseFloat(row.querySelector('td:nth-child(2) input')?.value);
+            if (name.trim() || (!isNaN(hoursVal) && hoursVal !== 0)) {
+                const tr = document.createElement('tr');
+                const nameTd = document.createElement('td');
+                nameTd.textContent = name;
+                const hoursTd = document.createElement('td');
+                hoursTd.textContent = formatHoursWorked(hoursVal);
+                tr.appendChild(nameTd);
+                tr.appendChild(hoursTd);
+                staffBody.appendChild(tr);
+            } 
          });
      }
  }
@@ -1310,7 +1317,7 @@ function saveData() {
             const nameTd = document.createElement('td');
             nameTd.textContent = trimmed;
             const hoursTd = document.createElement('td');
-            hoursTd.textContent = h;
+            hoursTd.textContent = formatHoursWorked(h);
             tr.appendChild(nameTd);
             tr.appendChild(hoursTd);
             staffBody.appendChild(tr);
@@ -1489,8 +1496,8 @@ export function clearStationSummaryView() {
      add(['Comb Type', data.combType]);
      add(['Start Time', data.startTime]);
      add(['Finish Time', data.finishTime]);
-     add(['Hours Worked', data.hoursWorked]);
-     add(['Time System', data.timeSystem]);
+    add(['Hours Worked', formatHoursWorked(parseFloat(data.hoursWorked))]);
+    add(['Time System', data.timeSystem]);
      add([]);
  
  add(['Shearer Tallies'], true);
@@ -1504,7 +1511,10 @@ export function clearStationSummaryView() {
  
      add(['Shed Staff'], true);
      add(['Name', 'Hours Worked'], true);
-     data.shedStaff.forEach(s => add([s.name, s.hours]));
+     data.shedStaff.forEach(s => {
+        const val = parseFloat(s.hours);
+        add([s.name, formatHoursWorked(val)]);
+    });
      add([]);
  
      add(['Sheep Type Totals'], true);
