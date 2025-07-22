@@ -19,18 +19,17 @@ label {
   font-size: 14px;
 }
 
+.meta-label {
+  font-size: 18px;
+  font-weight: 500;
+}
+
 .message {
   margin-top: 10px;
   font-style: italic;
   color: #ffea00;
 }
 
-/* Ensure time entry labels use the same font size as other form labels */
-label[for="startTime"],
-label[for="finishTime"],
-label[for="hoursWorked"] {
-  font-size: 14px;
-}
 
 table { border-collapse: collapse; width: 100%; margin-top: 20px; }
 #tallyTable {
