@@ -7,6 +7,14 @@ export function formatHoursWorked(decimal) {
   return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
 }
  
+// Helper to calculate hour difference between two HH:MM strings
+function getTimeDiffInHours(startStr, endStr) {
+  const start = new Date(`1970-01-01T${startStr}`);
+  const end = new Date(`1970-01-01T${endStr}`);
+  const diffMs = end - start;
+  return diffMs / (1000 * 60 * 60);
+}
+
  document.addEventListener("DOMContentLoaded", () => {
     const table = document.getElementById("tallyTable");
     if (table) {
@@ -849,8 +857,33 @@ function calculateHoursWorked() {
      const workdayToggle = document.getElementById('workdayToggle');
      if (toggle) toggle.addEventListener('click', toggleTimeFormat);
      if (workdayToggle) workdayToggle.addEventListener('click', toggleWorkdayType);
-     if (start) start.addEventListener("change", handleStartTimeChange);
-     if (end) end.addEventListener("change", calculateHoursWorked);
+   if (start) start.addEventListener("change", handleStartTimeChange);
+    if (end) end.addEventListener("change", () => {
+        calculateHoursWorked();
+        const startTime = document.getElementById("startTime").value;
+        const finishTime = document.getElementById("finishTime").value;
+        const hoursWorkedInput = document.getElementById("hoursWorked");
+        const systemToggle = document.getElementById("timeSystemToggle");
+
+        if (!startTime || !finishTime || !hoursWorkedInput) return;
+
+        const diff = getTimeDiffInHours(startTime, finishTime);
+
+        const timeSystem = systemToggle && systemToggle.value ?
+            systemToggle.value : (isNineHourDay ? '9' : '8');
+
+        const minExpectedHours = timeSystem === '9' ? 6.5 : 5.5;
+
+        if (diff > 0 && diff < minExpectedHours) {
+            const confirmWorkedThroughBreak = confirm(
+                `This day looks shorter than expected for a ${timeSystem}-hour system.\n\nDid you work through break(s)?\n\nClick OK to auto-fill hours worked as ${diff.toFixed(2)}h.`
+            );
+            if (confirmWorkedThroughBreak) {
+                hoursWorkedInput.value = diff.toFixed(2);
+                updateShedStaffHours(hoursWorkedInput.value);
+            }
+        }
+    }); 
  if (hours) {
          hours.addEventListener("input", () => updateShedStaffHours(hours.value));
          updateShedStaffHours(hours.value);
