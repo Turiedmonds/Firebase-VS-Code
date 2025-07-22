@@ -27,7 +27,7 @@
    <div id="tabNav" class="tabs">
   <button class="tab-button active" data-view="tallySheetView">Tally Sheet</button>
   <button class="tab-button" data-view="summaryView">Daily Summary</button>
-<button class="tab-button" data-view="stationSummaryView">Station Summary</button>
+  <button class="tab-button" data-view="stationSummaryView">Farm Summary</button>
    </div>
 <div id="tallySheetView" class="view">
 <div class="logo-container">
@@ -37,7 +37,7 @@
      <button id="newDayResetBtn" class="main-button">New Day Reset</button><br/><br/>
   <label class="meta-label">Date:</label><br/>
   <input id="date" type="date"/><br/><br/>
-<label class="meta-label">Station Name:</label><br/>
+<label>Farm Name:</label><br/>
   <input id="stationName" class="small-input" type="text"/><br/><br/>
 <label class="meta-label">Team Leader:</label><br/>
   <input id="teamLeader" class="small-input" type="text"/><br/><br/>
@@ -184,7 +184,7 @@
 <div id="stationSummaryView" class="view" style="display:none;">
   <div class="logo-container">
       <img src="logo.png" alt="SHEΔR iQ logo" />
-      <h2>Station Summary</h2>
+      <h2>Farm Summary</h2>
   </div>
   <div class="filters">
     <label for="stationSelect">Station:</label>
@@ -356,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyBtn = document.getElementById('stationSummaryApply');
     if (applyBtn) {
       applyBtn.addEventListener('click', () => {
-         alert('✅ Station Summary complete.');
+         alert('✅ Farm Summary complete.');
         buildStationSummary();
       });
     }
