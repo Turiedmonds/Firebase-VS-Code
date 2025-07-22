@@ -1529,7 +1529,14 @@ function loadSessionObject(session) {
 }
 
 function startSessionLoader(session) {
- confirmUnsavedChanges(() => {
+    const today = new Date().toLocaleDateString("en-NZ");
+    const current = collectExportData();
+    if (current && formatDateNZ(current.date) === today) {
+        current.meta = current.meta || {};
+        current.meta.date = today;
+        localStorage.setItem("session_today_backup", JSON.stringify(current));
+    }
+    confirmUnsavedChanges(() => {
         const summary = `Station: ${session.stationName}\nDate: ${formatDateNZ(session.date)}\nTeam Leader: ${session.teamLeader || ''}\n\nDo you want to load this session?`;
         if (confirm(summary)) {
             loadSessionObject(session);
