@@ -888,11 +888,70 @@ function calculateHoursWorked() {
  }
  
  function clearHighlights() {
-     document.querySelectorAll('.highlight-error').forEach(el => el.classList.remove('highlight-error'));
- }
+    document.querySelectorAll('.highlight-error').forEach(el => el.classList.remove('highlight-error'));
+}
+
+// Remove completely empty shearer columns, count rows and shed staff rows
+function cleanUpEmptyRowsAndColumns() {
+    const table = document.getElementById('tallyTable');
+    const headerRow = document.getElementById('headerRow');
+    const body = document.getElementById('tallyBody');
+    const subtotalRow = document.getElementById('subtotalRow');
+    const staffTable = document.getElementById('shedStaffTable');
+    if (!table || !headerRow || !body || !subtotalRow) return;
+
+    // === CLEAN EMPTY STANDS (columns) ===
+    for (let col = numStands; col >= 1; col--) {
+        let isEmpty = true;
+        for (let r = 0; r < body.rows.length; r++) {
+            const inp = body.rows[r].cells[col]?.querySelector('input');
+            if (inp && inp.value.trim() !== '') { isEmpty = false; break; }
+        }
+        const headerInp = headerRow.cells[col]?.querySelector('input');
+        if (headerInp && headerInp.value.trim() !== '') isEmpty = false;
+        if (isEmpty) {
+            headerRow.deleteCell(col);
+            for (let r = 0; r < body.rows.length; r++) body.rows[r].deleteCell(col);
+            subtotalRow.deleteCell(col);
+            numStands--;
+        }
+    }
+
+    // === CLEAN EMPTY COUNT ROWS ===
+    for (let r = body.rows.length - 1; r >= 0; r--) {
+        const row = body.rows[r];
+        let isEmpty = true;
+        for (let c = 1; c <= numStands; c++) {
+            const inp = row.cells[c]?.querySelector('input');
+            if (inp && inp.value.trim() !== '') { isEmpty = false; break; }
+        }
+        const typeInput = row.querySelector('.sheep-type input');
+        if (typeInput && typeInput.value.trim() !== '') isEmpty = false;
+        if (isEmpty) {
+            body.deleteRow(r);
+            runs--;
+        }
+    }
+
+    // === CLEAN EMPTY SHED STAFF ROWS ===
+    if (staffTable) {
+        for (let i = staffTable.rows.length - 1; i >= 0; i--) {
+            const row = staffTable.rows[i];
+            const name = row.querySelector('input[type="text"]');
+            const hours = row.querySelector('input[type="number"]');
+            if ((!name || !name.value.trim()) && (!hours || !hours.value.trim())) {
+                staffTable.deleteRow(i);
+            }
+        }
+    }
+
+    updateTotals();
+    updateSheepTypeTotals();
+}
  
 function saveData() {
-     clearHighlights();
+     cleanUpEmptyRowsAndColumns();
+    clearHighlights();
      const issues = [];
      const tbody = document.getElementById('tallyBody');
      const header = document.getElementById('headerRow');
