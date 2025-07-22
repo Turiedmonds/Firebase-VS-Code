@@ -708,8 +708,10 @@ function hideLoadSessionModal() {
      tbody.querySelectorAll('tr').forEach(row => {
          const typeInput = row.querySelector('.sheep-type input');
          if (!typeInput) return;
-         const type = typeInput.value.trim();
-         if (!type) return;
+        let type = typeInput.value.trim();
+        if (type === "") {
+            type = "❓ Missing Type";
+        }
          const runTotal = parseInt(row.querySelector('.run-total').innerText) || 0;
          totals[type] = (totals[type] || 0) + runTotal;
          grandTotal += runTotal;
@@ -720,8 +722,12 @@ function hideLoadSessionModal() {
      const body = table.querySelector('tbody');
      body.innerHTML = '';
      Object.keys(totals).forEach(type => {
-         const tr = document.createElement('tr');
-         const tdType = document.createElement('td');
+        const tr = document.createElement('tr');
+        const tdType = document.createElement('td');
+        const label = (type === "❓ Missing Type")
+            ? `<span class="missing-type">${type}</span>`
+            : type;
+        tdType.innerHTML = label;   
          tdType.textContent = type;
          const tdTotal = document.createElement('td');
          tdTotal.textContent = totals[type];
@@ -1043,10 +1049,12 @@ function saveData() {
      const totals = {};
      const standTotals = new Array(numStandsLocal).fill(0);
      Array.from(tallyBody.querySelectorAll('tr')).forEach(row => {
-         const typeInput = row.querySelector('.sheep-type input');
-         const typeRaw = typeInput ? typeInput.value.trim() : '';
-         if (!typeRaw) return;
-         const type = optionSet.has(typeRaw) ? typeRaw : 'Other';
+        const typeInput = row.querySelector('.sheep-type input');
+        let typeRaw = typeInput ? typeInput.value.trim() : '';
+        if (typeRaw === '') {
+            typeRaw = '❓ Missing Type';
+        }
+        const type = (optionSet.has(typeRaw) || typeRaw === '❓ Missing Type') ? typeRaw : 'Other';
          if (!totals[type]) totals[type] = new Array(numStandsLocal).fill(0);
          for (let s = 1; s <= numStandsLocal; s++) {
              const val = parseInt(row.children[s]?.querySelector('input')?.value) || 0;
@@ -1061,13 +1069,16 @@ function saveData() {
      if (!theadRow || !tbody) return;
      theadRow.innerHTML = '';
      const shearerTh = document.createElement('th');
-     shearerTh.textContent = 'Shearer';
-     theadRow.appendChild(shearerTh);
-     types.forEach(t => {
-         const th = document.createElement('th');
-         th.textContent = t;
-         theadRow.appendChild(th);
-     });
+    shearerTh.textContent = 'Shearer';
+    theadRow.appendChild(shearerTh);
+    types.forEach(t => {
+        const th = document.createElement('th');
+        const label = (t === '❓ Missing Type')
+            ? `<span class="missing-type">${t}</span>`
+            : t;
+        th.innerHTML = label;
+        theadRow.appendChild(th);
+    });
      const totalTh = document.createElement('th');
      totalTh.textContent = 'Total';
      theadRow.appendChild(totalTh);
@@ -1159,8 +1170,11 @@ function saveData() {
      sessions.forEach(s => {
          const standNames = (s.stands || []).map(st => st.name || '');
          (s.shearerCounts || []).forEach(run => {
-         const rawType = (run.sheepType || '').trim();
-             const type = optionSet.has(rawType) ? rawType : 'Other';
+        let rawType = (run.sheepType || '').trim();
+            if (rawType === '') {
+                rawType = '❓ Missing Type';
+            }
+            const type = (optionSet.has(rawType) || rawType === '❓ Missing Type') ? rawType : 'Other';
              run.stands.forEach((val, idx) => {
                  const name = standNames[idx] || `Stand ${idx+1}`;
                  const num = parseInt(val) || 0;
@@ -1247,7 +1261,10 @@ function saveData() {
         shearHead.appendChild(sTh);
         activeTypes.forEach(t => {
             const th = document.createElement('th');
-            th.textContent = t;
+             const label = (t === '❓ Missing Type')
+                ? `<span class="missing-type">${t}</span>`
+                : t;
+            th.innerHTML = label;
             shearHead.appendChild(th);
         });
         const totTh = document.createElement('th');
@@ -1338,7 +1355,10 @@ function saveData() {
         totalHead.innerHTML = '';
          activeTypes.forEach(t=>{
              const th = document.createElement('th');
-             th.textContent = t;
+             const label = (t === '❓ Missing Type')
+                 ? `<span class="missing-type">${t}</span>`
+                 : t;
+             th.innerHTML = label;
              totalHead.appendChild(th);
          });
          const grandTh = document.createElement('th');

@@ -279,6 +279,11 @@ button {
   border: 2px solid #ff0000 !important;
 }
 
+.missing-type {
+  color: #ff5050;
+  font-weight: bold;
+}
+
 /* Tab navigation */
 .tabs {
   display: flex;

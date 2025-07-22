@@ -10,7 +10,12 @@ export function exportDailySummaryCSV() {
     const totalsByType = {};
 
     data.shearerCounts.forEach(run => {
-        const type = optionSet.has(run.sheepType) ? run.sheepType : 'Other';
+        let type = (run.sheepType || '').trim();
+        if (type === '') {
+            type = '❓ Missing Type';
+        } else if (!optionSet.has(type)) {
+            type = 'Other';
+        }
         if (!totalsByType[type]) totalsByType[type] = new Array(shearerNames.length).fill(0);
         const values = Array.isArray(run.stands) ? run.stands : Array.isArray(run.counts) ? run.counts : [];
         values.forEach((val, idx) => {
@@ -245,7 +250,12 @@ export function exportDailySummaryExcel() {
     const totalsByType = {};
 
     data.shearerCounts.forEach(run => {
-        const type = optionSet.has(run.sheepType) ? run.sheepType : 'Other';
+         let type = (run.sheepType || '').trim();
+        if (type === '') {
+            type = '❓ Missing Type';
+        } else if (!optionSet.has(type)) {
+            type = 'Other';
+        }
         if (!totalsByType[type]) totalsByType[type] = new Array(shearerNames.length).fill(0);
         const values = Array.isArray(run.stands) ? run.stands : Array.isArray(run.counts) ? run.counts : [];
         values.forEach((val, idx) => {
