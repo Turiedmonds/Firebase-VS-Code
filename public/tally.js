@@ -1544,7 +1544,27 @@ function startSessionLoader(session) {
     });
 }
 
- document.addEventListener('DOMContentLoaded', () => {
+function restoreTodaySession() {
+  const backup = localStorage.getItem("session_today_backup");
+  if (!backup) {
+    alert("No backup session found.");
+    return;
+  }
+
+  try {
+    const session = JSON.parse(backup);
+    const summary = `Return to today\u2019s session?\n\nStation: ${session.stationName}\nDate: ${formatDateNZ(session.date)}\nTeam Leader: ${session.teamLeader || ''}`;
+    if (!confirm(summary)) return;
+
+    startSessionLoader(session);
+    localStorage.removeItem("session_today_backup");
+  } catch (e) {
+    console.error("\u274c Failed to restore today\u2019s session:", e);
+    alert("Something went wrong restoring your session.");
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.addEventListener('click', () => showView(btn.dataset.view));
     });
@@ -1648,10 +1668,11 @@ function showSetupModal() {
  window.removeShedStaff = removeShedStaff;
  window.lockSession = lockSession;
  window.unlockSession = unlockSession;
- window.promptForPinUnlock = promptForPinUnlock;
+window.promptForPinUnlock = promptForPinUnlock;
 window.saveData = saveData;
 window.showLoadSessionModal = showLoadSessionModal;
 window.enforceSessionLock = enforceSessionLock;
+window.restoreTodaySession = restoreTodaySession;
 
 
 // === Rebuild tally rows from saved session data ===
