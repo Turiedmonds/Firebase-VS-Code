@@ -706,16 +706,19 @@ function hideLoadSessionModal() {
      const totals = {};
      let grandTotal = 0;
      tbody.querySelectorAll('tr').forEach(row => {
-         const typeInput = row.querySelector('.sheep-type input');
-         if (!typeInput) return;
+        const typeInput = row.querySelector('.sheep-type input');
+        if (!typeInput) return;
+        const tallyInputs = row.querySelectorAll('td input[type="number"]');
+        const hasTally = Array.from(tallyInputs).some(inp => inp.value.trim() !== '');
+        if (!hasTally) return; // skip empty row
         let type = typeInput.value.trim();
         if (type === "") {
             type = "❓ Missing Type";
         }
          const runTotal = parseInt(row.querySelector('.run-total').innerText) || 0;
-         totals[type] = (totals[type] || 0) + runTotal;
-         grandTotal += runTotal;
-     });
+        totals[type] = (totals[type] || 0) + runTotal;
+        grandTotal += runTotal;
+    });
  
      const table = document.getElementById('sheepTypeTotalsTable');
      if (!table) return;
@@ -1049,6 +1052,10 @@ function saveData() {
      const totals = {};
      const standTotals = new Array(numStandsLocal).fill(0);
      Array.from(tallyBody.querySelectorAll('tr')).forEach(row => {
+        const tallyInputs = row.querySelectorAll('td input[type="number"]');
+        const hasTally = Array.from(tallyInputs).some(inp => inp.value.trim() !== '');
+        if (!hasTally) return; // skip empty row
+       
         const typeInput = row.querySelector('.sheep-type input');
         let typeRaw = typeInput ? typeInput.value.trim() : '';
         if (typeRaw === '') {
@@ -1056,12 +1063,12 @@ function saveData() {
         }
         const type = (optionSet.has(typeRaw) || typeRaw === '❓ Missing Type') ? typeRaw : 'Other';
          if (!totals[type]) totals[type] = new Array(numStandsLocal).fill(0);
-         for (let s = 1; s <= numStandsLocal; s++) {
-             const val = parseInt(row.children[s]?.querySelector('input')?.value) || 0;
-             totals[type][s-1] += val;
-             standTotals[s-1] += val;
-         }
-     });
+        for (let s = 1; s <= numStandsLocal; s++) {
+            const val = parseInt(row.children[s]?.querySelector('input')?.value) || 0;
+            totals[type][s-1] += val;
+            standTotals[s-1] += val;
+        }
+    });
  
      const types = Object.keys(totals);
      const theadRow = document.querySelector('#summaryTable thead tr');
