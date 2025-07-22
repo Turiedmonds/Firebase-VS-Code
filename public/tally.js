@@ -933,14 +933,14 @@ function cleanUpEmptyRowsAndColumns() {
         }
     }
 
-    // === CLEAN EMPTY SHED STAFF ROWS (fixed version) ===
+    // === CLEAN EMPTY SHED STAFF ROWS ===
     if (staffTable) {
-        for (let i = staffTable.rows.length - 2; i >= 1; i--) {
+        for (let i = staffTable.rows.length - 1; i >= 0; i--) {
             const row = staffTable.rows[i];
-             const nameSelect = row.querySelector('select');
-            const name = nameSelect?.value.trim() || '';
+            const nameInput = row.querySelector("input[type='text']");
+            const name = nameInput?.value.trim() || '';
 
-            // Remove row if no name is selected (ignore hours input)
+            // Remove row if no name is entered
             if (name === '') {
                 staffTable.deleteRow(i);
             }
