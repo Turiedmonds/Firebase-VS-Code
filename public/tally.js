@@ -7,6 +7,15 @@ export function formatHoursWorked(decimal) {
   return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
 }
  
+export function parseHoursWorked(str) {
+  if (!str) return 0;
+  const match = String(str).trim().match(/^(\d+)h(?:\s*(\d+)m)?$/);
+  if (!match) return parseFloat(str) || 0;
+  const hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2] || '0', 10);
+  return hours + minutes / 60;
+}
+
 // Helper to calculate hour difference between two HH:MM strings
 function getTimeDiffInHours(startStr, endStr) {
   const start = new Date(`1970-01-01T${startStr}`);
@@ -840,9 +849,9 @@ function calculateHoursWorked() {
          }
      });
  
-     output.value = totalHours > 0 ? totalHours.toFixed(2) : "0";
- updateShedStaffHours(output.value);
- }
+    output.value = totalHours > 0 ? formatHoursWorked(totalHours) : "0h";
+    updateShedStaffHours(output.value);
+}
  
  function updateShedStaffHours(value) {
      const table = document.getElementById('shedStaffTable');
@@ -884,10 +893,10 @@ function calculateHoursWorked() {
 
          if (diff > 0 && diff < minExpectedHours && isDuringMorningBreak(finishTime)) {
             const confirmWorkedThroughBreak = confirm(
-                `This day looks shorter than expected for a ${timeSystem}-hour system.\n\nDid you work through break(s)?\n\nClick OK to auto-fill hours worked as ${diff.toFixed(2)}h.`
+                `This day looks shorter than expected for a ${timeSystem}-hour system.\n\nDid you work through break(s)?\n\nClick OK to auto-fill hours worked as ${formatHoursWorked(diff)}.`
             );
             if (confirmWorkedThroughBreak) {
-                hoursWorkedInput.value = diff.toFixed(2);
+                 hoursWorkedInput.value = formatHoursWorked(diff);
                 updateShedStaffHours(hoursWorkedInput.value);
             }
         }
@@ -1177,22 +1186,22 @@ function saveData() {
      const staffBody = document.getElementById('summaryShedStaff');
      if (staffBody) {
          staffBody.innerHTML = '';
-         document.querySelectorAll('#shedStaffTable tr').forEach(row => {
-             const name = row.querySelector('td:nth-child(1) input')?.value || '';
-           const hoursVal = parseFloat(row.querySelector('td:nth-child(2) input')?.value);
-            if (name.trim() || (!isNaN(hoursVal) && hoursVal !== 0)) {
+          document.querySelectorAll('#shedStaffTable tr').forEach(row => {
+            const name = row.querySelector('td:nth-child(1) input')?.value || '';
+            const hoursStr = row.querySelector('td:nth-child(2) input')?.value || '';
+            if (name.trim() || hoursStr.trim()) {
                 const tr = document.createElement('tr');
                 const nameTd = document.createElement('td');
                 nameTd.textContent = name;
                 const hoursTd = document.createElement('td');
-                hoursTd.textContent = formatHoursWorked(hoursVal);
+                 hoursTd.textContent = hoursStr;
                 tr.appendChild(nameTd);
                 tr.appendChild(hoursTd);
                 staffBody.appendChild(tr);
-            } 
-         });
-     }
- }
+            }
+        });
+    }
+}
  
  function populateStationDropdown() {
      const select = document.getElementById('stationSelect');
@@ -1247,12 +1256,12 @@ function saveData() {
          });
  
          if (Array.isArray(s.shedStaff)) {
-             s.shedStaff.forEach(st => {
-                 const h = parseFloat(st.hours) || 0;
-                 if (!st.name) return;
-                 staffData[st.name] = (staffData[st.name] || 0) + h;
-             });
-         }
+            s.shedStaff.forEach(st => {
+                const h = parseHoursWorked(st.hours);
+                if (!st.name) return;
+                staffData[st.name] = (staffData[st.name] || 0) + h;
+            });
+        }
  
          if (s.teamLeader) {
              const totalSheep = (s.shearerCounts || []).reduce((a,b) => a + (parseInt(b.total)||0), 0);
@@ -1537,7 +1546,7 @@ export function clearStationSummaryView() {
      add(['Comb Type', data.combType]);
      add(['Start Time', data.startTime]);
      add(['Finish Time', data.finishTime]);
-    add(['Hours Worked', formatHoursWorked(parseFloat(data.hoursWorked))]);
+    add(['Hours Worked', data.hoursWorked]);
     add(['Time System', data.timeSystem]);
      add([]);
  
@@ -1552,9 +1561,8 @@ export function clearStationSummaryView() {
  
      add(['Shed Staff'], true);
      add(['Name', 'Hours Worked'], true);
-     data.shedStaff.forEach(s => {
-        const val = parseFloat(s.hours);
-        add([s.name, formatHoursWorked(val)]);
+      data.shedStaff.forEach(s => {
+        add([s.name, s.hours]);
     });
      add([]);
  

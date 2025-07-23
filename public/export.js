@@ -53,7 +53,7 @@ export function exportDailySummaryCSV() {
         ['Comb Type', data.combType],
         ['Start Time', data.startTime],
         ['Finish Time', data.finishTime],
-        ['Hours Worked', formatHoursWorked(parseFloat(data.hoursWorked))],
+        ['Hours Worked', data.hoursWorked],
         ['Time System', data.timeSystem]
     ];
     metadataRows.forEach(r => rows.push(r));
@@ -72,8 +72,7 @@ export function exportDailySummaryCSV() {
     rows.push(['Shed Staff']);
     rows.push(['Name', 'Hours Worked']);
     data.shedStaff.forEach(s => {
-        const h = parseFloat(s.hours);
-        rows.push([s.name, formatHoursWorked(h)]);
+       rows.push([s.name, s.hours]);
     });
 
     const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\r\n');
@@ -299,7 +298,7 @@ export function exportDailySummaryExcel() {
         ['Comb Type', data.combType],
         ['Start Time', data.startTime],
         ['Finish Time', data.finishTime],
-        ['Hours Worked', formatHoursWorked(parseFloat(data.hoursWorked))],
+        ['Hours Worked', data.hoursWorked],
         ['Time System', data.timeSystem]
    ];
     metadataRows.forEach(r => rows.push(r));
@@ -331,8 +330,7 @@ export function exportDailySummaryExcel() {
     headerRows.push(rows.length);
     rows.push(['Name', 'Hours Worked']);
     data.shedStaff.forEach(s => {
-        const h = parseFloat(s.hours);
-        rows.push([s.name, formatHoursWorked(h)]);
+    rows.push([s.name, s.hours]);   
     });
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
