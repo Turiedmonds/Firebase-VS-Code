@@ -955,19 +955,20 @@ function calculateHoursWorked() {
             const overlapStart = start > bStart ? start : bStart;
             const overlapEnd = end < bEnd ? end : bEnd;
             const overlapMinutes = Math.round((overlapEnd - overlapStart) / 60000);
-
             totalMinutes -= overlapMinutes;
 
-            if (overlapMinutes > 0) {
+            const finishInBreak = end > bStart && end <= bEnd;
+            if (finishInBreak && overlapMinutes > 0) {
                 const addBack = confirm(
                     `You worked into ${brk.name}. Add ${overlapMinutes} minutes as paid time?`
                 );
-                if (addBack) totalMinutes += overlapMinutes;
+                if (addBack) {
+                    totalMinutes += overlapMinutes;
+                }
             }
         }
     });
  
-     
     const totalHours = totalMinutes / 60;
     output.value = totalHours > 0 ? formatHoursWorked(totalHours) : "0h";
     updateShedStaffHours(output.value);
