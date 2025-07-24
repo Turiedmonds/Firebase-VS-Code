@@ -93,7 +93,7 @@ function getDynamicBreaks(startTimeStr) {
     return [
       [addMinutes(120), addMinutes(150)],
       [addMinutes(270), addMinutes(270 + lunchBreakDurationMinutes)],
-      [addMinutes(420), addMinutes(450)]
+      [addMinutes(450), addMinutes(480)]
     ];
   }
 }
