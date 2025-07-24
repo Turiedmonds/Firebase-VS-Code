@@ -66,8 +66,16 @@ function getWorkedBreakMinutes(finishTimeStr, breaks) {
 }
 
 // Backwards compatible helper that now returns the worked break minutes
+// Determine if the given time falls within any defined break.
+// Finishing exactly at the start of a break should not count as
+// working during that break, so we use a strict greater-than check.
 function isTimeWithinBreaks(timeStr, breaks) {
-  return getWorkedBreakMinutes(timeStr, breaks);
+  const time = new Date("1970-01-01T" + timeStr);
+  return breaks.some(([start, end]) => {
+    const bStart = new Date("1970-01-01T" + start);
+    const bEnd = new Date("1970-01-01T" + end);
+    return time > bStart && time <= bEnd;
+  });
 }
 
 function getDynamicBreaks(startTimeStr) {
@@ -928,10 +936,13 @@ function calculateHoursWorked(extraMinutes = 0) {
          const bStart = new Date("1970-01-01T" + b[0]);
          const bEnd = new Date("1970-01-01T" + b[1]);
  
-         if (end >= bStart && start <= bEnd) {
-             totalMinutes -= (bEnd - bStart) / 60000;
-         }
-     });
+         // Only subtract the break if the working period actually overlaps it.
+        // Finishing exactly when a break starts or starting right as it ends
+        // should not remove break time.
+        if (end > bStart && start < bEnd) {
+            totalMinutes -= (bEnd - bStart) / 60000;
+        }
+    });
  
      totalMinutes += extraMinutes;
     const totalHours = totalMinutes / 60;
