@@ -84,10 +84,10 @@ function getDynamicBreaks(startTimeStr) {
   const addMinutes = mins => new Date(base.getTime() + mins * 60000).toTimeString().slice(0, 5);
   if (isNineHourDay) {
     return [
-      [addMinutes(0), addMinutes(60)],
-      [addMinutes(225), addMinutes(255)],
-      [addMinutes(360), addMinutes(420)],
-      [addMinutes(525), addMinutes(555)]
+      [addMinutes(120), addMinutes(180)],
+      [addMinutes(285), addMinutes(315)],
+      [addMinutes(420), addMinutes(480)],
+      [addMinutes(585), addMinutes(615)]
     ];
   } else {
     return [
