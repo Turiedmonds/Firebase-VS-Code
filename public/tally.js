@@ -35,6 +35,17 @@ function isDuringMorningBreak(timeStr) {
 // Default lunch break length in minutes
 let lunchBreakDurationMinutes = 60;
 
+function updateLunchToggleButton() {
+    const btn = document.getElementById('lunchToggle');
+    if (btn) btn.textContent = `Lunch: ${lunchBreakDurationMinutes}m`;
+}
+
+function toggleLunchBreak() {
+    lunchBreakDurationMinutes = lunchBreakDurationMinutes === 60 ? 45 : 60;
+    updateLunchToggleButton();
+    calculateHoursWorked();
+}
+
 function isTimeWithinBreaks(timeStr, breaks) {
   const time = new Date("1970-01-01T" + timeStr);
   return breaks.some(([start, end]) => {
@@ -427,6 +438,7 @@ function confirmSetupModal() {
     if (lunchSelect) {
         lunchBreakDurationMinutes = parseInt(lunchSelect.value, 10);
     }
+    updateLunchToggleButton();
     hideSetupModal();
     setupDailyLayout(shearers, counts, staff);
 }
@@ -620,17 +632,21 @@ function confirmSetupModal() {
  }
  
  function setWorkdayType(nineHour) {
-     isNineHourDay = nineHour;
-     adjustRuns(isNineHourDay ? 5 : 4);
-     calculateHoursWorked();
+    isNineHourDay = nineHour;
+    adjustRuns(isNineHourDay ? 5 : 4);
+    calculateHoursWorked();
       const label = document.getElementById('timeSystemLabel');
      if (label) {
          label.textContent = isNineHourDay ? 'Time System: 9-Hour Day' : 'Time System: 8-Hour Day';
          label.style.color = isNineHourDay ? '#ff0' : '#0f0';
      }
      const hours = document.getElementById('hoursWorked');
-     if (hours) updateShedStaffHours(hours.value);
- }
+    if (hours) updateShedStaffHours(hours.value);
+    if (isNineHourDay && lunchBreakDurationMinutes !== 60) {
+        lunchBreakDurationMinutes = 60;
+    }
+    updateLunchToggleButton();
+}
  
  function toggleWorkdayType() {
      const switchToNine = !isNineHourDay;
@@ -914,9 +930,12 @@ function calculateHoursWorked() {
      const end = document.getElementById("finishTime");
      const hours = document.getElementById("hoursWorked");
      const toggle = document.getElementById('timeFormatToggle');
-     const workdayToggle = document.getElementById('workdayToggle');
-     if (toggle) toggle.addEventListener('click', toggleTimeFormat);
-     if (workdayToggle) workdayToggle.addEventListener('click', toggleWorkdayType);
+    const workdayToggle = document.getElementById('workdayToggle');
+    const lunchToggle = document.getElementById('lunchToggle');
+    if (toggle) toggle.addEventListener('click', toggleTimeFormat);
+    if (workdayToggle) workdayToggle.addEventListener('click', toggleWorkdayType);
+    if (lunchToggle) lunchToggle.addEventListener('click', toggleLunchBreak);
+    updateLunchToggleButton();
    if (start) start.addEventListener("change", handleStartTimeChange);
     if (end) end.addEventListener("change", () => {
         calculateHoursWorked();
