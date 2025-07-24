@@ -51,7 +51,7 @@ function isTimeWithinBreaks(timeStr, breaks) {
   return breaks.some(([start, end]) => {
     const bStart = new Date("1970-01-01T" + start);
     const bEnd = new Date("1970-01-01T" + end);
-    return time >= bStart && time <= bEnd;
+    return time > bStart && time <= bEnd;
   });
 }
 function getDynamicBreaks(startTimeStr) {
