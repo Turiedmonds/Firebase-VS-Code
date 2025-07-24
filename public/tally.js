@@ -24,14 +24,6 @@ function getTimeDiffInHours(startStr, endStr) {
   return diffMs / (1000 * 60 * 60);
 }
 
-// Detect if a time falls within the standard morning break window (9:00-9:30)
-function isDuringMorningBreak(timeStr) {
-  const t = new Date(`1970-01-01T${timeStr}`);
-  const breakStart = new Date('1970-01-01T09:00');
-  const breakEnd = new Date('1970-01-01T09:30');
-  return t >= breakStart && t <= breakEnd;
-}
-
 // Default lunch break length in minutes
 let lunchBreakDurationMinutes = 60;
 
@@ -61,6 +53,25 @@ function isTimeWithinBreaks(timeStr, breaks) {
     const bEnd = new Date("1970-01-01T" + end);
     return time >= bStart && time <= bEnd;
   });
+}
+function getDynamicBreaks(startTimeStr) {
+  const base = new Date("1970-01-01T" + startTimeStr);
+  if (isNaN(base)) return [];
+  const addMinutes = mins => new Date(base.getTime() + mins * 60000).toTimeString().slice(0, 5);
+  if (isNineHourDay) {
+    return [
+      [addMinutes(0), addMinutes(60)],
+      [addMinutes(225), addMinutes(255)],
+      [addMinutes(360), addMinutes(420)],
+      [addMinutes(525), addMinutes(555)]
+    ];
+  } else {
+    return [
+      [addMinutes(120), addMinutes(150)],
+      [addMinutes(270), addMinutes(270 + lunchBreakDurationMinutes)],
+      [addMinutes(420), addMinutes(450)]
+    ];
+  }
 }
 
  document.addEventListener("DOMContentLoaded", () => {
@@ -895,17 +906,7 @@ function calculateHoursWorked() {
  
      let totalHours = (end - start) / (1000 * 60 * 60);
  
-      const breaks = isNineHourDay ?
-        [
-            ["07:00", "08:00"],
-            ["09:45", "10:15"],
-            ["12:00", "13:00"],
-            ["14:45", "15:15"]
-        ] : [
-            ["09:00", "09:30"],
-            ["11:30", lunchBreakDurationMinutes === 60 ? "12:30" : "12:15"],
-            ["14:30", "15:00"]
-        ];
+      const breaks = getDynamicBreaks(startInput.value);
  
      breaks.forEach(b => {
          const bStart = new Date("1970-01-01T" + b[0]);
@@ -965,18 +966,7 @@ function calculateHoursWorked() {
         
         if (!startTime || !finishTime || !hoursWorkedInput) return;
 
-  const breaks = isNineHourDay
-          ? [
-              ["07:00", "08:00"],
-              ["09:45", "10:15"],
-              ["12:00", "13:00"],
-              ["14:45", "15:15"]
-            ]
-          : [
-              ["09:00", "09:30"],
-              ["11:30", lunchBreakDurationMinutes === 60 ? "12:30" : "12:15"],
-              ["14:30", "15:00"]
-            ];
+      const breaks = getDynamicBreaks(startTime);
 
         if (isTimeWithinBreaks(finishTime, breaks)) {
           const confirmWorkedThrough = confirm("Did you work through a break time?");
