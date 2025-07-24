@@ -1,4 +1,4 @@
-import { collectExportData, buildExportRows, buildStationSummary, isNineHourDay, formatHoursWorked } from './tally.js';
+import { collectExportData, buildExportRows, buildStationSummary, isNineHourDay, formatHoursWorked, parseHoursWorked } from './tally.js';
 
 export function exportDailySummaryCSV() {
     const data = collectExportData();
@@ -190,7 +190,7 @@ function loadPreviousSession() {
         if (Array.isArray(data.shedStaff)) {
             data.shedStaff.forEach(staff => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td><input placeholder="Staff Name" type="text"/></td><td><input min="0" placeholder="0" step="0.1" type="number"/></td>';
+                tr.innerHTML = '<td><input placeholder="Staff Name" type="text"/></td><td><input placeholder="e.g. 8h 30m" type="text" class="hours-input"/></td>';
                 const nameInput = tr.querySelector('td:nth-child(1) input');
                 const hoursInput = tr.querySelector('td:nth-child(2) input');
                 if (nameInput) {
@@ -199,7 +199,7 @@ function loadPreviousSession() {
                     applyInputHistory(nameInput);
                 }
                 if (hoursInput) {
-                    hoursInput.value = staff.hours || '';
+                hoursInput.value = formatHoursWorked(parseHoursWorked(staff.hours));    
                     adjustShedStaffHoursWidth(hoursInput);
                 }
                 staffTable.appendChild(tr);

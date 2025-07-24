@@ -90,6 +90,12 @@ input.small-input { width: auto; }
    text-align: left;
 }
 
+.hours-input {
+  width: 100px;
+  text-align: left;
+}
+
+
 /* Base button styling for easier tapping */
 button {
   padding: 12px 16px;
@@ -250,7 +256,8 @@ button {
   #combType,
   #startTime,
   #finishTime,
-  #hoursWorked {
+ #hoursWorked,
+  .hours-input {
     width: 100%;
     max-width: 300px;
   }

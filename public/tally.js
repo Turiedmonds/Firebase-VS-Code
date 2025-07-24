@@ -305,7 +305,7 @@ function populateSessionData(data) {
         if (Array.isArray(data.shedStaff)) {
             data.shedStaff.forEach(staff => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td><input placeholder="Staff Name" type="text"/></td><td><input min="0" placeholder="0" step="0.1" type="number"/></td>';
+                tr.innerHTML = '<td><input placeholder="Staff Name" type="text"/></td><td><input placeholder="e.g. 8h 30m" type="text" class="hours-input"/></td>';
                 const nameInput = tr.querySelector('td:nth-child(1) input');
                 const hoursInput = tr.querySelector('td:nth-child(2) input');
                 if (nameInput) {
@@ -314,7 +314,7 @@ function populateSessionData(data) {
                     applyInputHistory(nameInput);
                 }
                 if (hoursInput) {
-                    hoursInput.value = staff.hours || '';
+                    hoursInput.value = formatHoursWorked(parseHoursWorked(staff.hours));
                     adjustShedStaffHoursWidth(hoursInput);
                 }
                 staffTableEl.appendChild(tr);
@@ -452,9 +452,13 @@ function hideLoadSessionModal() {
      } catch (e) {}
  
      input.addEventListener('blur', () => {
-         if (input.closest('#shedStaffTable')) {
-             adjustShedStaffNameWidth(input);
-         }
+        if (input.closest('#shedStaffTable')) {
+            if (input.matches('.hours-input')) {
+                adjustShedStaffHoursWidth(input);
+            } else {
+                adjustShedStaffNameWidth(input);
+            }
+        }
          const val = input.value.trim();
          if (!val) return;
          let arr;
@@ -476,24 +480,29 @@ function hideLoadSessionModal() {
          }
            if (input.matches('#tallyBody td.sheep-type input[type="text"]')) {
              adjustSheepTypeWidth(input);
-         } else if (input.matches('#shedStaffTable input[type="number"]')) {
+         } else if (input.matches('#shedStaffTable .hours-input')) {
              adjustShedStaffHoursWidth(input);
          } else if (input.matches('#headerRow input[type="text"]')) {
              adjustStandNameWidth(input);
          }
      });
      
-  // ensure shed staff name width is sized correctly on initialization
-     if (input.closest('#shedStaffTable')) {
-         adjustShedStaffNameWidth(input);
-     }
+  // ensure shed staff inputs are sized correctly on initialization
+    if (input.closest('#shedStaffTable')) {
+        if (input.matches('.hours-input')) {
+            adjustShedStaffHoursWidth(input);
+        } else {
+            adjustShedStaffNameWidth(input);
+        }
+    }
      
      input.addEventListener('input', () => {
          if (input.matches('#tallyBody td.sheep-type input[type="text"]')) {
              adjustSheepTypeWidth(input);
-         } else if (input.matches('#shedStaffTable input[type="text"]')) {
+         } else if (input.matches('#shedStaffTable td:nth-child(1) input')) {
              adjustShedStaffNameWidth(input);
-         } else if (input.matches('#shedStaffTable input[type="number"]')) {
+         } else if (input.matches('#shedStaffTable .hours-input')) {
+            adjustShedStaffHoursWidth(input);
              adjustShedStaffHoursWidth(input);
          } else if (input.matches('#headerRow input[type="text"]')) {
              adjustStandNameWidth(input);
@@ -907,10 +916,10 @@ function calculateHoursWorked() {
      }
      document.querySelectorAll('#headerRow input[type="text"]').forEach(adjustStandNameWidth);
  document.querySelectorAll('#tallyBody td.sheep-type input[type="text"]').forEach(adjustSheepTypeWidth);
-     document.querySelectorAll('#shedStaffTable input[type="text"]').forEach(adjustShedStaffNameWidth);
-     document.querySelectorAll('#shedStaffTable input[type="number"]').forEach(adjustShedStaffHoursWidth);
-     document.querySelectorAll('input[type="text"]').forEach(applyInputHistory);
- });
+     document.querySelectorAll('#shedStaffTable td:nth-child(1) input').forEach(adjustShedStaffNameWidth);
+    document.querySelectorAll('#shedStaffTable .hours-input').forEach(adjustShedStaffHoursWidth);
+    document.querySelectorAll('input[type="text"]').forEach(applyInputHistory);
+});
  
  document.addEventListener('input', function(e) {
      if (e.target.matches('#headerRow input[type="text"]')) {
@@ -920,18 +929,18 @@ function calculateHoursWorked() {
          adjustSheepTypeWidth(e.target);
           updateSheepTypeTotals();
      }
- if (e.target.matches('#shedStaffTable input[type="text"]')) {
-         adjustShedStaffNameWidth(e.target);
-     }
-     if (e.target.matches('#shedStaffTable input[type="number"]')) {
-         adjustShedStaffHoursWidth(e.target);
-     }
+if (e.target.matches('#shedStaffTable td:nth-child(1) input')) {
+        adjustShedStaffNameWidth(e.target);
+    }
+    if (e.target.matches('#shedStaffTable .hours-input')) {
+        adjustShedStaffHoursWidth(e.target);
+    }
  });
  
  function addShedStaff() {
      const body = document.getElementById('shedStaffTable');
      const row = document.createElement('tr');
-     row.innerHTML = `<td><input placeholder="Staff Name" type="text"/></td><td><input min="0" placeholder="0" step="0.1" type="number"/></td>`;
+     row.innerHTML = `<td><input placeholder="Staff Name" type="text"/></td><td><input placeholder="e.g. 8h 30m" type="text" class="hours-input"/></td>`;
      body.appendChild(row);
      const hours = document.getElementById('hoursWorked');
      const nameInput = row.querySelector('td:nth-child(1) input');
