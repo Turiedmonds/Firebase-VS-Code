@@ -37,7 +37,7 @@ let lunchBreakDurationMinutes = 60;
 
 function updateLunchToggleButton() {
     const btn = document.getElementById('lunchToggle');
-    if (btn) btn.textContent = `Lunch Break: ${lunchBreakDurationMinutes}m`;
+   if (btn) btn.textContent = 'Lunch Break';  
 }
 
 function toggleLunchBreak() {
