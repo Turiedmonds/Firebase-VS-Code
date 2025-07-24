@@ -920,7 +920,7 @@ function calculateHoursWorked() {
 
     if (!startInput || !endInput || !output) return;
 
-     const startStr = startInput.value;
+    const startStr = startInput.value;
     const endStr = endInput.value;
     const start = new Date("1970-01-01T" + startStr);
     const end = new Date("1970-01-01T" + endStr); 
@@ -934,28 +934,30 @@ function calculateHoursWorked() {
     let totalMinutes = (end - start) / 60000;
 
    const breakWindows = getDynamicBreaks(startStr);
+    console.log("Break windows", breakWindows);
     const labels = isNineHourDay
         ? ["Breakfast", "Morning Smoko", "Lunch", "Afternoon Smoko"]
         : ["Morning Smoko", "Lunch", "Afternoon Smoko"];
 
     breakWindows.forEach(([bStartStr, bEndStr], idx) => {
         const bStart = new Date("1970-01-01T" + bStartStr);
-        if (end > bStart && start < bEnd) {
+         const bEnd = new Date("1970-01-01T" + bEndStr);
+
+        if (end <= bStart || start >= bEnd) return;
+
+        if (end > bStart && end < bEnd) {
+            const worked = Math.round((end - bStart) / 60000);
+            const label = labels[idx] || `Break ${idx + 1}`;
+            console.log(`Finish within ${label}: worked ${worked} minutes`);
+            if (!confirm(`You worked into ${label}. Add ${worked} minutes as paid time?`)) {
+                totalMinutes -= worked;
+            }
+        } else {
             const overlapStart = start > bStart ? start : bStart;
             const overlapEnd = end < bEnd ? end : bEnd;
             const overlapMinutes = Math.round((overlapEnd - overlapStart) / 60000);
             totalMinutes -= overlapMinutes;
 
-            if (end > bStart && end <= bEnd) {
-                const worked = Math.round((end - bStart) / 60000);
-                const label = labels[idx] || `Break ${idx + 1}`;
-                const addBack = confirm(
-                   `You worked into ${label}. Add ${worked} minutes as paid time?` 
-                );
-                if (addBack) {
-                    totalMinutes += worked;
-                }
-            }
         }
     });
  
