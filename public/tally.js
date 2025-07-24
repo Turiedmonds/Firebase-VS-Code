@@ -913,38 +913,61 @@ spacerCell.innerText = "Total Today";
 subtotalRow.appendChild(spacerCell);
 updateTotals();
 
-function calculateHoursWorked(extraMinutes = 0) {
-     const startInput = document.getElementById("startTime");
-     const endInput = document.getElementById("finishTime");
-     const output = document.getElementById("hoursWorked");
- 
-     if (!startInput || !endInput || !output) return;
- 
-     const start = new Date("1970-01-01T" + startInput.value);
-     const end = new Date("1970-01-01T" + endInput.value);
- 
-     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-         output.value = "";
-         return;
-     }
- 
-     let totalMinutes = (end - start) / 60000;
- 
-      const breaks = getDynamicBreaks(startInput.value);
- 
-     breaks.forEach(b => {
-         const bStart = new Date("1970-01-01T" + b[0]);
-         const bEnd = new Date("1970-01-01T" + b[1]);
- 
-         // Only subtract the break if the working period actually overlaps it.
-        // Finishing exactly when a break starts or starting right as it ends
-        // should not remove break time.
+function calculateHoursWorked() {
+    const startInput = document.getElementById("startTime");
+    const endInput = document.getElementById("finishTime");
+    const output = document.getElementById("hoursWorked");
+
+    if (!startInput || !endInput || !output) return;
+
+    const start = new Date("1970-01-01T" + startInput.value);
+    const end = new Date("1970-01-01T" + endInput.value);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
+        output.value = "";
+        updateShedStaffHours("");
+        return;
+    }
+
+    let totalMinutes = (end - start) / 60000;
+
+    const breaks = isNineHourDay
+        ? [
+            { name: "Breakfast", start: "05:00", end: "06:00" },
+            { name: "Morning Smoko", start: "10:45", end: "11:15" },
+            { name: "Lunch", start: "13:00", end: "14:00" },
+            { name: "Afternoon Smoko", start: "15:45", end: "16:15" }
+          ]
+        : [
+            { name: "Morning Smoko", start: "09:00", end: "09:30" },
+            {
+              name: "Lunch",
+              start: "11:30",
+              end: lunchBreakDurationMinutes === 60 ? "12:30" : "12:15"
+            },
+            { name: "Afternoon Smoko", start: "14:30", end: "15:00" }
+          ];
+
+    breaks.forEach(brk => {
+        const bStart = new Date("1970-01-01T" + brk.start);
+        const bEnd = new Date("1970-01-01T" + brk.end);
         if (end > bStart && start < bEnd) {
-            totalMinutes -= (bEnd - bStart) / 60000;
+            const overlapStart = start > bStart ? start : bStart;
+            const overlapEnd = end < bEnd ? end : bEnd;
+            const overlapMinutes = Math.round((overlapEnd - overlapStart) / 60000);
+
+            totalMinutes -= overlapMinutes;
+
+            if (overlapMinutes > 0) {
+                const addBack = confirm(
+                    `You worked into ${brk.name}. Add ${overlapMinutes} minutes as paid time?`
+                );
+                if (addBack) totalMinutes += overlapMinutes;
+            }
         }
     });
  
-     totalMinutes += extraMinutes;
+     
     const totalHours = totalMinutes / 60;
     output.value = totalHours > 0 ? formatHoursWorked(totalHours) : "0h";
     updateShedStaffHours(output.value);
@@ -984,22 +1007,7 @@ function calculateHoursWorked(extraMinutes = 0) {
       updateLunchIndicatorText();
     }
     updateLunchToggleButton();
-   if (start) start.addEventListener("change", handleStartTimeChange);
-    if (end) end.addEventListener("change", () => {
-        const startTime = document.getElementById("startTime").value;
-        const finishTime = document.getElementById("finishTime").value;
-         if (!startTime || !finishTime) { calculateHoursWorked(); return; }
-
-        const breaks = getDynamicBreaks(startTime);
-        const workedMins = getWorkedBreakMinutes(finishTime, breaks);
-
-        if (workedMins > 0) {
-          const addTime = confirm("You worked into a break. Add paid time?");
-          calculateHoursWorked(addTime ? workedMins : 0);
-        } else {
-          calculateHoursWorked(); 
-        }
-     });
+   if (end) end.addEventListener("change", calculateHoursWorked);
  if (hours) {
          hours.addEventListener("input", () => updateShedStaffHours(hours.value));
          updateShedStaffHours(hours.value);
