@@ -37,7 +37,15 @@ let lunchBreakDurationMinutes = 60;
 
 function updateLunchToggleButton() {
     const btn = document.getElementById('lunchToggle');
-   if (btn) btn.textContent = 'Lunch Break';  
+   if (btn) btn.textContent = 'Lunch Break';
+}
+
+function updateLunchIndicatorText() {
+  const text = lunchBreakDurationMinutes === 60
+    ? "Lunch Break: 1 hour"
+    : "Lunch Break: 45 min";
+  const el = document.getElementById("lunchIndicator");
+  if (el) el.textContent = text; 
 }
 
 function toggleLunchBreak() {
@@ -439,6 +447,7 @@ function confirmSetupModal() {
         lunchBreakDurationMinutes = parseInt(lunchSelect.value, 10);
     }
     updateLunchToggleButton();
+    updateLunchIndicatorText();
     hideSetupModal();
     setupDailyLayout(shearers, counts, staff);
 }
@@ -646,6 +655,7 @@ function confirmSetupModal() {
         lunchBreakDurationMinutes = 60;
     }
     updateLunchToggleButton();
+    updateLunchIndicatorText();
 }
  
  function toggleWorkdayType() {
@@ -931,10 +941,20 @@ function calculateHoursWorked() {
      const hours = document.getElementById("hoursWorked");
      const toggle = document.getElementById('timeFormatToggle');
     const workdayToggle = document.getElementById('workdayToggle');
-    const lunchToggle = document.getElementById('lunchToggle');
+    const lunchBtn = document.getElementById('lunchToggle');
+    const lunchIndicator = document.getElementById('lunchIndicator');
     if (toggle) toggle.addEventListener('click', toggleTimeFormat);
     if (workdayToggle) workdayToggle.addEventListener('click', toggleWorkdayType);
-    if (lunchToggle) lunchToggle.addEventListener('click', toggleLunchBreak);
+    if (lunchBtn && lunchIndicator) {
+      lunchBtn.addEventListener('click', () => {
+        lunchBreakDurationMinutes = lunchBreakDurationMinutes === 60 ? 45 : 60;
+        updateLunchIndicatorText();
+        alert(`✅ Lunch break set to ${lunchBreakDurationMinutes === 60 ? '1 hour' : '45 minutes'}`);
+      });
+
+      // Set initial display
+      updateLunchIndicatorText();
+    }
     updateLunchToggleButton();
    if (start) start.addEventListener("change", handleStartTimeChange);
     if (end) end.addEventListener("change", () => {
