@@ -46,14 +46,30 @@ function toggleLunchBreak() {
     calculateHoursWorked();
 }
 
-function isTimeWithinBreaks(timeStr, breaks) {
-  const time = new Date("1970-01-01T" + timeStr);
-  return breaks.some(([start, end]) => {
-    const bStart = new Date("1970-01-01T" + start);
-    const bEnd = new Date("1970-01-01T" + end);
-    return time > bStart && time <= bEnd;
+// Determine how many minutes of break time the provided finish time falls into
+// returning the value rounded up to the nearest 15 minute block.
+function getWorkedBreakMinutes(finishTimeStr, breaks) {
+  const finish = new Date("1970-01-01T" + finishTimeStr);
+  let workedMinutes = 0;
+
+  breaks.forEach(([startStr, endStr]) => {
+    const start = new Date("1970-01-01T" + startStr);
+    const end = new Date("1970-01-01T" + endStr);
+
+    if (finish > start && finish <= end) {
+      const diff = Math.floor((finish - start) / 60000);
+      const rounded = Math.ceil(diff / 15) * 15;
+      workedMinutes += rounded;
+    }
   });
+  return workedMinutes;
 }
+
+// Backwards compatible helper that now returns the worked break minutes
+function isTimeWithinBreaks(timeStr, breaks) {
+  return getWorkedBreakMinutes(timeStr, breaks);
+}
+
 function getDynamicBreaks(startTimeStr) {
   const base = new Date("1970-01-01T" + startTimeStr);
   if (isNaN(base)) return [];
@@ -889,7 +905,7 @@ spacerCell.innerText = "Total Today";
 subtotalRow.appendChild(spacerCell);
 updateTotals();
 
-function calculateHoursWorked() {
+function calculateHoursWorked(extraMinutes = 0) {
      const startInput = document.getElementById("startTime");
      const endInput = document.getElementById("finishTime");
      const output = document.getElementById("hoursWorked");
@@ -904,7 +920,7 @@ function calculateHoursWorked() {
          return;
      }
  
-     let totalHours = (end - start) / (1000 * 60 * 60);
+     let totalMinutes = (end - start) / 60000;
  
       const breaks = getDynamicBreaks(startInput.value);
  
@@ -912,13 +928,13 @@ function calculateHoursWorked() {
          const bStart = new Date("1970-01-01T" + b[0]);
          const bEnd = new Date("1970-01-01T" + b[1]);
  
-         if (end > bStart && start < bEnd) {
-             const overlapStart = new Date(Math.max(start, bStart));
-             const overlapEnd = new Date(Math.min(end, bEnd));
-             totalHours -= (overlapEnd - overlapStart) / (1000 * 60 * 60);
+         if (end >= bStart && start <= bEnd) {
+             totalMinutes -= (bEnd - bStart) / 60000;
          }
      });
  
+     totalMinutes += extraMinutes;
+    const totalHours = totalMinutes / 60;
     output.value = totalHours > 0 ? formatHoursWorked(totalHours) : "0h";
     updateShedStaffHours(output.value);
 }
@@ -959,25 +975,18 @@ function calculateHoursWorked() {
     updateLunchToggleButton();
    if (start) start.addEventListener("change", handleStartTimeChange);
     if (end) end.addEventListener("change", () => {
-        calculateHoursWorked();
         const startTime = document.getElementById("startTime").value;
         const finishTime = document.getElementById("finishTime").value;
-        const hoursWorkedInput = document.getElementById("hoursWorked");
-        
-        if (!startTime || !finishTime || !hoursWorkedInput) return;
+         if (!startTime || !finishTime) { calculateHoursWorked(); return; }
 
-      const breaks = getDynamicBreaks(startTime);
+        const breaks = getDynamicBreaks(startTime);
+        const workedMins = getWorkedBreakMinutes(finishTime, breaks);
 
-        if (isTimeWithinBreaks(finishTime, breaks)) {
-          const confirmWorkedThrough = confirm("Did you work through a break time?");
-          if (confirmWorkedThrough) {
-            const startDate = new Date("1970-01-01T" + startTime);
-            const endDate = new Date("1970-01-01T" + finishTime);
-            const workedMs = endDate - startDate;
-            const workedHours = workedMs / (1000 * 60 * 60);
-            hoursWorkedInput.value = formatHoursWorked(workedHours);
-            updateShedStaffHours(hoursWorkedInput.value);
-          }
+        if (workedMins > 0) {
+          const addTime = confirm("You worked into a break. Add paid time?");
+          calculateHoursWorked(addTime ? workedMins : 0);
+        } else {
+          calculateHoursWorked(); 
         }
      });
  if (hours) {
