@@ -224,6 +224,28 @@
 </div>
  
 <footer id="footer">Logged in as: <span id="userEmail">loading...</span></footer>
+
+<!-- Setup Modal -->
+<div id="setupModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>Setup Day</h3>
+    <label for="setupShearers"># Shearers:</label><br/>
+    <input id="setupShearers" type="number" min="0"/><br/><br/>
+    <label for="setupRuns"># Tally Rows:</label><br/>
+    <input id="setupRuns" type="number" min="0"/><br/><br/>
+    <label for="setupStaff"># Shed Staff:</label><br/>
+    <input id="setupStaff" type="number" min="0"/><br/><br/>
+    <label for="lunchLength">Lunch Break Length:</label>
+    <select id="lunchLength">
+      <option value="60">60 minutes</option>
+      <option value="45">45 minutes</option>
+    </select>
+    <div class="modal-buttons" style="margin-top:20px;">
+      <button id="setupConfirmBtn">Confirm</button>
+      <button id="setupCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
 <script>
 firebase.auth().onAuthStateChanged(function(user) {
   if (user) {

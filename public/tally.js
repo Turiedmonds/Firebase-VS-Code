@@ -32,6 +32,18 @@ function isDuringMorningBreak(timeStr) {
   return t >= breakStart && t <= breakEnd;
 }
 
+// Default lunch break length in minutes
+let lunchBreakDurationMinutes = 60;
+
+function isTimeWithinBreaks(timeStr, breaks) {
+  const time = new Date("1970-01-01T" + timeStr);
+  return breaks.some(([start, end]) => {
+    const bStart = new Date("1970-01-01T" + start);
+    const bEnd = new Date("1970-01-01T" + end);
+    return time >= bStart && time <= bEnd;
+  });
+}
+
  document.addEventListener("DOMContentLoaded", () => {
     const table = document.getElementById("tallyTable");
     if (table) {
@@ -397,6 +409,28 @@ function hideLoadSessionModal() {
     if (modal) modal.style.display = 'none';
 }
  
+function showSetupModal() {
+    const modal = document.getElementById('setupModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function hideSetupModal() {
+    const modal = document.getElementById('setupModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function confirmSetupModal() {
+    const shearers = Math.min(50, parseInt(document.getElementById('setupShearers').value, 10) || 0);
+    const counts = parseInt(document.getElementById('setupRuns').value, 10) || 0;
+    const staff = parseInt(document.getElementById('setupStaff').value, 10) || 0;
+    const lunchSelect = document.getElementById('lunchLength');
+    if (lunchSelect) {
+        lunchBreakDurationMinutes = parseInt(lunchSelect.value, 10);
+    }
+    hideSetupModal();
+    setupDailyLayout(shearers, counts, staff);
+}
+
  function adjustStandNameWidth(input) {
      const len = input.value.length || input.placeholder.length || 1;
      input.style.width = (len + 1) + 'ch';
@@ -836,16 +870,16 @@ function calculateHoursWorked() {
      let totalHours = (end - start) / (1000 * 60 * 60);
  
       const breaks = isNineHourDay ?
-         [
-             ["07:00", "08:00"],
-             ["09:45", "10:15"],
-             ["12:00", "13:00"],
-             ["14:45", "15:15"]
-         ] : [
-             ["09:00", "09:30"],
-             ["11:30", "12:30"],
-             ["14:30", "15:00"]
-         ];
+        [
+            ["07:00", "08:00"],
+            ["09:45", "10:15"],
+            ["12:00", "13:00"],
+            ["14:45", "15:15"]
+        ] : [
+            ["09:00", "09:30"],
+            ["11:30", lunchBreakDurationMinutes === 60 ? "12:30" : "12:15"],
+            ["14:30", "15:00"]
+        ];
  
      breaks.forEach(b => {
          const bStart = new Date("1970-01-01T" + b[0]);
@@ -889,27 +923,34 @@ function calculateHoursWorked() {
         const startTime = document.getElementById("startTime").value;
         const finishTime = document.getElementById("finishTime").value;
         const hoursWorkedInput = document.getElementById("hoursWorked");
-        const systemToggle = document.getElementById("timeSystemToggle");
-
+        
         if (!startTime || !finishTime || !hoursWorkedInput) return;
 
-        const diff = getTimeDiffInHours(startTime, finishTime);
+  const breaks = isNineHourDay
+          ? [
+              ["07:00", "08:00"],
+              ["09:45", "10:15"],
+              ["12:00", "13:00"],
+              ["14:45", "15:15"]
+            ]
+          : [
+              ["09:00", "09:30"],
+              ["11:30", lunchBreakDurationMinutes === 60 ? "12:30" : "12:15"],
+              ["14:30", "15:00"]
+            ];
 
-        const timeSystem = systemToggle && systemToggle.value ?
-            systemToggle.value : (isNineHourDay ? '9' : '8');
-
-        const minExpectedHours = timeSystem === '9' ? 6.5 : 5.5;
-
-         if (diff > 0 && diff < minExpectedHours && isDuringMorningBreak(finishTime)) {
-            const confirmWorkedThroughBreak = confirm(
-                `This day looks shorter than expected for a ${timeSystem}-hour system.\n\nDid you work through break(s)?\n\nClick OK to auto-fill hours worked as ${formatHoursWorked(diff)}.`
-            );
-            if (confirmWorkedThroughBreak) {
-                 hoursWorkedInput.value = formatHoursWorked(diff);
-                updateShedStaffHours(hoursWorkedInput.value);
-            }
+        if (isTimeWithinBreaks(finishTime, breaks)) {
+          const confirmWorkedThrough = confirm("Did you work through a break time?");
+          if (confirmWorkedThrough) {
+            const startDate = new Date("1970-01-01T" + startTime);
+            const endDate = new Date("1970-01-01T" + finishTime);
+            const workedMs = endDate - startDate;
+            const workedHours = workedMs / (1000 * 60 * 60);
+            hoursWorkedInput.value = formatHoursWorked(workedHours);
+            updateShedStaffHours(hoursWorkedInput.value);
+          }
         }
-    }); 
+     });
  if (hours) {
          hours.addEventListener("input", () => updateShedStaffHours(hours.value));
          updateShedStaffHours(hours.value);
@@ -1738,7 +1779,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateInput = document.getElementById('loadDateInput');
     const partialResetBtn = document.getElementById('partialResetBtn');
     const fullResetBtn = document.getElementById('fullResetBtn');
-   const stationNameInput = document.getElementById('stationName');
+     const setupConfirmBtn = document.getElementById('setupConfirmBtn');
+    const setupCancelBtn = document.getElementById('setupCancelBtn');
+    const stationNameInput = document.getElementById('stationName');
     if (!layoutBuilt && !getLastSession()) {
     window.awaitingSetupPrompt = true;
   }
@@ -1781,6 +1824,8 @@ const interceptReset = (full) => (e) => {
         document.getElementById('loadSessionStep1').style.display = 'block';
     });
     stationInput?.addEventListener('input', () => populateDateOptions(stationInput.value));
+     setupConfirmBtn?.addEventListener('click', confirmSetupModal);
+    setupCancelBtn?.addEventListener('click', hideSetupModal);
     confirmBtn?.addEventListener('click', () => {
         const station = stationInput.value.trim();
         const dateNZ = dateInput.value.trim();
@@ -1806,15 +1851,10 @@ function showSetupPrompt() {
     setupDailyLayout(shearers, counts, staff);
 }
 
-function showSetupModal() {
-    const shearers = Math.min(50, parseInt(prompt('How many shearers today?', '')) || 0);
-    const counts = parseInt(prompt('How many tally rows (runs) today?', '')) || 0;
-    const staff = parseInt(prompt('How many shed staff today?', '')) || 0;
-    setupDailyLayout(shearers, counts, staff);
-}
-
     window.showSetupPrompt = showSetupPrompt;
     window.showSetupModal = showSetupModal;
+    window.hideSetupModal = hideSetupModal;
+    window.confirmSetupModal = confirmSetupModal;
 });
  
  // Expose functions for inline handlers
