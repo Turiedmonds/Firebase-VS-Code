@@ -920,8 +920,10 @@ function calculateHoursWorked() {
 
     if (!startInput || !endInput || !output) return;
 
-    const start = new Date("1970-01-01T" + startInput.value);
-    const end = new Date("1970-01-01T" + endInput.value);
+     const startStr = startInput.value;
+    const endStr = endInput.value;
+    const start = new Date("1970-01-01T" + startStr);
+    const end = new Date("1970-01-01T" + endStr); 
 
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
         output.value = "";
@@ -931,39 +933,27 @@ function calculateHoursWorked() {
 
     let totalMinutes = (end - start) / 60000;
 
-    const breaks = isNineHourDay
-        ? [
-            { name: "Breakfast", start: "05:00", end: "06:00" },
-            { name: "Morning Smoko", start: "10:45", end: "11:15" },
-            { name: "Lunch", start: "13:00", end: "14:00" },
-            { name: "Afternoon Smoko", start: "15:45", end: "16:15" }
-          ]
-        : [
-            { name: "Morning Smoko", start: "09:00", end: "09:30" },
-            {
-              name: "Lunch",
-              start: "11:30",
-              end: lunchBreakDurationMinutes === 60 ? "12:30" : "12:15"
-            },
-            { name: "Afternoon Smoko", start: "14:30", end: "15:00" }
-          ];
+   const breakWindows = getDynamicBreaks(startStr);
+    const labels = isNineHourDay
+        ? ["Breakfast", "Morning Smoko", "Lunch", "Afternoon Smoko"]
+        : ["Morning Smoko", "Lunch", "Afternoon Smoko"];
 
-    breaks.forEach(brk => {
-        const bStart = new Date("1970-01-01T" + brk.start);
-        const bEnd = new Date("1970-01-01T" + brk.end);
+    breakWindows.forEach(([bStartStr, bEndStr], idx) => {
+        const bStart = new Date("1970-01-01T" + bStartStr);
         if (end > bStart && start < bEnd) {
             const overlapStart = start > bStart ? start : bStart;
             const overlapEnd = end < bEnd ? end : bEnd;
             const overlapMinutes = Math.round((overlapEnd - overlapStart) / 60000);
             totalMinutes -= overlapMinutes;
 
-            const finishInBreak = end > bStart && end <= bEnd;
-            if (finishInBreak && overlapMinutes > 0) {
+            if (end > bStart && end <= bEnd) {
+                const worked = Math.round((end - bStart) / 60000);
+                const label = labels[idx] || `Break ${idx + 1}`;
                 const addBack = confirm(
-                    `You worked into ${brk.name}. Add ${overlapMinutes} minutes as paid time?`
+                   `You worked into ${label}. Add ${worked} minutes as paid time?` 
                 );
                 if (addBack) {
-                    totalMinutes += overlapMinutes;
+                    totalMinutes += worked;
                 }
             }
         }
