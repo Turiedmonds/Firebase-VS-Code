@@ -945,8 +945,9 @@ function calculateHoursWorked() {
 
         if (end <= bStart || start >= bEnd) return;
 
-        if (end > bStart && end < bEnd) {
-            const worked = Math.round((end - bStart) / 60000);
+        if (end > bStart && end <= bEnd) {
+            const workedStart = start > bStart ? start : bStart;
+            const worked = Math.round((end - workedStart) / 60000);
             const label = labels[idx] || `Break ${idx + 1}`;
             console.log(`Finish within ${label}: worked ${worked} minutes`);
             if (!confirm(`You worked into ${label}. Add ${worked} minutes as paid time?`)) {
