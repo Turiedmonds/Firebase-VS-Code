@@ -1955,8 +1955,7 @@ const interceptReset = (full) => (e) => {
 
     const exportBtn = document.getElementById('exportFarmSummaryBtn');
     exportBtn?.addEventListener('click', () => {
-        const farmName = document.getElementById('stationName')?.value.trim() || 'FarmSummary';
-        exportTableToCSV('stationSummaryTable', `FarmSummary_${farmName}`);
+        exportFarmSummaryCSV();
     });
 
     document.addEventListener('focusin', (e) => {
