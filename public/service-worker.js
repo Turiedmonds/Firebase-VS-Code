@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sheariq-pwa-v2';
+const CACHE_NAME = 'sheariq-pwa-v3';
 const FILES_TO_CACHE = [
   'index.html',
   'login.html',
