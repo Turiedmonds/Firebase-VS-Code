@@ -34,51 +34,6 @@ export function exportFarmSummaryCSV() {
     ];
 
     const rows = [];
-    tables.forEach(([id, title], idx) => {
-        const table = document.getElementById(id);
-        if (!table) return;
-        rows.push([title]);
-        table.querySelectorAll('tr').forEach(tr => {
-            const cols = Array.from(tr.querySelectorAll('th,td'))
-                .map(td => td.textContent.trim());
-            rows.push(cols);
-        });
-        if (idx < tables.length - 1) {
-            rows.push([]);
-            rows.push([]);
-        }
-    });
-
-    const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(','))
-        .join('\r\n');
-
-    const farmName = document.getElementById('stationSelect')?.value.trim() || 'FarmSummary';
-    const date = new Date();
-    const formatted = date.toLocaleDateString('en-NZ').replace(/\//g, '-');
-    const fileName = `FarmSummary_${farmName}_${formatted}.csv`;
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-window.exportFarmSummaryCSV = exportFarmSummaryCSV;
-
-export function exportFarmSummaryCSV() {
-    const tables = [
-        ['stationShearerTable', 'Shearer Summary'],
-        ['stationStaffTable', 'Shed Staff'],
-        ['stationLeaderTable', 'Team Leaders'],
-        ['stationCombTable', 'Comb Types'],
-        ['stationTotalTable', 'Totals']
-    ];
-
-    const rows = [];
     const appendTable = (id, title) => {
         const table = document.getElementById(id);
         if (!table) return;
