@@ -1949,13 +1949,19 @@ const interceptReset = (full) => (e) => {
         const session = getStoredSessions().find(s =>
             s.stationName.trim().toLowerCase() === station.toLowerCase() && s.date === iso);
         if (!session) { alert('Session not found'); return; }
-        hideLoadSessionModal();
-      startSessionLoader(session);   
+    hideLoadSessionModal();
+      startSessionLoader(session);
+    });
+
+    const exportBtn = document.getElementById('exportFarmSummaryBtn');
+    exportBtn?.addEventListener('click', () => {
+        const farmName = document.getElementById('stationName')?.value.trim() || 'FarmSummary';
+        exportTableToCSV('stationSummaryTable', `FarmSummary_${farmName}`);
     });
 
     document.addEventListener('focusin', (e) => {
         if (sessionLocked && e.target.matches('#tallySheetView input, #tallySheetView select')) {
-           promptForPinUnlock(); 
+           promptForPinUnlock();
         }
     });
 
