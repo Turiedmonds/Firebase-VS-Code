@@ -1,5 +1,29 @@
 import { collectExportData, buildExportRows, buildStationSummary, isNineHourDay, formatHoursWorked, parseHoursWorked } from './tally.js';
 
+export function exportTableToCSV(tableId, baseName = 'table') {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const rows = Array.from(table.querySelectorAll('tr')).map(tr =>
+        Array.from(tr.querySelectorAll('th,td'))
+            .map(td => `"${td.textContent.replace(/"/g, '""')}"`)
+            .join(',')
+    );
+    const date = new Date();
+    const formatted = date.toLocaleDateString('en-NZ').replace(/\//g, '-');
+    const csv = rows.join('\r\n');
+    const fileName = `${baseName}_${formatted}.csv`;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+window.exportTableToCSV = exportTableToCSV;
+
 export function exportDailySummaryCSV() {
     const data = collectExportData();
 
