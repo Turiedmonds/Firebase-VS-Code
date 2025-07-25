@@ -1844,11 +1844,12 @@ function startSessionLoader(session) {
     const today = new Date().toLocaleDateString("en-NZ");
     const current = collectExportData();
     if (current && formatDateNZ(current.date) === today) {
-       if (!localStorage.getItem("session_today_backup")) {
+        if (!localStorage.getItem("session_today_backup")) {
             current.meta = current.meta || {};
             current.meta.date = today;
+            delete current.viewOnly; // ensure today's backup isn't locked
             localStorage.setItem("session_today_backup", JSON.stringify(current));
-        } 
+        }
     }
     confirmUnsavedChanges(() => {
         const summary = `Station: ${session.stationName}\nDate: ${formatDateNZ(session.date)}\nTeam Leader: ${session.teamLeader || ''}\n\nDo you want to load this session?`;
@@ -1867,6 +1868,7 @@ function restoreTodaySession() {
 
   try {
     const session = JSON.parse(backup);
+    delete session.viewOnly; // ensure restored session is editable
     const summary = `Return to today\u2019s session?\n\nStation: ${session.stationName}\nDate: ${formatDateNZ(session.date)}\nTeam Leader: ${session.teamLeader || ''}`;
     if (!confirm(summary)) return;
 
