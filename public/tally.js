@@ -32,6 +32,8 @@ function updateLunchToggleButton() {
    if (btn) btn.textContent = 'Lunch Break';
 }
 
+let lunchIndicatorYellow = false;
+
 function updateLunchIndicatorText() {
   const text = lunchBreakDurationMinutes === 60
     ? "Lunch Break: 1 hour"
@@ -39,7 +41,7 @@ function updateLunchIndicatorText() {
   const el = document.getElementById("lunchIndicator");
   if (el) {
     el.textContent = text;
-    el.style.color = isNineHourDay ? '#ff0' : '#0f0';
+    el.style.color = lunchIndicatorYellow ? '#ff0' : '#0f0';
   } 
 }
 
@@ -687,10 +689,6 @@ function confirmSetupModal() {
          label.textContent = isNineHourDay ? 'Time System: 9-Hour Day' : 'Time System: 8-Hour Day';
          label.style.color = isNineHourDay ? '#ff0' : '#0f0';
      }
-     const lunchIndicator = document.getElementById('lunchIndicator');
-     if (lunchIndicator) {
-         lunchIndicator.style.color = isNineHourDay ? '#ff0' : '#0f0';
-     }
      const hours = document.getElementById('hoursWorked');
     if (hours) updateShedStaffHours(hours.value);
     if (isNineHourDay && lunchBreakDurationMinutes !== 60) {
@@ -1002,6 +1000,10 @@ function calculateHoursWorked() {
         lunchBreakDurationMinutes = lunchBreakDurationMinutes === 60 ? 45 : 60;
         updateLunchIndicatorText();
         alert(`✅ Lunch break set to ${lunchBreakDurationMinutes === 60 ? '1 hour' : '45 minutes'}`);
+      });
+      lunchIndicator.addEventListener('click', () => {
+        lunchIndicatorYellow = !lunchIndicatorYellow;
+        lunchIndicator.style.color = lunchIndicatorYellow ? '#ff0' : '#0f0';
       });
 
       // Set initial display
