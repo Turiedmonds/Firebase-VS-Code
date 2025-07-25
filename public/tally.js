@@ -1402,16 +1402,19 @@ function saveData() {
 
 // Determine sheep age/sex category from a type name
 export function detectSheepCategory(sheepTypeName) {
-    const name = (sheepTypeName || "").toLowerCase().trim();
-    const words = name.split(/[^a-z]+/).filter(Boolean);
-    const hasWord = w => words.includes(w);
-    const escapeReg = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const hasPhrase = phrase => new RegExp(`\\b${escapeReg(phrase)}\\b`).test(name);
-    if (hasWord('ewe') && !hasWord('lamb')) return 'adult-female';
-    if (hasWord('ewe') && hasWord('lamb')) return 'lamb-female';
-    if (hasWord('ram') && hasWord('lamb')) return 'lamb-male';
-    if (hasWord('wether') || hasWord('mixed') || hasPhrase('long tail')) return 'lamb-wether';
-    if (hasWord('ram') && !hasWord('lamb')) return 'adult-male';
+   const name = (sheepTypeName || "").toLowerCase().trim();
+    const ewe = /\bewes?\b/.test(name);
+    const ram = /\brams?\b/.test(name);
+    const lamb = /\blambs?\b/.test(name);
+    const wether = /\bwethers?\b/.test(name);
+    const mixed = /\bmixed\b/.test(name);
+    const longTail = /\blong tail\b/.test(name);
+
+    if (ewe && !lamb) return 'adult-female';
+    if (ewe && lamb) return 'lamb-female';
+    if (ram && lamb) return 'lamb-male';
+    if (wether || mixed || longTail) return 'lamb-wether';
+    if (ram && !lamb) return 'adult-male';
     return 'unknown';
 }
  
