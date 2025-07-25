@@ -1960,3 +1960,4 @@ const body = document.getElementById('tallyBody');
 }
 
 window.rebuildRowsFromSession = rebuildRowsFromSession;
+window.resetTallySheet = resetTallySheet;

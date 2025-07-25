@@ -343,17 +343,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (e) e.value = '';
     });
 
-    // ✅ FULL layout clear: remove all rows and columns
-    document.getElementById('headerRow').innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
-    document.getElementById('tallyBody').innerHTML = '';
-    document.getElementById('subtotalRow').innerHTML = '<th>Shearer Totals</th>';
-    document.getElementById('shedStaffTable').innerHTML = '';
-
-    // ✅ Reset all counters
-    numStands = 0;
-    runs = 0;
-    layoutBuilt = false;
-
+    if (window.resetTallySheet) window.resetTallySheet(); 
     window.awaitingSetupPrompt = true;
   }
 
