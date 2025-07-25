@@ -16,6 +16,20 @@ export function parseHoursWorked(str) {
   return hours + minutes / 60;
 }
 
+// Detect simple age category keywords within a sheep type name
+// Returns "lamb", "adult" or "unknown"
+function detectAgeCategory(sheepTypeName) {
+  const name = String(sheepTypeName || '').toLowerCase();
+  if (name.includes('lamb')) return 'lamb';
+  const adultTerms = ['ram', 'ewe', 'wether', 'full wool', 'stud', 'shear'];
+  for (const term of adultTerms) {
+    if (name.includes(term)) return 'adult';
+  }
+  return 'unknown';
+}
+
+
+
 // Helper to calculate hour difference between two HH:MM strings
 function getTimeDiffInHours(startStr, endStr) {
   const start = new Date(`1970-01-01T${startStr}`);
@@ -1384,7 +1398,20 @@ function saveData() {
      });
  
      return { shearerData, staffData, leaders, combs, totalByType, grandTotal };
- }
+}
+
+// Determine sheep age/sex category from a type name
+export function detectSheepCategory(sheepTypeName) {
+    const name = (sheepTypeName || '').toLowerCase();
+    const has = term => name.includes(term);
+
+    if (has('ewe') && !has('lamb')) return 'adult-female';
+    if (has('ewe') && has('lamb')) return 'lamb-female';
+    if (has('ram') && has('lamb')) return 'lamb-male';
+    if (has('wether') || has('mixed') || name.includes('long tail')) return 'lamb-wether';
+    if (has('ram') && !has('lamb')) return 'adult-male';
+    return 'unknown';
+}
  
  export function buildStationSummary() {
      const stationInput = document.getElementById('stationSelect');
@@ -1419,9 +1446,32 @@ function saveData() {
      if (msg) msg.style.display = sessions.length ? 'none' : 'block';
      const { shearerData, staffData, leaders, combs, totalByType, grandTotal } = aggregateStationData(sessions);
  
-     const optionOrder = Array.from(document.querySelectorAll('#sheepTypes option')).map(o => o.value);
-     const activeTypes = optionOrder.filter(t => totalByType[t] > 0);
-     Object.keys(totalByType).forEach(t => { if (!activeTypes.includes(t)) activeTypes.push(t); });
+     const adultFemales = [];
+    const lambFemales = [];
+    const lambMales = [];
+    const lambWethers = [];
+    const adultMales = [];
+    const unknowns = [];
+
+    Object.keys(totalByType).forEach(t => {
+        if (totalByType[t] <= 0) return;
+        switch (detectSheepCategory(t)) {
+            case 'adult-female':
+                adultFemales.push(t); break;
+            case 'lamb-female':
+                lambFemales.push(t); break;
+            case 'lamb-male':
+                lambMales.push(t); break;
+            case 'lamb-wether':
+                lambWethers.push(t); break;
+            case 'adult-male':
+                adultMales.push(t); break;
+            default:
+                unknowns.push(t); break;
+        }
+    });
+
+    const activeTypes = [].concat(adultFemales, lambFemales, lambMales, lambWethers, adultMales, unknowns);
  
       const shearHead = document.querySelector('#stationShearerTable thead tr');
     const shearBody = document.querySelector('#stationShearerTable tbody');
@@ -1432,10 +1482,11 @@ function saveData() {
         shearHead.appendChild(sTh);
         activeTypes.forEach(t => {
             const th = document.createElement('th');
-             const label = (t === '❓ Missing Type')
+            const label = (t === '❓ Missing Type')
                 ? `<span class="missing-type">${t}</span>`
                 : t;
-            th.innerHTML = label;
+           const age = detectAgeCategory(t);
+            th.innerHTML = `<span title="Age: ${age}">${label}</span>`;
             shearHead.appendChild(th);
         });
         const totTh = document.createElement('th');
@@ -1525,13 +1576,14 @@ function saveData() {
      if (totalHead && totalBody) {
         totalHead.innerHTML = '';
          activeTypes.forEach(t=>{
-             const th = document.createElement('th');
-             const label = (t === '❓ Missing Type')
-                 ? `<span class="missing-type">${t}</span>`
-                 : t;
-             th.innerHTML = label;
-             totalHead.appendChild(th);
-         });
+            const th = document.createElement('th');
+            const label = (t === '❓ Missing Type')
+                ? `<span class="missing-type">${t}</span>`
+                : t;
+            const age = detectAgeCategory(t);
+            th.innerHTML = `<span title="Age: ${age}">${label}</span>`;
+            totalHead.appendChild(th);
+        });
          const grandTh = document.createElement('th');
          grandTh.textContent = 'Grand Total';
          totalHead.appendChild(grandTh);
