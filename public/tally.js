@@ -1001,10 +1001,12 @@ function calculateHoursWorked() {
         updateLunchIndicatorText();
         alert(`✅ Lunch break set to ${lunchBreakDurationMinutes === 60 ? '1 hour' : '45 minutes'}`);
       });
-      lunchIndicator.addEventListener('click', () => {
-        lunchIndicatorYellow = !lunchIndicatorYellow;
-        lunchIndicator.style.color = lunchIndicatorYellow ? '#ff0' : '#0f0';
-      });
+      ['click', 'touchstart'].forEach(evt =>
+        lunchIndicator.addEventListener(evt, () => {
+          lunchIndicatorYellow = !lunchIndicatorYellow;
+          lunchIndicator.style.color = lunchIndicatorYellow ? '#ff0' : '#0f0';
+        })
+      );
 
       // Set initial display
       updateLunchIndicatorText();
