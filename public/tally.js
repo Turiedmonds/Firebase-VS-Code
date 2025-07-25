@@ -37,7 +37,10 @@ function updateLunchIndicatorText() {
     ? "Lunch Break: 1 hour"
     : "Lunch Break: 45 min";
   const el = document.getElementById("lunchIndicator");
-  if (el) el.textContent = text; 
+  if (el) {
+    el.textContent = text;
+    el.style.color = isNineHourDay ? '#ff0' : '#0f0';
+  } 
 }
 
 function toggleLunchBreak() {
@@ -679,10 +682,14 @@ function confirmSetupModal() {
     isNineHourDay = nineHour;
     adjustRuns(isNineHourDay ? 5 : 4);
     calculateHoursWorked();
-      const label = document.getElementById('timeSystemLabel');
+     const label = document.getElementById('timeSystemLabel');
      if (label) {
          label.textContent = isNineHourDay ? 'Time System: 9-Hour Day' : 'Time System: 8-Hour Day';
          label.style.color = isNineHourDay ? '#ff0' : '#0f0';
+     }
+     const lunchIndicator = document.getElementById('lunchIndicator');
+     if (lunchIndicator) {
+         lunchIndicator.style.color = isNineHourDay ? '#ff0' : '#0f0';
      }
      const hours = document.getElementById('hoursWorked');
     if (hours) updateShedStaffHours(hours.value);
