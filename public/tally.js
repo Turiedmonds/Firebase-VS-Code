@@ -1403,19 +1403,20 @@ function saveData() {
 // Determine sheep age/sex category from a type name
 export function detectSheepCategory(sheepTypeName) {
    const name = (sheepTypeName || "").toLowerCase().trim();
-    const ewe = /\bewes?\b/.test(name);
-    const ram = /\brams?\b/.test(name);
-    const lamb = /\blambs?\b/.test(name);
-    const wether = /\bwethers?\b/.test(name);
-    const mixed = /\bmixed\b/.test(name);
-    const longTail = /\blong tail\b/.test(name);
+  const ewe = /\bewes?\b/.test(name);
+  const ram = /\brams?\b/.test(name);
+  const lamb = /\blambs?\b/.test(name);
+  const wether = /\bwethers?\b/.test(name);
+  const mixed = /\bmixed\b/.test(name);
+  const longTail = /\blong tail\b/.test(name);
 
-    if (ewe && !lamb) return 'adult-female';
-    if (ewe && lamb) return 'lamb-female';
-    if (ram && lamb) return 'lamb-male';
-    if (wether || mixed || longTail) return 'lamb-wether';
-    if (ram && !lamb) return 'adult-male';
-    return 'unknown';
+  if (ewe && !lamb) return 'adult-female';
+  if (ewe && lamb) return 'lamb-female';
+  if (ram && lamb) return 'lamb-male';
+  if ((wether && lamb) || mixed || longTail) return 'lamb-wether';
+  if (wether && !lamb) return 'adult-male';
+  if (ram && !lamb) return 'adult-male';
+  return 'unknown';
 }
  
  export function buildStationSummary() {
