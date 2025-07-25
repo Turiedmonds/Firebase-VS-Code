@@ -479,7 +479,7 @@ function hideSetupModal() {
 }
 
 function confirmSetupModal() {
-    const shearers = Math.min(50, parseInt(document.getElementById('setupShearers').value, 10) || 0);
+    const shearers = parseInt(document.getElementById('setupShearers').value, 10) || 0;
     const counts = parseInt(document.getElementById('setupRuns').value, 10) || 0;
     const staff = parseInt(document.getElementById('setupStaff').value, 10) || 0;
     const lunchSelect = document.getElementById('lunchLength');
@@ -1902,7 +1902,7 @@ const interceptReset = (full) => (e) => {
     });
 
 function showSetupPrompt() {
-     const shearers = Math.min(50, parseInt(prompt('How many shearers today?', '')) || 0);
+    const shearers = parseInt(prompt('How many shearers today?', '')) || 0; 
     const counts = parseInt(prompt('How many tally rows (runs) today?', '')) || 0;
     const staff = parseInt(prompt('How many shed staff today?', '')) || 0;
     setupDailyLayout(shearers, counts, staff);

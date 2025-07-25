@@ -232,11 +232,11 @@
   <div class="modal-box">
     <h3>Setup Day</h3>
     <label for="setupShearers"># Shearers:</label><br/>
-    <input id="setupShearers" type="number" min="0"/><br/><br/>
+   <select id="setupShearers"></select><br/><br/>
     <label for="setupRuns"># Tally Rows:</label><br/>
-    <input id="setupRuns" type="number" min="0"/><br/><br/>
+    <select id="setupRuns"></select><br/><br/>
     <label for="setupStaff"># Shed Staff:</label><br/>
-    <input id="setupStaff" type="number" min="0"/><br/><br/>
+    <select id="setupStaff"></select><br/><br/>
     <label for="lunchLength">Lunch Break Length:</label>
     <select id="lunchLength">
       <option value="60">60 minutes</option>
@@ -255,6 +255,18 @@ firebase.auth().onAuthStateChanged(function(user) {
   } else {
     document.getElementById("userEmail").textContent = "Not logged in";
   }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  ['setupShearers', 'setupRuns', 'setupStaff'].forEach(function(id) {
+    var select = document.getElementById(id);
+    if (!select) return;
+    var opts = '<option value=""></option>';
+    for (var i = 1; i <= 100; i++) {
+      opts += '<option value="' + i + '">' + i + '</option>';
+    }
+    select.innerHTML = opts;
+  });
 });
 </script>
 <!-- Reset Confirmation Modal -->
