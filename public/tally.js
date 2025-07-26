@@ -139,6 +139,36 @@ export let isNineHourDay = false;
 let promptedNineHour = false;
 let layoutBuilt = false
 
+// === Autosave state ===
+let autosaveTimer = null;
+let lastSavedJson = '';
+let lastLocalSave = 0;
+let lastCloudSave = 0;
+
+function scheduleAutosave() {
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+        const data = collectExportData();
+        const json = JSON.stringify(data);
+        if (json === lastSavedJson) return;
+        const now = Date.now();
+        let saved = false;
+        if (now - lastLocalSave >= 10000) {
+            performSave(true, false);
+            lastLocalSave = now;
+            saved = true;
+        }
+        if (now - lastCloudSave >= 10000) {
+            saveSessionToFirestore();
+            lastCloudSave = now;
+            saved = true;
+        }
+        if (saved) {
+            lastSavedJson = json;
+        }
+    }, 3000);
+}
+
  // Dynamic sheep type list will be saved to localStorage under 'sheep_types'
  function getSheepTypes() {
      try {
@@ -2140,6 +2170,17 @@ const interceptReset = (full) => (e) => {
     document.addEventListener('focusin', (e) => {
         if (sessionLocked && e.target.matches('#tallySheetView input, #tallySheetView select')) {
            promptForPinUnlock();
+        }
+    });
+
+    document.addEventListener('input', (e) => {
+        if (e.target.matches('input, textarea')) {
+            scheduleAutosave();
+        }
+    });
+    document.addEventListener('change', (e) => {
+        if (e.target.matches('select')) {
+            scheduleAutosave();
         }
     });
 
