@@ -1765,6 +1765,7 @@ export async function saveSessionToFirestore() {
             });
 
         console.log('✅ Session saved to Firestore:', id);
+        alert('✅ Session saved to the cloud!');
     } catch (err) {
         console.error('❌ Failed to save session to Firestore:', err);
     }
