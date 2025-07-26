@@ -1621,7 +1621,7 @@ export function clearStationSummaryView() {
     if (msg) msg.style.display = 'block';
 }
 
- export function collectExportData() {
+export function collectExportData() {
      const data = {
          date: document.getElementById('date')?.value || '',
          stationName: document.getElementById('stationName')?.value || '',
@@ -1736,6 +1736,38 @@ export function clearStationSummaryView() {
    data.sheepTypeTotals.forEach(t => add([t.type, t.total]));
 
     return { rows, boldRows };
+}
+
+// Save the current session to Firestore under
+// contractors/ruapehu_shearing/sessions/[stationName_date_teamLeader]
+export async function saveSessionToFirestore() {
+    if (typeof firebase === 'undefined' ||
+        !firebase.firestore ||
+        !firebase.auth ||
+        !firebase.auth().currentUser) {
+        return; // Firebase not ready or user not signed in
+    }
+
+    try {
+        const data = collectExportData();
+        const station = (data.stationName || '').trim().replace(/\s+/g, '_');
+        const leader = (data.teamLeader || '').trim().replace(/\s+/g, '_');
+        const id = `${station}_${data.date}_${leader}`;
+
+        await firebase.firestore()
+            .collection('contractors')
+            .doc('ruapehu_shearing')
+            .collection('sessions')
+            .doc(id)
+            .set({
+                ...data,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+        console.log('✅ Session saved to Firestore:', id);
+    } catch (err) {
+        console.error('❌ Failed to save session to Firestore:', err);
+    }
 }
 
 function confirmUnsavedChanges(next) {
@@ -1993,6 +2025,7 @@ window.saveData = saveData;
 window.showLoadSessionModal = showLoadSessionModal;
 window.enforceSessionLock = enforceSessionLock;
 window.restoreTodaySession = restoreTodaySession;
+window.saveSessionToFirestore = saveSessionToFirestore;
 
 
 // === Rebuild tally rows from saved session data ===
