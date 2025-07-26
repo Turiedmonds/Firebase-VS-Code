@@ -175,7 +175,7 @@ function scheduleAutosave() {
         const now = Date.now();
         let saved = false;
         if (now - lastLocalSave >= 10000) {
-            performSave(true, false);
+            saveData(false);
             lastLocalSave = now;
             saved = true;
         }
@@ -1225,8 +1225,9 @@ function cleanUpEmptyRowsAndColumns() {
 }
  
 let saveCallback = null;
+let manualSave = false;
 
-function performSave(saveLocal, saveCloud) {
+function performSave(saveLocal, saveCloud, manual) {
     cleanUpEmptyRowsAndColumns();
     clearHighlights();
     const issues = [];
@@ -1284,8 +1285,9 @@ function performSave(saveLocal, saveCloud) {
         const json = JSON.stringify(data, null, 2);
         localStorage.setItem('sheariq_saved_session', json);
         saveSessionToStorage(data);
-        alert('Session saved successfully to local storage.');
-        showAutosaveStatus('\ud83d\udcbe Saved locally');
+        if (manual) {
+            alert('Session saved successfully to local storage.');
+        }
     }
 
     if (saveCloud) {
@@ -1293,23 +1295,32 @@ function performSave(saveLocal, saveCloud) {
     }
 }
 
-function saveData(callback) {
+function saveData(manual = false, callback) {
+    manualSave = manual;
     saveCallback = typeof callback === 'function' ? callback : null;
     const modal = document.getElementById('saveOptionsModal');
-    if (modal) modal.style.display = 'flex';
+    if (manual) {
+        if (modal) modal.style.display = 'flex';
+    } else {
+        performSave(true, false, false);
+    }
 }
 
 function handleSaveOption(option) {
     const modal = document.getElementById('saveOptionsModal');
     const saveLocal = option === 'local' || option === 'both';
     const saveCloud = option === 'cloud' || option === 'both';
-    performSave(saveLocal, saveCloud);
+    performSave(saveLocal, saveCloud, manualSave);
+    if (manualSave) {
+        showAutosaveStatus('\ud83d\udcbe Saved locally');
+    }
     if (modal) modal.style.display = 'none';
     if (typeof saveCallback === 'function') {
         const cb = saveCallback;
         saveCallback = null;
         cb();
     }
+    manualSave = false;
 }
  
  function showView(id) {
@@ -1953,7 +1964,7 @@ function confirmUnsavedChanges(next) {
             discardBtn.removeEventListener('click', onDiscard);
             cancelBtn.removeEventListener('click', onCancel);
         };
-        const onSave = () => { cleanup(); saveData(next); };
+        const onSave = () => { cleanup(); saveData(true, next); };
         const onDiscard = () => { cleanup(); next(); };
         const onCancel = () => { cleanup(); };
         saveBtn.addEventListener('click', onSave);
@@ -1961,7 +1972,7 @@ function confirmUnsavedChanges(next) {
         cancelBtn.addEventListener('click', onCancel);
     } else {
         if (confirm('You have unsaved work. Save before loading?')) {
-            saveData(next);
+            saveData(true, next);
         } else if (confirm('Continue without saving?')) {
             next();
         }
@@ -1991,7 +2002,7 @@ function confirmSaveReset(full) {
             discardBtn.removeEventListener('click', onDiscard);
             cancelBtn.removeEventListener('click', onCancel);
         };
-        const onSave = () => { cleanup(); saveData(() => { if (typeof performReset === 'function') performReset(full); }); };
+        const onSave = () => { cleanup(); saveData(true, () => { if (typeof performReset === 'function') performReset(full); }); };
         const onDiscard = () => { cleanup(); if (typeof performReset === 'function') performReset(full); };
         const onCancel = () => { cleanup(); };
         saveBtn.addEventListener('click', onSave);
@@ -2000,7 +2011,7 @@ function confirmSaveReset(full) {
     } else {
         const save = confirm('Do you want to save the current session before resetting?');
         if (save) {
-            saveData(() => { if (typeof performReset === 'function') performReset(full); });
+            saveData(true, () => { if (typeof performReset === 'function') performReset(full); });
         } else if (confirm('Reset without saving?')) {
             if (typeof performReset === 'function') performReset(full);
         }
