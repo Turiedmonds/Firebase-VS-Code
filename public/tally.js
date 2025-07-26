@@ -1872,7 +1872,7 @@ export function collectExportData() {
 }
 
 // Save the current session to Firestore under
-// contractors/ruapehu_shearing/sessions/[stationName_date_teamLeader]
+// contractors/{contractorId}/sessions/[stationName_date_teamLeader]
 export async function saveSessionToFirestore(showStatus = false) {
     if (typeof firebase === 'undefined' ||
         !firebase.firestore ||
@@ -1916,15 +1916,21 @@ export async function saveSessionToFirestore(showStatus = false) {
 export async function listSessionsFromFirestore() {
     if (typeof firebase === 'undefined' ||
         !firebase.firestore ||
-        !firebase.auth ||
-        !firebase.auth().currentUser) {
+        !firebase.auth) {
+        return [];
+    }
+
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser) {
+        alert('You must be signed in to load sessions from the cloud.');
         return [];
     }
 
     try {
+        const contractorId = currentUser.uid;
         const snap = await firebase.firestore()
             .collection('contractors')
-            .doc('ruapehu_shearing')
+            .doc(contractorId)
             .collection('sessions')
             .get();
 
@@ -1946,14 +1952,21 @@ export async function listSessionsFromFirestore() {
 // Fetch a specific session document by ID
 export async function loadSessionFromFirestore(id) {
     if (!id || typeof firebase === 'undefined' ||
-        !firebase.firestore || !firebase.auth || !firebase.auth().currentUser) {
+        !firebase.firestore || !firebase.auth) {
+        return null;
+    }
+
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser) {
+        alert('You must be signed in to load sessions from the cloud.');
         return null;
     }
 
     try {
+        const contractorId = currentUser.uid;
         const docSnap = await firebase.firestore()
             .collection('contractors')
-            .doc('ruapehu_shearing')
+            .doc(contractorId)
             .collection('sessions')
             .doc(id)
             .get();
