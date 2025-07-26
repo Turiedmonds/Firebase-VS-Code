@@ -492,6 +492,30 @@ function hideLoadOptionsModal() {
     if (modal) modal.style.display = 'none';
 }
 
+function showCloudSessionModal() {
+    const modal = document.getElementById('cloudSessionModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function hideCloudSessionModal() {
+    const modal = document.getElementById('cloudSessionModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function populateCloudSessionDropdown(list) {
+    const select = document.getElementById('cloudSessionSelect');
+    if (!select) return;
+    select.innerHTML = '';
+    list.forEach(item => {
+        const opt = document.createElement('option');
+        const date = formatDateNZ(item.date);
+        const leader = item.teamLeader ? ` - ${item.teamLeader}` : '';
+        opt.value = item.id;
+        opt.textContent = `${date} - ${item.stationName}${leader}`;
+        select.appendChild(opt);
+    });
+}
+
 function showSetupModal() {
     const modal = document.getElementById('setupModal');
     if (modal) modal.style.display = 'flex';
@@ -1807,6 +1831,58 @@ export async function saveSessionToFirestore() {
     }
 }
 
+// Fetch list of all sessions for this contractor from Firestore
+export async function listSessionsFromFirestore() {
+    if (typeof firebase === 'undefined' ||
+        !firebase.firestore ||
+        !firebase.auth ||
+        !firebase.auth().currentUser) {
+        return [];
+    }
+
+    try {
+        const snap = await firebase.firestore()
+            .collection('contractors')
+            .doc('ruapehu_shearing')
+            .collection('sessions')
+            .get();
+
+        return snap.docs.map(doc => {
+            const d = doc.data() || {};
+            return {
+                id: doc.id,
+                stationName: d.stationName,
+                date: d.date,
+                teamLeader: d.teamLeader
+            };
+        });
+    } catch (err) {
+        console.error('❌ Failed to list sessions from Firestore:', err);
+        return [];
+    }
+}
+
+// Fetch a specific session document by ID
+export async function loadSessionFromFirestore(id) {
+    if (!id || typeof firebase === 'undefined' ||
+        !firebase.firestore || !firebase.auth || !firebase.auth().currentUser) {
+        return null;
+    }
+
+    try {
+        const docSnap = await firebase.firestore()
+            .collection('contractors')
+            .doc('ruapehu_shearing')
+            .collection('sessions')
+            .doc(id)
+            .get();
+        return docSnap.exists ? docSnap.data() : null;
+    } catch (err) {
+        console.error('❌ Failed to load session from Firestore:', err);
+        return null;
+    }
+}
+
 function confirmUnsavedChanges(next) {
     if (!hasUnsavedChanges()) { next(); return; }
     const modal = document.getElementById('unsavedModal');
@@ -1971,6 +2047,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveBothBtn = document.getElementById('saveBothBtn');
     const loadLocalBtn = document.getElementById('loadLocalBtn');
     const loadCloudBtn = document.getElementById('loadCloudBtn');
+    const cloudSelect = document.getElementById('cloudSessionSelect');
+    const cloudConfirmBtn = document.getElementById('loadCloudConfirmBtn');
+    const cloudCancelBtn = document.getElementById('cancelCloudLoadBtn');
     if (!layoutBuilt && !getLastSession()) {
     window.awaitingSetupPrompt = true;
   }
@@ -1998,9 +2077,23 @@ const interceptReset = (full) => (e) => {
         hideLoadOptionsModal();
         showLoadSessionModal();
     });
-    loadCloudBtn?.addEventListener('click', () => {
+    loadCloudBtn?.addEventListener('click', async () => {
         hideLoadOptionsModal();
-        alert('Cloud loading coming soon.');
+        const sessions = await listSessionsFromFirestore();
+        populateCloudSessionDropdown(sessions);
+        showCloudSessionModal();
+    });
+    cloudCancelBtn?.addEventListener('click', hideCloudSessionModal);
+    cloudConfirmBtn?.addEventListener('click', async () => {
+        const id = cloudSelect?.value;
+        if (!id) { alert('Please select a session'); return; }
+        hideCloudSessionModal();
+        const session = await loadSessionFromFirestore(id);
+        if (session) {
+            startSessionLoader(session);
+        } else {
+            alert('Failed to load session from cloud.');
+        }
     });
     cancelBtn?.addEventListener('click', hideLoadSessionModal);
     lastBtn?.addEventListener('click', () => {
@@ -2078,6 +2171,8 @@ window.showLoadSessionModal = showLoadSessionModal;
 window.enforceSessionLock = enforceSessionLock;
 window.restoreTodaySession = restoreTodaySession;
 window.saveSessionToFirestore = saveSessionToFirestore;
+window.listSessionsFromFirestore = listSessionsFromFirestore;
+window.loadSessionFromFirestore = loadSessionFromFirestore;
 
 
 // === Rebuild tally rows from saved session data ===
