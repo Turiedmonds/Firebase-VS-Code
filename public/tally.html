@@ -393,6 +393,18 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<!-- Save Options Modal -->
+<div id="saveOptionsModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>Save Session</h3>
+    <div class="modal-buttons">
+      <button id="saveLocalBtn">📁 Save to Device</button>
+      <button id="saveCloudBtn">☁️ Save to Cloud</button>
+      <button id="saveBothBtn">🔄 Save to Both</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { buildStationSummary, clearStationSummaryView } from './tally.js';
 window.clearStationSummaryView = clearStationSummaryView;
