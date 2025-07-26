@@ -138,6 +138,7 @@ let is24HourFormat = true;
 export let isNineHourDay = false;
 let promptedNineHour = false;
 let layoutBuilt = false
+let isSetupComplete = false;
 
 // === Autosave state ===
 let autosaveTimer = null;
@@ -336,6 +337,7 @@ function setupDailyLayout(shearers, counts, staff) {
 
         updateTotals();
         layoutBuilt = true;
+        isSetupComplete = true;
         showView('tallySheetView');
 
         const stationName = document.getElementById('stationName')?.value.trim();
@@ -1228,7 +1230,9 @@ let saveCallback = null;
 let manualSave = false;
 
 function performSave(saveLocal, saveCloud, manual) {
-    cleanUpEmptyRowsAndColumns();
+    if (isSetupComplete || manual) {
+        cleanUpEmptyRowsAndColumns();
+    }
     clearHighlights();
     const issues = [];
      const tbody = document.getElementById('tallyBody');
@@ -2035,6 +2039,7 @@ function resetTallySheet() {
     numStands = 0;
     runs = 0;
     layoutBuilt = false;
+    isSetupComplete = false;
 }
 
 function loadSessionObject(session) {
