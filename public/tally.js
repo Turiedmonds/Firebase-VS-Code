@@ -147,6 +147,14 @@ let lastCloudSave = 0;
 
 let autosaveHideTimer = null;
 
+function updateAutosaveIndicator() {
+    const el = document.getElementById('autosaveInfo');
+    if (!el) return;
+    const time = new Date().toLocaleTimeString();
+    el.innerText = `Autosaved ${time}`;
+    el.style.display = 'block';
+}
+
 function showAutosaveStatus(message) {
     const el = document.getElementById('autosaveStatus');
     if (!el) return;
@@ -170,15 +178,15 @@ function scheduleAutosave() {
             performSave(true, false);
             lastLocalSave = now;
             saved = true;
-            showAutosaveStatus("\ud83d\udcbe Autosaved locally");
         }
         if (now - lastCloudSave >= 10000) {
-            saveSessionToFirestore();
+            saveSessionToFirestore(false);
             lastCloudSave = now;
             saved = true;
         }
         if (saved) {
             lastSavedJson = json;
+            updateAutosaveIndicator();
         }
     }, 3000);
 }
@@ -1277,10 +1285,11 @@ function performSave(saveLocal, saveCloud) {
         localStorage.setItem('sheariq_saved_session', json);
         saveSessionToStorage(data);
         alert('Session saved successfully to local storage.');
+        showAutosaveStatus('\ud83d\udcbe Saved locally');
     }
 
     if (saveCloud) {
-        saveSessionToFirestore();
+        saveSessionToFirestore(true);
     }
 }
 
@@ -1844,7 +1853,7 @@ export function collectExportData() {
 
 // Save the current session to Firestore under
 // contractors/ruapehu_shearing/sessions/[stationName_date_teamLeader]
-export async function saveSessionToFirestore() {
+export async function saveSessionToFirestore(showStatus = false) {
     if (typeof firebase === 'undefined' ||
         !firebase.firestore ||
         !firebase.auth ||
@@ -1869,8 +1878,10 @@ export async function saveSessionToFirestore() {
             });
 
         console.log('✅ Session saved to Firestore:', id);
-        alert('✅ Session saved to the cloud!');
-        showAutosaveStatus('\u2601\ufe0f Autosaved to cloud');
+        if (showStatus) {
+            alert('✅ Session saved to the cloud!');
+            showAutosaveStatus('\u2601\ufe0f Saved to cloud');
+        }
     } catch (err) {
         console.error('❌ Failed to save session to Firestore:', err);
     }
