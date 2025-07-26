@@ -1139,9 +1139,12 @@ function cleanUpEmptyRowsAndColumns() {
 }
  
 function saveData() {
-     cleanUpEmptyRowsAndColumns();
+    cleanUpEmptyRowsAndColumns();
     clearHighlights();
-     const issues = [];
+    const choice = (window.prompt('Save session to: "local", "cloud", or "both"?', 'local') || 'local').trim().toLowerCase();
+    const saveLocal = choice === 'local' || choice === 'both' || choice === '';
+    const saveCloud = choice === 'cloud' || choice === 'both';
+    const issues = [];
      const tbody = document.getElementById('tallyBody');
      const header = document.getElementById('headerRow');
      if (!tbody || !header) return;
@@ -1192,12 +1195,17 @@ function saveData() {
     data.meta = data.meta || {};
     data.meta.date = new Date().toLocaleDateString("en-NZ");
    
-    const json = JSON.stringify(data, null, 2);
-     localStorage.setItem('sheariq_saved_session', json);
-     saveSessionToStorage(data);
- 
-     alert('Session saved successfully to local storage.');
- }
+    if (saveLocal) {
+        const json = JSON.stringify(data, null, 2);
+        localStorage.setItem('sheariq_saved_session', json);
+        saveSessionToStorage(data);
+        alert('Session saved successfully to local storage.');
+    }
+
+    if (saveCloud) {
+        saveSessionToFirestore();
+    }
+}
  
  function showView(id) {
      document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
