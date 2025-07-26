@@ -139,6 +139,7 @@ export let isNineHourDay = false;
 let promptedNineHour = false;
 let layoutBuilt = false
 let isSetupComplete = false;
+let hasUserStartedEnteringData = false;
 
 // === Autosave state ===
 let autosaveTimer = null;
@@ -281,6 +282,8 @@ function getLastSession() {
 
 function setupDailyLayout(shearers, counts, staff) {
     console.log("Setup called with:", shearers, "shearers,", counts, "counts,", staff, "shed staff");
+
+    hasUserStartedEnteringData = false;
 
     const headerRowEl = document.getElementById('headerRow');
     const bodyEl = document.getElementById('tallyBody');
@@ -1230,7 +1233,7 @@ let saveCallback = null;
 let manualSave = false;
 
 function performSave(saveLocal, saveCloud, manual) {
-    if (isSetupComplete || manual) {
+    if ((isSetupComplete && hasUserStartedEnteringData) || manual) {
         cleanUpEmptyRowsAndColumns();
     }
     clearHighlights();
@@ -2040,6 +2043,7 @@ function resetTallySheet() {
     runs = 0;
     layoutBuilt = false;
     isSetupComplete = false;
+    hasUserStartedEnteringData = false;
 }
 
 function loadSessionObject(session) {
@@ -2216,6 +2220,13 @@ const interceptReset = (full) => (e) => {
     });
 
     document.addEventListener('input', (e) => {
+        if (!hasUserStartedEnteringData && (
+            e.target.matches('#tallyBody input[type="number"]') ||
+            e.target.matches('#tallyBody td.sheep-type input[type="text"]') ||
+            e.target.matches('#shedStaffTable td:nth-child(1) input')
+        )) {
+            hasUserStartedEnteringData = true;
+        }
         if (e.target.matches('input, textarea')) {
             scheduleAutosave();
         }
