@@ -1876,9 +1876,13 @@ export function collectExportData() {
 export async function saveSessionToFirestore(showStatus = false) {
     if (typeof firebase === 'undefined' ||
         !firebase.firestore ||
-        !firebase.auth ||
-        !firebase.auth().currentUser) {
-        return; // Firebase not ready or user not signed in
+        !firebase.auth) {
+        return; // Firebase not ready
+    }
+
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser) {
+        return; // User not signed in
     }
 
     try {
@@ -1887,11 +1891,12 @@ export async function saveSessionToFirestore(showStatus = false) {
         const leader = (data.teamLeader || '').trim().replace(/\s+/g, '_');
         const id = `${station}_${data.date}_${leader}`;
 
+        const contractorId = currentUser.uid;
+        const path = `contractors/${contractorId}/sessions/${id}`;
+        console.log('Saving session to Firestore path:', path);
+
         await firebase.firestore()
-            .collection('contractors')
-            .doc('ruapehu_shearing')
-            .collection('sessions')
-            .doc(id)
+            .doc(path)
             .set({
                 ...data,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
