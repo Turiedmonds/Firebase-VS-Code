@@ -145,6 +145,19 @@ let lastSavedJson = '';
 let lastLocalSave = 0;
 let lastCloudSave = 0;
 
+let autosaveHideTimer = null;
+
+function showAutosaveStatus(message) {
+    const el = document.getElementById('autosaveStatus');
+    if (!el) return;
+    el.innerText = message;
+    el.style.display = 'block';
+    if (autosaveHideTimer) clearTimeout(autosaveHideTimer);
+    autosaveHideTimer = setTimeout(() => {
+        el.style.display = 'none';
+    }, 3000);
+}
+
 function scheduleAutosave() {
     if (autosaveTimer) clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(() => {
@@ -157,6 +170,7 @@ function scheduleAutosave() {
             performSave(true, false);
             lastLocalSave = now;
             saved = true;
+            showAutosaveStatus("\ud83d\udcbe Autosaved locally");
         }
         if (now - lastCloudSave >= 10000) {
             saveSessionToFirestore();
@@ -1856,6 +1870,7 @@ export async function saveSessionToFirestore() {
 
         console.log('✅ Session saved to Firestore:', id);
         alert('✅ Session saved to the cloud!');
+        showAutosaveStatus('\u2601\ufe0f Autosaved to cloud');
     } catch (err) {
         console.error('❌ Failed to save session to Firestore:', err);
     }
