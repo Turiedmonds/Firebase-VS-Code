@@ -418,6 +418,18 @@ document.addEventListener('DOMContentLoaded', function () {
   </div>
 </div>
 
+<!-- Cloud Session Modal -->
+<div id="cloudSessionModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <h3>Select Cloud Session</h3>
+    <select id="cloudSessionSelect" class="small-input" style="width:100%; margin-bottom:10px;"></select>
+    <div class="modal-buttons">
+      <button id="loadCloudConfirmBtn">Load Selected Session</button>
+      <button id="cancelCloudLoadBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { buildStationSummary, clearStationSummaryView } from './tally.js';
 window.clearStationSummaryView = clearStationSummaryView;
