@@ -1138,12 +1138,11 @@ function cleanUpEmptyRowsAndColumns() {
     updateSheepTypeTotals();
 }
  
-function saveData() {
+let saveCallback = null;
+
+function performSave(saveLocal, saveCloud) {
     cleanUpEmptyRowsAndColumns();
     clearHighlights();
-    const choice = (window.prompt('Save session to: "local", "cloud", or "both"?', 'local') || 'local').trim().toLowerCase();
-    const saveLocal = choice === 'local' || choice === 'both' || choice === '';
-    const saveCloud = choice === 'cloud' || choice === 'both';
     const issues = [];
      const tbody = document.getElementById('tallyBody');
      const header = document.getElementById('headerRow');
@@ -1204,6 +1203,25 @@ function saveData() {
 
     if (saveCloud) {
         saveSessionToFirestore();
+    }
+}
+
+function saveData(callback) {
+    saveCallback = typeof callback === 'function' ? callback : null;
+    const modal = document.getElementById('saveOptionsModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function handleSaveOption(option) {
+    const modal = document.getElementById('saveOptionsModal');
+    const saveLocal = option === 'local' || option === 'both';
+    const saveCloud = option === 'cloud' || option === 'both';
+    performSave(saveLocal, saveCloud);
+    if (modal) modal.style.display = 'none';
+    if (typeof saveCallback === 'function') {
+        const cb = saveCallback;
+        saveCallback = null;
+        cb();
     }
 }
  
@@ -1793,7 +1811,7 @@ function confirmUnsavedChanges(next) {
             discardBtn.removeEventListener('click', onDiscard);
             cancelBtn.removeEventListener('click', onCancel);
         };
-        const onSave = () => { cleanup(); saveData(); next(); };
+        const onSave = () => { cleanup(); saveData(next); };
         const onDiscard = () => { cleanup(); next(); };
         const onCancel = () => { cleanup(); };
         saveBtn.addEventListener('click', onSave);
@@ -1801,8 +1819,7 @@ function confirmUnsavedChanges(next) {
         cancelBtn.addEventListener('click', onCancel);
     } else {
         if (confirm('You have unsaved work. Save before loading?')) {
-            saveData();
-            next();
+            saveData(next);
         } else if (confirm('Continue without saving?')) {
             next();
         }
@@ -1832,7 +1849,7 @@ function confirmSaveReset(full) {
             discardBtn.removeEventListener('click', onDiscard);
             cancelBtn.removeEventListener('click', onCancel);
         };
-        const onSave = () => { cleanup(); saveData(); if (typeof performReset === 'function') performReset(full); };
+        const onSave = () => { cleanup(); saveData(() => { if (typeof performReset === 'function') performReset(full); }); };
         const onDiscard = () => { cleanup(); if (typeof performReset === 'function') performReset(full); };
         const onCancel = () => { cleanup(); };
         saveBtn.addEventListener('click', onSave);
@@ -1841,8 +1858,7 @@ function confirmSaveReset(full) {
     } else {
         const save = confirm('Do you want to save the current session before resetting?');
         if (save) {
-            saveData();
-            if (typeof performReset === 'function') performReset(full);
+            saveData(() => { if (typeof performReset === 'function') performReset(full); });
         } else if (confirm('Reset without saving?')) {
             if (typeof performReset === 'function') performReset(full);
         }
@@ -1940,6 +1956,9 @@ document.addEventListener('DOMContentLoaded', () => {
      const setupConfirmBtn = document.getElementById('setupConfirmBtn');
     const setupCancelBtn = document.getElementById('setupCancelBtn');
     const stationNameInput = document.getElementById('stationName');
+    const saveLocalBtn = document.getElementById('saveLocalBtn');
+    const saveCloudBtn = document.getElementById('saveCloudBtn');
+    const saveBothBtn = document.getElementById('saveBothBtn');
     if (!layoutBuilt && !getLastSession()) {
     window.awaitingSetupPrompt = true;
   }
@@ -1995,6 +2014,10 @@ const interceptReset = (full) => (e) => {
     hideLoadSessionModal();
       startSessionLoader(session);
     });
+
+    saveLocalBtn?.addEventListener('click', () => handleSaveOption('local'));
+    saveCloudBtn?.addEventListener('click', () => handleSaveOption('cloud'));
+    saveBothBtn?.addEventListener('click', () => handleSaveOption('both'));
 
     const exportBtn = document.getElementById('exportFarmSummaryBtn');
     exportBtn?.addEventListener('click', () => {
