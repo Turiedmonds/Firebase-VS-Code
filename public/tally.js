@@ -481,7 +481,17 @@ function hideLoadSessionModal() {
     const modal = document.getElementById('loadSessionModal');
     if (modal) modal.style.display = 'none';
 }
- 
+
+function showLoadOptionsModal() {
+    const modal = document.getElementById('loadOptionsModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function hideLoadOptionsModal() {
+    const modal = document.getElementById('loadOptionsModal');
+    if (modal) modal.style.display = 'none';
+}
+
 function showSetupModal() {
     const modal = document.getElementById('setupModal');
     if (modal) modal.style.display = 'flex';
@@ -1959,6 +1969,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveLocalBtn = document.getElementById('saveLocalBtn');
     const saveCloudBtn = document.getElementById('saveCloudBtn');
     const saveBothBtn = document.getElementById('saveBothBtn');
+    const loadLocalBtn = document.getElementById('loadLocalBtn');
+    const loadCloudBtn = document.getElementById('loadCloudBtn');
     if (!layoutBuilt && !getLastSession()) {
     window.awaitingSetupPrompt = true;
   }
@@ -1981,7 +1993,15 @@ const interceptReset = (full) => (e) => {
 
 
 
-    loadBtn?.addEventListener('click', showLoadSessionModal);
+    loadBtn?.addEventListener('click', showLoadOptionsModal);
+    loadLocalBtn?.addEventListener('click', () => {
+        hideLoadOptionsModal();
+        showLoadSessionModal();
+    });
+    loadCloudBtn?.addEventListener('click', () => {
+        hideLoadOptionsModal();
+        alert('Cloud loading coming soon.');
+    });
     cancelBtn?.addEventListener('click', hideLoadSessionModal);
     lastBtn?.addEventListener('click', () => {
         const session = getLastSession();
