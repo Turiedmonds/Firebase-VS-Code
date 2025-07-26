@@ -1170,7 +1170,7 @@ if (e.target.matches('#shedStaffTable td:nth-child(1) input')) {
 }
 
 // Remove completely empty shearer columns, count rows and shed staff rows
-function cleanUpEmptyRowsAndColumns() {
+function cleanUpEmptyRowsAndColumns(manual = false) {
     const table = document.getElementById('tallyTable');
     const headerRow = document.getElementById('headerRow');
     const body = document.getElementById('tallyBody');
@@ -1234,53 +1234,55 @@ let manualSave = false;
 
 function performSave(saveLocal, saveCloud, manual) {
     if ((isSetupComplete && hasUserStartedEnteringData) || manual) {
-        cleanUpEmptyRowsAndColumns();
+        cleanUpEmptyRowsAndColumns(manual);
     }
     clearHighlights();
     const issues = [];
-     const tbody = document.getElementById('tallyBody');
-     const header = document.getElementById('headerRow');
-     if (!tbody || !header) return;
- 
-     // Check empty stand columns
-     for (let s = 1; s <= numStands; s++) {
-         const inputs = Array.from(tbody.querySelectorAll(`tr td:nth-child(${s + 1}) input`));
-         const empty = inputs.every(inp => !inp.value.trim());
-         if (empty) {
-             issues.push(`Stand ${s} has no data. Please remove unused stands.`);
-             const headerInput = header.children[s].querySelector('input');
-             if (headerInput) headerInput.classList.add('highlight-error');
-             inputs.forEach(i => i.classList.add('highlight-error'));
-         }
-     }
- 
-     // Check empty count rows
-     Array.from(tbody.querySelectorAll('tr')).forEach((row, idx) => {
-         const standInputs = Array.from(row.querySelectorAll('td input[type="number"]')).slice(0, numStands);
-         const sheepType = row.querySelector('.sheep-type input');
-         const allEmpty = standInputs.every(i => !i.value.trim()) && (!sheepType || !sheepType.value.trim());
-         if (allEmpty) {
-             issues.push(`Count ${idx + 1} has no data. Please remove unused counts.`);
-             standInputs.forEach(i => i.classList.add('highlight-error'));
-             if (sheepType) sheepType.classList.add('highlight-error');
-         }
-     });
- 
-     // Check empty shed staff rows
-     document.querySelectorAll('#shedStaffTable tr').forEach((row, idx) => {
-         const name = row.querySelector('td:nth-child(1) input');
-         const hours = row.querySelector('td:nth-child(2) input');
-         if (name && hours && !name.value.trim() && !hours.value.trim()) {
-             issues.push(`Shed Staff row ${idx + 1} has no data. Please remove unused rows.`);
-             name.classList.add('highlight-error');
-             hours.classList.add('highlight-error');
-         }
-     });
- 
-     if (issues.length) {
-         window.alert(issues.join('\n'));
-         return;
-     }
+    const tbody = document.getElementById('tallyBody');
+    const header = document.getElementById('headerRow');
+    if (!tbody || !header) return;
+
+    if (manual) {
+        // Check empty stand columns
+        for (let s = 1; s <= numStands; s++) {
+            const inputs = Array.from(tbody.querySelectorAll(`tr td:nth-child(${s + 1}) input`));
+            const empty = inputs.every(inp => !inp.value.trim());
+            if (empty) {
+                issues.push(`Stand ${s} has no data. Please remove unused stands.`);
+                const headerInput = header.children[s].querySelector('input');
+                if (headerInput) headerInput.classList.add('highlight-error');
+                inputs.forEach(i => i.classList.add('highlight-error'));
+            }
+        }
+
+        // Check empty count rows
+        Array.from(tbody.querySelectorAll('tr')).forEach((row, idx) => {
+            const standInputs = Array.from(row.querySelectorAll('td input[type="number"]')).slice(0, numStands);
+            const sheepType = row.querySelector('.sheep-type input');
+            const allEmpty = standInputs.every(i => !i.value.trim()) && (!sheepType || !sheepType.value.trim());
+            if (allEmpty) {
+                issues.push(`Count ${idx + 1} has no data. Please remove unused counts.`);
+                standInputs.forEach(i => i.classList.add('highlight-error'));
+                if (sheepType) sheepType.classList.add('highlight-error');
+            }
+        });
+
+        // Check empty shed staff rows
+        document.querySelectorAll('#shedStaffTable tr').forEach((row, idx) => {
+            const name = row.querySelector('td:nth-child(1) input');
+            const hours = row.querySelector('td:nth-child(2) input');
+            if (name && hours && !name.value.trim() && !hours.value.trim()) {
+                issues.push(`Shed Staff row ${idx + 1} has no data. Please remove unused rows.`);
+                name.classList.add('highlight-error');
+                hours.classList.add('highlight-error');
+            }
+        });
+
+        if (issues.length) {
+            window.alert(issues.join('\n'));
+            return;
+        }
+    }
  
     // Collect current session data
     const data = collectExportData();
