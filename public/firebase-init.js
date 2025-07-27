@@ -1,6 +1,6 @@
 (function() {
   const firebaseConfig = {
-    apiKey: "AIzaSyCuQh49AgKbrMvrxcuwsR8Svy86aP3Fg2Q",
+    apiKey: "AIzaSyD529f2jn9mb8OAip4x6l3IQb7KOaPNxaM",
     authDomain: "sheariq-tally-app.firebaseapp.com",
     projectId: "sheariq-tally-app",
     storageBucket: "sheariq-tally-app.firebasestorage.app",
