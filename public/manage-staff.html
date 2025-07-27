@@ -105,15 +105,9 @@
         const tempPassword = generatePassword();
 
         try {
-          let newUid = null;
-          if (firebase.functions) {
-            const createUser = firebase.functions().httpsCallable('createStaffUser');
-            const res = await createUser({ email, password: tempPassword });
-            newUid = res.data.uid;
-          } else {
-            console.log('Firebase functions not available, simulating user creation');
-            newUid = 'uid_' + Math.random().toString(36).slice(2, 10);
-          }
+          const createUser = firebase.functions().httpsCallable('createStaffUser');
+          const res = await createUser({ email, password: tempPassword });
+          const newUid = res.data.uid;
 
           await firebase.firestore()
             .collection('contractors')
@@ -126,7 +120,7 @@
               createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-          alert('Staff member added! Temporary password: ' + tempPassword);
+          alert('Staff member added!');
         } catch (err) {
           console.error('Failed to add staff member', err);
           alert('Error creating staff member: ' + (err.message || err));
