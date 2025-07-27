@@ -1830,7 +1830,7 @@ export function collectExportData() {
      return data;
  }
  
- export function buildExportRows(data) {
+export function buildExportRows(data) {
      const rows = [];
      const boldRows = [];
      const add = (arr, bold=false) => {
@@ -1871,6 +1871,18 @@ export function collectExportData() {
     return { rows, boldRows };
 }
 
+function updateUIForRole(role) {
+    const admin = role === 'admin';
+    const ids = ['saveCloudBtn', 'saveBothBtn', 'loadCloudBtn', 'exportFarmSummaryBtn'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (admin) el.removeAttribute('disabled');
+            else el.setAttribute('disabled', 'disabled');
+        }
+    });
+}
+
 // Verify the signed-in user exists in this contractor's users subcollection
 export async function verifyContractorUser() {
     const currentUser = firebase.auth().currentUser;
@@ -1892,7 +1904,18 @@ export async function verifyContractorUser() {
         }
 
         const doc = snap.docs[0];
-        return { id: doc.id, ...doc.data() };
+        const data = doc.data() || {};
+        const role = data.role;
+        const allowed = ['admin', 'shed_hand', 'presser'];
+        if (!role || !allowed.includes(role)) {
+            alert('Your account role is not permitted.');
+            await firebase.auth().signOut();
+            return null;
+        }
+
+        sessionStorage.setItem('userRole', role);
+        updateUIForRole(role);
+        return { id: doc.id, ...data };
     } catch (err) {
         console.error('Failed to verify contractor user:', err);
         alert('Error verifying user. Signing out.');
@@ -2150,6 +2173,8 @@ function restoreTodaySession() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const storedRole = sessionStorage.getItem('userRole');
+    if (storedRole) updateUIForRole(storedRole);
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.addEventListener('click', () => showView(btn.dataset.view));
     });
@@ -2317,6 +2342,7 @@ window.restoreTodaySession = restoreTodaySession;
 window.saveSessionToFirestore = saveSessionToFirestore;
 window.listSessionsFromFirestore = listSessionsFromFirestore;
 window.loadSessionFromFirestore = loadSessionFromFirestore;
+window.updateUIForRole = updateUIForRole;
 
 
 // === Rebuild tally rows from saved session data ===
