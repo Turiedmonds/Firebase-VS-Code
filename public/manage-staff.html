@@ -43,7 +43,6 @@
       max-width: 400px;
     }
   </style>
-  <script src="firebase-init.js"></script>
 </head>
 <body>
   <h2>Manage Staff</h2>
@@ -119,7 +118,7 @@
           };
 
           const tempPassword = generatePassword();
-          console.log('Creating staff user with', { email, password: tempPassword });
+          console.log('📤 Creating staff user with', { email, password: tempPassword });
 
           try {
             const createStaffUser = httpsCallable(functions, 'createStaffUser');
