@@ -1889,21 +1889,27 @@ export async function verifyContractorUser() {
   const currentUser = firebase.auth().currentUser;
   if (!currentUser || !firebase.firestore) return null;
 
+  console.log('[verifyContractorUser] Current user:', {
+    uid: currentUser.uid,
+    email: currentUser.email
+  });
+
   const db = firebase.firestore();
 
   try {
-    // 1. Is the user a contractor?
+    console.log('[verifyContractorUser] Checking if /contractors/' + currentUser.uid + ' exists');
     const contractorDoc = await db.collection('contractors')
       .doc(currentUser.uid)
       .get();
     if (contractorDoc.exists) {
+      console.log('Contractor login verified');
       const role = 'contractor';
       sessionStorage.setItem('user_role', role);
       sessionStorage.setItem('contractor_id', currentUser.uid);
       return { role, uid: currentUser.uid, email: currentUser.email };
     }
 
-    // 2. Look for matching staff email in any contractor's users subcollection
+    console.log('[verifyContractorUser] Not a contractor, scanning staff collections');
     const snap = await db.collectionGroup('users')
       .where('email', '==', currentUser.email)
       .limit(1)
@@ -1911,12 +1917,14 @@ export async function verifyContractorUser() {
 
     if (!snap.empty) {
       const doc = snap.docs[0];
-      const data = doc.data() || {};
       const contractorId = doc.ref.parent.parent.id;
+      console.log('[verifyContractorUser] Checking contractorId', contractorId);
+      const data = doc.data() || {};
       const role = data.role || 'staff';
 
       sessionStorage.setItem('user_role', role);
       sessionStorage.setItem('contractor_id', contractorId);
+      console.log('Staff login verified under contractor ' + contractorId);
 
       return {
         contractorId,
@@ -1927,6 +1935,7 @@ export async function verifyContractorUser() {
       };
     }
 
+    console.log('No matching user found');
     // 3. Nothing found - sign out
     alert('You are not authorised for this account.');
     await firebase.auth().signOut();
