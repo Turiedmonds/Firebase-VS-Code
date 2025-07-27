@@ -1892,19 +1892,18 @@ export async function verifyContractorUser() {
     const db = firebase.firestore();
 
     try {
-        // 1) Check if the user is a contractor
+        // 1. Is the user a contractor?
         const contractorDoc = await db.collection('contractors')
             .doc(currentUser.uid)
             .get();
         if (contractorDoc.exists) {
             const role = 'contractor';
             sessionStorage.setItem('user_role', role);
-            sessionStorage.removeItem('contractor_id');
-            updateUIForRole(role);
+            sessionStorage.setItem('contractor_id', currentUser.uid);
             return { role, uid: currentUser.uid, email: currentUser.email };
         }
 
-        // 2) Check all contractors' users subcollections for matching email
+        // 2. Look for matching staff email in any contractor's users subcollection
         const snap = await db.collectionGroup('users')
             .where('email', '==', currentUser.email)
             .limit(1)
@@ -1918,18 +1917,17 @@ export async function verifyContractorUser() {
 
             sessionStorage.setItem('user_role', role);
             sessionStorage.setItem('contractor_id', contractorId);
-            updateUIForRole(role);
 
-            return { contractorId, id: doc.id, ...data };
+            return { contractorId, id: doc.id, role, email: currentUser.email, ...data };
         }
 
-        // 3) Not authorised
-        alert('You are not authorised for this contractor account.');
+        // 3. Nothing found - sign out
+        alert('You are not authorised for this account.');
         await firebase.auth().signOut();
         return null;
     } catch (err) {
         console.error('Failed to verify contractor user:', err);
-        alert('Error verifying user. Signing out.');
+        alert('You are not authorised for this account.');
         await firebase.auth().signOut();
         return null;
     }
