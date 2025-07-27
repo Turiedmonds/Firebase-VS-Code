@@ -3,7 +3,10 @@ const admin = require('firebase-admin');
 admin.initializeApp();
 
 exports.createStaffUser = functions.https.onCall(async (data, context) => {
-  console.log("📥 Received data in function:", JSON.stringify(data)); // 👈 Add this
+  console.log("📥 Received data in function:", {
+    email: data.email,
+    password: data.password
+  });
 
   const { email, password } = data;
   if (!email || !password) {
