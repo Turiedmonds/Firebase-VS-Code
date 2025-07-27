@@ -43,12 +43,7 @@
       max-width: 400px;
     }
   </style>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
   <script src="firebase-init.js"></script>
-  <script type="module" src="auth.js"></script>
 </head>
 <body>
   <h2>Manage Staff</h2>
@@ -62,17 +57,36 @@
   <div id="staffList"></div>
 
   <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyCuQh49AgKbrMvrxcuwsR8Svy86aP3Fg2Q',
+      authDomain: 'sheariq-tally-app.firebaseapp.com',
+      projectId: 'sheariq-tally-app',
+      storageBucket: 'sheariq-tally-app.firebasestorage.app',
+      messagingSenderId: '201669876235',
+      appId: '1:201669876235:web:379fc4035da99f4b09450e'
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const functions = getFunctions(app);
+
     document.addEventListener('DOMContentLoaded', () => {
-      // Verify the user is logged in and is a contractor
-      firebase.auth().onAuthStateChanged(async user => {
+      onAuthStateChanged(auth, async user => {
         if (!user) {
           window.location.replace('login.html');
           return;
         }
+
         try {
-          const docRef = firebase.firestore().collection('contractors').doc(user.uid);
-          const snap = await docRef.get();
-          const data = snap.exists ? snap.data() : {};
+          const docRef = doc(collection(db, 'contractors'), user.uid);
+          const snap = await getDoc(docRef);
+          const data = snap.exists() ? snap.data() : {};
           if (data.role !== 'contractor') {
             window.location.replace('login.html');
             return;
@@ -83,10 +97,9 @@
           return;
         }
 
-        // Listener for adding staff once the role is verified
         const addBtn = document.getElementById('addStaffBtn');
         addBtn.addEventListener('click', async () => {
-          const currentUser = firebase.auth().currentUser;
+          const currentUser = auth.currentUser;
           if (!currentUser) {
             alert('Not authenticated');
             return;
@@ -109,20 +122,15 @@
           console.log('Creating staff user with', { email, password: tempPassword });
 
           try {
-            const createStaffUser = firebase.functions().httpsCallable('createStaffUser');
+            const createStaffUser = httpsCallable(functions, 'createStaffUser');
             const result = await createStaffUser({ email, password: tempPassword });
             const uid = result.data.uid;
 
-            await firebase.firestore()
-              .collection('contractors')
-              .doc(contractorUid)
-              .collection('users')
-              .doc(uid)
-              .set({
-                email,
-                role,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-              });
+            await setDoc(doc(collection(doc(collection(db, 'contractors'), contractorUid), 'users'), uid), {
+              email,
+              role,
+              createdAt: serverTimestamp()
+            });
 
             console.log('Staff member added successfully');
             alert('Staff member added!');
@@ -132,7 +140,6 @@
           }
         });
       });
-
     });
   </script>
 </body>
