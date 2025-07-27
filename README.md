@@ -32,6 +32,18 @@ accounts. Documents in `contractors/{contractorId}/users` contain:
 After sign‑in the app confirms the current email exists in that subcollection
 and signs out if it does not.
 
+## User Roles
+
+Each user document includes a `role` field used to restrict functionality. The
+expected values are:
+
+- `admin` – full access to all features including saving/loading sessions from
+  the cloud and exporting farm summaries.
+- `shed_hand` or `presser` – standard tally entry without admin actions.
+
+The detected role is stored in `sessionStorage` as `userRole`. If a signed-in
+user has a missing or unknown role the app alerts them and signs out.
+
 ## PWA Features
 
 - **Installable**: Supported browsers will offer an install prompt.
