@@ -82,53 +82,55 @@
         }
       });
 
-      const addBtn = document.getElementById('addStaffBtn');
-      addBtn.addEventListener('click', async () => {
-        const currentUser = firebase.auth().currentUser;
-        if (!currentUser) {
-          alert('Not authenticated');
-          return;
-        }
-
-        const contractorUid = currentUser.uid;
-        const email = document.getElementById('staffEmailInput').value.trim();
-        const role = document.getElementById('staffRoleSelect').value;
-        if (!email) {
-          alert('Please enter an email address');
-          return;
-        }
-
-        const generatePassword = (len = 10) => {
-          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-          return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-        };
-        const tempPassword = generatePassword();
-
-        try {
-         console.log("📤 Sending to function:", { email, password: tempPassword });
-
-          const createStaffUser = firebase.functions().httpsCallable('createStaffUser');
-          const result = await createStaffUser({ email, password: tempPassword });
-          const uid = result.data.uid;
-
-          await firebase.firestore()
-            .collection('contractors')
-            .doc(contractorUid)
-            .collection('users')
-            .doc(uid)
-            .set({
-              email,
-              role,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-          alert('Staff member added!');
-        } catch (err) {
-          console.error('Failed to add staff member', err);
-          alert('Error creating staff member: ' + (err.message || err));
-        }
-      });
     });
   </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const addBtn = document.getElementById('addStaffBtn');
+  addBtn.addEventListener('click', async function() {
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser) {
+      alert('Not authenticated');
+      return;
+    }
+
+    const contractorUid = currentUser.uid;
+    const email = document.getElementById('staffEmailInput').value.trim();
+    const role = document.getElementById('staffRoleSelect').value;
+    if (!email) {
+      alert('Please enter an email address');
+      return;
+    }
+
+    const generatePassword = (len = 10) => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    };
+    const tempPassword = generatePassword();
+
+    try {
+      const createStaffUser = firebase.functions().httpsCallable('createStaffUser');
+      const result = await createStaffUser({ email, password: tempPassword });
+      const uid = result.data.uid;
+
+      await firebase.firestore()
+        .collection('contractors')
+        .doc(contractorUid)
+        .collection('users')
+        .doc(uid)
+        .set({
+          email,
+          role,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+      alert('Staff member added!');
+    } catch (err) {
+      console.error('Failed to add staff member', err);
+      alert('Error creating staff member: ' + (err.message || err));
+    }
+  });
+});
+</script>
 </body>
 </html>
