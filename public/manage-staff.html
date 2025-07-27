@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manage Staff - SHEAR iQ</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    form {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+    }
+    form input, form select {
+      margin: 6px 0;
+      padding: 8px;
+    }
+    form button {
+      margin-top: 10px;
+      padding: 12px 16px;
+      background: #333;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    form button:hover {
+      background: #555;
+    }
+    #staffList {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 400px;
+    }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-init.js"></script>
+  <script type="module" src="auth.js"></script>
+</head>
+<body>
+  <h2>Manage Staff</h2>
+  <form id="staffForm">
+    <input type="email" id="staffEmailInput" placeholder="Email" required>
+    <select id="staffRoleSelect">
+      <option value="staff">staff</option>
+    </select>
+    <button type="button" id="addStaffBtn">Add Staff Member</button>
+  </form>
+  <div id="staffList"></div>
+
+  <script type="module">
+    document.addEventListener('DOMContentLoaded', () => {
+      firebase.auth().onAuthStateChanged(async user => {
+        if (!user) {
+          window.location.replace('login.html');
+          return;
+        }
+        try {
+          const docRef = firebase.firestore().collection('contractors').doc(user.uid);
+          const snap = await docRef.get();
+          const data = snap.exists ? snap.data() : {};
+          if (data.role !== 'contractor') {
+            window.location.replace('login.html');
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to verify role', err);
+          window.location.replace('login.html');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
