@@ -105,15 +105,15 @@
         const tempPassword = generatePassword();
 
         try {
-          const createUser = firebase.functions().httpsCallable('createStaffUser');
-          const res = await createUser({ email, password: tempPassword });
-          const newUid = res.data.uid;
+          const createStaffUser = firebase.functions().httpsCallable('createStaffUser');
+          const result = await createStaffUser({ email, password: tempPassword });
+          const uid = result.data.uid;
 
           await firebase.firestore()
             .collection('contractors')
             .doc(contractorUid)
             .collection('users')
-            .doc(newUid)
+            .doc(uid)
             .set({
               email,
               role,
