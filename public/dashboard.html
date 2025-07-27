@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard - SHEAR iQ</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    #buttonContainer {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 400px;
+    }
+    #buttonContainer button {
+      margin: 6px 0;
+      padding: 12px 16px;
+      background: #333;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    #buttonContainer button:hover {
+      background: #555;
+    }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-init.js"></script>
+  <script type="module" src="auth.js"></script>
+</head>
+<body>
+  <h2 id="welcomeMessage">Welcome</h2>
+  <div id="buttonContainer">
+    <button id="btnManageStaff">Manage Staff</button>
+    <button id="btnViewSavedSessions">View Saved Sessions</button>
+    <button id="btnStationSummary">Station Summary</button>
+    <button id="btnLoadPrevious">Load Previous Session</button>
+    <button id="btnChangePin">Change Contractor PIN</button>
+    <button id="btnSaveBackup">Save &amp; Backup Options</button>
+    <button id="btnNewDayReset">New Day Reset</button>
+    <button id="btnEditCurrent">Edit Current Session Details</button>
+    <button id="btnExportAll">Export All Sessions</button>
+    <button id="btnSetDefaultStart">Set Default Start Time / Workday Type</button>
+    <button id="btnSettings">Settings / Preferences</button>
+  </div>
+
+  <script type="module">
+    document.addEventListener('DOMContentLoaded', () => {
+      firebase.auth().onAuthStateChanged(async user => {
+        if (!user) {
+          window.location.replace('login.html');
+          return;
+        }
+        try {
+          const docRef = firebase.firestore().collection('contractors').doc(user.uid);
+          const snap = await docRef.get();
+          const data = snap.exists ? snap.data() : {};
+          if (data.role !== 'contractor') {
+            window.location.replace('login.html');
+            return;
+          }
+          const name = data.displayName || data.businessName || user.displayName || 'Contractor';
+          document.getElementById('welcomeMessage').textContent = `Welcome, ${name}!`;
+        } catch (err) {
+          console.error('Failed to verify role', err);
+          window.location.replace('login.html');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
