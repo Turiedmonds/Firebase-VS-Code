@@ -105,7 +105,8 @@
         const tempPassword = generatePassword();
 
         try {
-          console.log("📤 Sending to function:", { email, tempPassword });
+         console.log("📤 Sending to function:", { email, password: tempPassword });
+
           const createStaffUser = firebase.functions().httpsCallable('createStaffUser');
           const result = await createStaffUser({ email, password: tempPassword });
           const uid = result.data.uid;
