@@ -20,6 +20,18 @@ The first time you load the app while online, its files are cached by the servic
 
 There is no build step. All files live inside the `public/` folder, so just serve that directory as described above.
 
+## Firestore Structure
+
+Each contractor document has a `users` subcollection used to manage worker
+accounts. Documents in `contractors/{contractorId}/users` contain:
+
+- `email` – the worker's login email
+- `name` – their display name
+- `role` – permissions like `admin`, `shed_hand` or `presser`
+
+After sign‑in the app confirms the current email exists in that subcollection
+and signs out if it does not.
+
 ## PWA Features
 
 - **Installable**: Supported browsers will offer an install prompt.

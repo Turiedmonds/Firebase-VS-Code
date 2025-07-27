@@ -1866,9 +1866,39 @@ export function collectExportData() {
  
      add(['Sheep Type Totals'], true);
      add(['Sheep Type', 'Total'], true);
-   data.sheepTypeTotals.forEach(t => add([t.type, t.total]));
+    data.sheepTypeTotals.forEach(t => add([t.type, t.total]));
 
     return { rows, boldRows };
+}
+
+// Verify the signed-in user exists in this contractor's users subcollection
+export async function verifyContractorUser() {
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser || !firebase.firestore) return null;
+
+    try {
+        const snap = await firebase.firestore()
+            .collection('contractors')
+            .doc(currentUser.uid)
+            .collection('users')
+            .where('email', '==', currentUser.email)
+            .limit(1)
+            .get();
+
+        if (snap.empty) {
+            alert('You are not authorised for this contractor account.');
+            await firebase.auth().signOut();
+            return null;
+        }
+
+        const doc = snap.docs[0];
+        return { id: doc.id, ...doc.data() };
+    } catch (err) {
+        console.error('Failed to verify contractor user:', err);
+        alert('Error verifying user. Signing out.');
+        await firebase.auth().signOut();
+        return null;
+    }
 }
 
 // Save the current session to Firestore under
@@ -2320,3 +2350,7 @@ const body = document.getElementById('tallyBody');
 
 window.rebuildRowsFromSession = rebuildRowsFromSession;
 window.resetTallySheet = resetTallySheet;
+
+firebase.auth().onAuthStateChanged(user => {
+    if (user) verifyContractorUser();
+});
