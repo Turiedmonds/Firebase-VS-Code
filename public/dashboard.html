@@ -80,5 +80,41 @@
       });
     });
   </script>
+  <script>
+    // Navigation button handlers
+    document.getElementById('btnManageStaff')?.addEventListener('click', () => {
+      window.location.href = 'manage-staff.html';
+    });
+    document.getElementById('btnViewSessions')?.addEventListener('click', () => {
+      window.location.href = 'view-sessions.html';
+    });
+    document.getElementById('btnStationSummary')?.addEventListener('click', () => {
+      window.location.href = 'station-summary.html';
+    });
+    document.getElementById('btnLoadSession')?.addEventListener('click', () => {
+      window.location.href = 'load-session.html';
+    });
+    document.getElementById('btnChangePIN')?.addEventListener('click', () => {
+      window.location.href = 'change-pin.html';
+    });
+    document.getElementById('btnBackup')?.addEventListener('click', () => {
+      window.location.href = 'backup-options.html';
+    });
+    document.getElementById('btnNewDay')?.addEventListener('click', () => {
+      window.location.href = 'tally.html?newDay=true';
+    });
+    document.getElementById('btnEditSession')?.addEventListener('click', () => {
+      window.location.href = 'edit-session.html';
+    });
+    document.getElementById('btnExportAll')?.addEventListener('click', () => {
+      window.location.href = 'export-all.html';
+    });
+    document.getElementById('btnSetDefaults')?.addEventListener('click', () => {
+      window.location.href = 'set-defaults.html';
+    });
+    document.getElementById('btnSettings')?.addEventListener('click', () => {
+      window.location.href = 'settings.html';
+    });
+  </script>
 </body>
 </html>
