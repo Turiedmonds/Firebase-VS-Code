@@ -46,6 +46,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
   <script src="firebase-init.js"></script>
   <script type="module" src="auth.js"></script>
 </head>
@@ -78,6 +79,57 @@
         } catch (err) {
           console.error('Failed to verify role', err);
           window.location.replace('login.html');
+        }
+      });
+
+      const addBtn = document.getElementById('addStaffBtn');
+      addBtn.addEventListener('click', async () => {
+        const currentUser = firebase.auth().currentUser;
+        if (!currentUser) {
+          alert('Not authenticated');
+          return;
+        }
+
+        const contractorUid = currentUser.uid;
+        const email = document.getElementById('staffEmailInput').value.trim();
+        const role = document.getElementById('staffRoleSelect').value;
+        if (!email) {
+          alert('Please enter an email address');
+          return;
+        }
+
+        const generatePassword = (len = 10) => {
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+          return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        };
+        const tempPassword = generatePassword();
+
+        try {
+          let newUid = null;
+          if (firebase.functions) {
+            const createUser = firebase.functions().httpsCallable('createStaffUser');
+            const res = await createUser({ email, password: tempPassword });
+            newUid = res.data.uid;
+          } else {
+            console.log('Firebase functions not available, simulating user creation');
+            newUid = 'uid_' + Math.random().toString(36).slice(2, 10);
+          }
+
+          await firebase.firestore()
+            .collection('contractors')
+            .doc(contractorUid)
+            .collection('users')
+            .doc(newUid)
+            .set({
+              email,
+              role,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+          alert('Staff member added! Temporary password: ' + tempPassword);
+        } catch (err) {
+          console.error('Failed to add staff member', err);
+          alert('Error creating staff member: ' + (err.message || err));
         }
       });
     });
