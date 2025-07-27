@@ -1883,39 +1883,50 @@ function updateUIForRole(role) {
     });
 }
 
-// Verify the signed-in user exists in this contractor's users subcollection
+// Verify the signed-in user exists either as a contractor document or within
+// a contractor's users subcollection
 export async function verifyContractorUser() {
     const currentUser = firebase.auth().currentUser;
     if (!currentUser || !firebase.firestore) return null;
 
+    const db = firebase.firestore();
+
     try {
-        const snap = await firebase.firestore()
-            .collection('contractors')
+        // 1) Check if the user is a contractor
+        const contractorDoc = await db.collection('contractors')
             .doc(currentUser.uid)
-            .collection('users')
+            .get();
+        if (contractorDoc.exists) {
+            const role = 'contractor';
+            sessionStorage.setItem('user_role', role);
+            sessionStorage.removeItem('contractor_id');
+            updateUIForRole(role);
+            return { role, uid: currentUser.uid, email: currentUser.email };
+        }
+
+        // 2) Check all contractors' users subcollections for matching email
+        const snap = await db.collectionGroup('users')
             .where('email', '==', currentUser.email)
             .limit(1)
             .get();
 
-        if (snap.empty) {
-            alert('You are not authorised for this contractor account.');
-            await firebase.auth().signOut();
-            return null;
+        if (!snap.empty) {
+            const doc = snap.docs[0];
+            const data = doc.data() || {};
+            const contractorId = doc.ref.parent.parent.id;
+            const role = data.role || 'staff';
+
+            sessionStorage.setItem('user_role', role);
+            sessionStorage.setItem('contractor_id', contractorId);
+            updateUIForRole(role);
+
+            return { contractorId, id: doc.id, ...data };
         }
 
-        const doc = snap.docs[0];
-        const data = doc.data() || {};
-        const role = data.role;
-        const allowed = ['admin', 'shed_hand', 'presser'];
-        if (!role || !allowed.includes(role)) {
-            alert('Your account role is not permitted.');
-            await firebase.auth().signOut();
-            return null;
-        }
-
-        sessionStorage.setItem('userRole', role);
-        updateUIForRole(role);
-        return { id: doc.id, ...data };
+        // 3) Not authorised
+        alert('You are not authorised for this contractor account.');
+        await firebase.auth().signOut();
+        return null;
     } catch (err) {
         console.error('Failed to verify contractor user:', err);
         alert('Error verifying user. Signing out.');
