@@ -123,6 +123,7 @@
             const createStaffUser = httpsCallable(getFunctions(app), 'createStaffUser');
             const result = await createStaffUser({ email, password });
             const uid = result.data.uid;
+            console.log('Created staff user UID:', uid);
 
             await setDoc(doc(collection(doc(collection(db, 'contractors'), contractorUid), 'users'), uid), {
               email,
