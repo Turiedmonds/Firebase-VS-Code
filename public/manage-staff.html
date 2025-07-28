@@ -120,7 +120,7 @@
           console.log('📤 Creating staff user with', { email, password });
 
           try {
-            const createStaffUser = httpsCallable(getFunctions(), 'createStaffUser');
+            const createStaffUser = httpsCallable(getFunctions(app), 'createStaffUser');
             const result = await createStaffUser({ email, password });
             const uid = result.data.uid;
 
