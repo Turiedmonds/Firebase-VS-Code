@@ -5,7 +5,7 @@ admin.initializeApp();
 exports.createStaffUser = functions.https.onCall(async (data, context) => {
   console.log("📥 Received data in function:", {
     email: data.email,
-    password: data.password
+    password: '[REDACTED]'
   });
 
   const { email, password } = data;
