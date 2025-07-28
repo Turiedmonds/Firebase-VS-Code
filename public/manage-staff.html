@@ -140,17 +140,21 @@
               createdAt: serverTimestamp()
             });
 
+            console.log("✅ Reached sendStaffCredentials function");
+            console.log("📧 Contractor email:", auth.currentUser?.email);
+            console.log("staffName:", name, "staffEmail:", email, "password:", password);
+
             try {
               const sendStaffCredentials = httpsCallable(functions, 'sendStaffCredentials');
-              await sendStaffCredentials({
+              const response = await sendStaffCredentials({
                 staffName: name,
                 staffEmail: email,
                 password,
                 contractorEmail: auth.currentUser.email
               });
-              console.log('Staff credentials email sent successfully');
+              console.log("📨 Staff credentials email sent successfully:", response.data);
             } catch (error) {
-              console.error('Failed to send staff credentials email:', error);
+              console.error("❌ Email function failed:", error.message || error);
             }
 
             console.log('Staff member added successfully');
