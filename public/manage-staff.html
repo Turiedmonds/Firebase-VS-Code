@@ -47,6 +47,7 @@
 <body>
   <h2>Manage Staff</h2>
   <form id="staffForm">
+    <input type="text" id="staffNameInput" placeholder="Name" required>
     <input type="email" id="staffEmailInput" placeholder="Email" required>
     <select id="staffRoleSelect">
       <option value="staff">staff</option>
@@ -105,8 +106,13 @@
           }
 
           const contractorUid = currentUser.uid;
+          const name = document.getElementById('staffNameInput').value.trim();
           const email = document.getElementById('staffEmailInput').value.trim();
           const role = document.getElementById('staffRoleSelect').value;
+          if (!name) {
+            alert('Please enter a name');
+            return;
+          }
           if (!email) {
             alert('Please enter an email address');
             return;
@@ -126,7 +132,9 @@
             const uid = result.data.uid;
             console.log('Created staff user UID:', uid);
 
-            await setDoc(doc(collection(doc(collection(db, 'contractors'), contractorUid), 'users'), uid), {
+            const staffRef = doc(db, 'contractors', contractorUid, 'staff', uid);
+            await setDoc(staffRef, {
+              name,
               email,
               role,
               createdAt: serverTimestamp()
