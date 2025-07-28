@@ -47,7 +47,8 @@
 <body>
   <h2>Manage Staff</h2>
   <form id="staffForm">
-    <input type="text" id="staffNameInput" placeholder="Name" required>
+    <label for="staff-name">Staff Name</label>
+    <input type="text" id="staff-name" placeholder="Enter staff member’s name" required>
     <input type="email" id="staffEmailInput" placeholder="Email" required>
     <select id="staffRoleSelect">
       <option value="staff">staff</option>
@@ -106,10 +107,10 @@
           }
 
           const contractorUid = currentUser.uid;
-          const name = document.getElementById('staffNameInput').value.trim();
+          const staffName = document.getElementById('staff-name').value.trim();
           const email = document.getElementById('staffEmailInput').value.trim();
           const role = document.getElementById('staffRoleSelect').value;
-          if (!name) {
+          if (!staffName) {
             alert('Please enter a name');
             return;
           }
@@ -134,7 +135,7 @@
 
             const staffRef = doc(db, 'contractors', contractorUid, 'staff', uid);
             await setDoc(staffRef, {
-              name,
+              name: staffName,
               email,
               role,
               createdAt: serverTimestamp()
@@ -142,12 +143,12 @@
 
             console.log("✅ Reached sendStaffCredentials function");
             console.log("📧 Contractor email:", auth.currentUser?.email);
-            console.log("staffName:", name, "staffEmail:", email, "password:", password);
+            console.log("staffName:", staffName, "staffEmail:", email, "password:", password);
 
             try {
               const sendStaffCredentials = httpsCallable(functions, 'sendStaffCredentials');
               const response = await sendStaffCredentials({
-                staffName: name,
+                staffName,
                 staffEmail: email,
                 password,
                 contractorEmail: auth.currentUser.email
