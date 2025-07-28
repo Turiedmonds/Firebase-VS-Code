@@ -1,23 +1,16 @@
- const functions = require('firebase-functions');
+const functions = require('firebase-functions');
+const { onCall } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-exports.createStaffUser = functions.https.onCall(async (data, context) => {
-  console.log("📥 Received data in function:", {
-    email: data.email,
-    password: '[REDACTED]'
-  });
+exports.createStaffUser = onCall(async (request) => {
+  const { email, password } = request.data;
+  console.log("📥 Received data in function:", { email });
 
-  const { email, password } = data;
   if (!email || !password) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing email or password');
+    throw new Error('Missing email or password');
   }
 
-  try {
-    const userRecord = await admin.auth().createUser({ email, password });
-    return { uid: userRecord.uid };
-  } catch (err) {
-    console.error('Failed to create user', err);
-    throw new functions.https.HttpsError('internal', err.message);
-  }
+  const userRecord = await admin.auth().createUser({ email, password });
+  return { uid: userRecord.uid };
 });
