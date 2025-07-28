@@ -140,6 +140,19 @@
               createdAt: serverTimestamp()
             });
 
+            try {
+              const sendStaffCredentials = httpsCallable(functions, 'sendStaffCredentials');
+              await sendStaffCredentials({
+                staffName: name,
+                staffEmail: email,
+                password,
+                contractorEmail: auth.currentUser.email
+              });
+              console.log('Staff credentials email sent successfully');
+            } catch (error) {
+              console.error('Failed to send staff credentials email:', error);
+            }
+
             console.log('Staff member added successfully');
             alert('Staff member added!');
           } catch (err) {
