@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const cred = await auth.signInWithEmailAndPassword(email, password);
       console.log("Login success");
-
       if (db && cred.user) {
         const docRef = db.collection('contractors').doc(cred.user.uid);
         try {
@@ -20,13 +19,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (role === 'contractor') {
             window.location.href = 'dashboard.html';
+            return;
           } else if (role === 'staff') {
             window.location.href = 'tally.html';
+            return;
           }
         } catch (err) {
           console.error('Failed to fetch user role:', err);
         }
       }
+      // Default redirect for authenticated users if no specific role is found
+      window.location.href = 'tally.html';
     } catch (err) {
       console.error("Login error:", err);
       alert("Login failed: " + err.message);
