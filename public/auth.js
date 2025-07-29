@@ -6,7 +6,10 @@ firebase.auth().onAuthStateChanged(user => {
 
 export function logout() {
   firebase.auth().signOut().then(() => {
-    window.location.href = 'login.html';
+    // Clear any cached session data after sign out
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.replace('login.html');
   });
 }
 

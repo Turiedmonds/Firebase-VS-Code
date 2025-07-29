@@ -20,7 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // at contractors/{UID}
       const contractorDoc = await db.collection('contractors').doc(uid).get();
       if (contractorDoc.exists) {
-        window.location.href = 'dashboard.html';
+        // Use replace to ensure a hard reload after login
+        window.location.replace('dashboard.html');
         return;
       }
 
@@ -35,11 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!query.empty) {
         // Staff member found
-        window.location.href = 'tally.html';
+        window.location.replace('tally.html');
       } else {
         // No matching staff record
         alert('No role found in staff records for this user.');
         await auth.signOut();
+        // Clear any cached session data after sign out
+        localStorage.clear();
+        sessionStorage.clear();
       }
 
     } catch (err) {
