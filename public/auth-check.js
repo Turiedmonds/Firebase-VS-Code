@@ -37,27 +37,18 @@ firebase.auth().onAuthStateChanged(async function (user) {
     const contractorId = data.contractorId;
     console.log("[auth-check] \ud83c\udd94 contractorId:", contractorId);
 
-    if (contractorId) {
-      localStorage.setItem("contractor_id", contractorId);
-      console.log(`[auth-check] \ud83d\udcbe contractor_id saved to localStorage: ${contractorId}`);
-    
-      let tries = 0;
-      const maxTries = 20;
-      const checkInterval = setInterval(() => {
-        const stored = localStorage.getItem("contractor_id");
-        console.log(`[auth-check] \u23F1 Try ${tries + 1}: contractor_id in localStorage =`, stored);
-        if (stored === contractorId) {
-          clearInterval(checkInterval);
-          console.log("[auth-check] \u2705 contractor_id confirmed in localStorage — redirecting");
-          window.location.href = "tally.html";
-        } else if (++tries >= maxTries) {
-          clearInterval(checkInterval);
-          console.error("[auth-check] \u274c Failed to confirm contractor_id in localStorage after timeout");
-          firebase.auth().signOut().then(() => {
-            window.location.href = "login.html";
-          });
+      if (contractorId) {
+        localStorage.setItem("contractor_id", contractorId);
+        console.log(`[auth-check] \ud83d\udcbe contractor_id saved to localStorage: ${contractorId}`);
+
+        // Wait until contractor_id appears in localStorage
+        let retries = 0;
+        while (!localStorage.getItem("contractor_id") && retries < 20) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          retries++;
         }
-      }, 100);
+        console.log("[auth-check] contractor_id verified in localStorage:", localStorage.getItem("contractor_id"));
+        window.location.href = "tally.html";
       } else {
         console.warn("[auth-check] \u26a0\ufe0f contractorId is missing or undefined in staff document!");
       }
