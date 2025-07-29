@@ -5,11 +5,11 @@ const nodemailer = require('nodemailer');
 admin.initializeApp();
 
 exports.createStaffUser = onCall(async (request) => {
-  const { email, password } = request.data;
+  const { email, password = "Test1234!" } = request.data;
   console.log("📥 Received data in function:", { email });
 
-  if (!email || !password) {
-    throw new Error('Missing email or password');
+  if (!email) {
+    throw new Error('Missing email');
   }
 
   const userRecord = await admin.auth().createUser({ email, password });
