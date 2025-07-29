@@ -8,21 +8,30 @@ firebase.auth().onAuthStateChanged(async function (user) {
       const userData = docSnap.data();
       const role = userData.role;
 
+      let contractorId;
+
       if (role === "contractor") {
-        localStorage.setItem("contractor_id", user.uid);
+        contractorId = user.uid;
       } else if (role === "staff") {
-        const contractorId = userData.contractorId;
-        if (contractorId) {
-          localStorage.setItem("contractor_id", contractorId);
-        } else {
-          console.error("Missing contractorId in staff profile");
-        }
+        contractorId = userData.contractorId;
+      }
+
+      if (contractorId) {
+        localStorage.setItem('contractor_id', contractorId);
+        console.log('[auth-check] contractor_id stored, redirecting to tally.html');
+        setTimeout(() => {
+          window.location.href = 'tally.html';
+        }, 200); // short delay to ensure it sticks
+        return;
+      } else {
+        console.error("Missing contractorId in profile");
       }
     } else {
       console.error("User document not found in contractors collection");
     }
 
-    window.location.href = "tally.html";
+    // If we reach this point without a contractor ID, return to login
+    window.location.href = 'login.html';
   } else {
     window.location.href = "login.html";
   }
