@@ -2443,6 +2443,17 @@ const body = document.getElementById('tallyBody');
 window.rebuildRowsFromSession = rebuildRowsFromSession;
 window.resetTallySheet = resetTallySheet;
 
+function setup() {
+  verifyContractorUser();
+}
+
 firebase.auth().onAuthStateChanged(user => {
-    if (user) verifyContractorUser();
+  if (!user) return;
+  const timer = setInterval(() => {
+    const contractorId = localStorage.getItem('contractor_id');
+    if (contractorId) {
+      clearInterval(timer);
+      setup();
+    }
+  }, 100);
 });
