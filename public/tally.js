@@ -2448,12 +2448,7 @@ async function setup() {
 }
 
 firebase.auth().onAuthStateChanged(user => {
-  if (!user) return;
-  const timer = setInterval(() => {
-    const contractorId = localStorage.getItem('contractor_id');
-    if (contractorId) {
-      clearInterval(timer);
-      setup();
-    }
-  }, 100);
+  if (user) {
+    setup();
+  }
 });
