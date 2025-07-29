@@ -29,16 +29,18 @@ firebase.auth().onAuthStateChanged(async function (user) {
     .get();
 
   if (!staffQuery.empty) {
-    const doc = staffQuery.docs[0];
-    const data = doc.data();
+    console.log("[auth-check] \u2705 Found matching staff");
+    const docSnap = staffQuery.docs[0];
+    const data = docSnap.data();
+    console.log("[auth-check] \ud83d\udce6 Staff docSnap data:", data);
+
     const contractorId = data.contractorId;
-    console.log("[auth-check] \u2705 Found staff record:", data);
     console.log("[auth-check] \ud83c\udd94 contractorId:", contractorId);
 
     if (contractorId) {
       localStorage.setItem("contractor_id", contractorId);
-      console.log("[auth-check] \ud83d\udcbe contractor_id set to:", contractorId);
-
+      console.log(`[auth-check] \ud83d\udcbe contractor_id saved to localStorage: ${contractorId}`);
+    
       let tries = 0;
       const maxTries = 20;
       const checkInterval = setInterval(() => {
@@ -56,11 +58,9 @@ firebase.auth().onAuthStateChanged(async function (user) {
           });
         }
       }, 100);
-    } else {
-      console.error("[auth-check] \u26a0\ufe0f contractorId missing from staff profile");
-      await firebase.auth().signOut();
-      window.location.href = "login.html";
-    }
+      } else {
+        console.warn("[auth-check] \u26a0\ufe0f contractorId is missing or undefined in staff document!");
+      }
   } else {
     console.error("[auth-check] \u274c Staff user not found in any subcollection");
     await firebase.auth().signOut();
