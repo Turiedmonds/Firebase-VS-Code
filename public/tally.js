@@ -1241,8 +1241,13 @@ let saveCallback = null;
 let manualSave = false;
 
 function performSave(saveLocal, saveCloud, manual) {
+    const finishTime = document.getElementById('finishTime')?.value;
+    const sessionHasEnded = finishTime && finishTime.trim() !== '';
+
     if ((isSetupComplete && hasUserStartedEnteringData) || manual) {
-        cleanUpEmptyRowsAndColumns(manual);
+        if (sessionHasEnded || manual) {
+            cleanUpEmptyRowsAndColumns(manual);
+        }
     }
     clearHighlights();
     const issues = [];
