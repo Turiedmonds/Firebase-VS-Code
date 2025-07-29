@@ -146,6 +146,8 @@ let autosaveTimer = null;
 let lastSavedJson = '';
 let lastLocalSave = 0;
 let lastCloudSave = 0;
+// Remember the generated Firestore document ID once all required fields are provided
+let firestoreSessionId = '';
 
 let autosaveHideTimer = null;
 
@@ -176,16 +178,22 @@ function scheduleAutosave() {
         if (json === lastSavedJson) return;
         const now = Date.now();
         let saved = false;
+
+        // Always save to localStorage if 10s passed
         if (now - lastLocalSave >= 10000) {
             saveData(false);
             lastLocalSave = now;
             saved = true;
         }
-        if (now - lastCloudSave >= 10000) {
+
+        // Only save to Firestore if station, date, and leader are all filled in
+        const hasAllKeys = data.stationName && data.date && data.teamLeader;
+        if (hasAllKeys && now - lastCloudSave >= 10000) {
             saveSessionToFirestore(false);
             lastCloudSave = now;
             saved = true;
         }
+
         if (saved) {
             lastSavedJson = json;
             updateAutosaveIndicator();
@@ -1938,11 +1946,23 @@ export async function saveSessionToFirestore(showStatus = false) {
     try {
         const data = collectExportData();
         const station = (data.stationName || '').trim().replace(/\s+/g, '_');
+        const date = data.date || '';
         const leader = (data.teamLeader || '').trim().replace(/\s+/g, '_');
-        const id = `${station}_${data.date}_${leader}`;
+
+        // Skip cloud save if any key info is missing
+        const hasAllKeys = station && date && leader;
+        if (!hasAllKeys) {
+            console.warn('Skipping Firestore save - missing station/date/leader');
+            return;
+        }
+
+        // Generate session ID once when all fields are provided
+        if (!firestoreSessionId) {
+            firestoreSessionId = `${station}_${date}_${leader}`;
+        }
 
         const contractorId = currentUser.uid;
-        const path = `contractors/${contractorId}/sessions/${id}`;
+        const path = `contractors/${contractorId}/sessions/${firestoreSessionId}`;
         console.log('Saving session to Firestore path:', path);
 
         await firebase.firestore()
@@ -1952,7 +1972,7 @@ export async function saveSessionToFirestore(showStatus = false) {
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-        console.log('✅ Session saved to Firestore:', id);
+        console.log('✅ Session saved to Firestore:', firestoreSessionId);
         if (showStatus) {
             alert('✅ Session saved to the cloud!');
             showAutosaveStatus('\u2601\ufe0f Saved to cloud');
