@@ -1,67 +1,52 @@
 firebase.auth().onAuthStateChanged(async function (user) {
-  if (user) {
-    const db = firebase.firestore();
-    const docRef = db.collection("contractors").doc(user.uid);
-    console.log("[auth-check] Querying Firestore for UID:", user.uid);
-    const docSnap = await docRef.get();
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
 
-    if (docSnap.exists) {
-      const userData = docSnap.data();
-      const role = userData.role;
+  const db = firebase.firestore();
+  const userUid = user.uid;
 
-      if (role === "contractor") {
-        localStorage.setItem("contractor_id", user.uid);
-        await waitForContractorIdAndRedirect();
-        return;
-      } else if (role === "staff") {
-        console.log("[auth-check] Found matching staff");
-        console.log('[auth-check] Staff docSnap data:', docSnap.data());
-        const contractorId = docSnap.data().contractorId;
-        console.log('[auth-check] Retrieved contractorId:', contractorId);
-        console.log('[auth-check] contractorId from staff profile:', contractorId);
-        if (contractorId) {
-          localStorage.setItem("contractor_id", contractorId);
-          console.log(`[auth-check] localStorage.setItem('contractor_id', '${contractorId}') called`);
-          console.log("[auth-check] contractor_id after set:", localStorage.getItem("contractor_id"));
-          console.log('[auth-check] contractor_id in localStorage:', localStorage.getItem('contractor_id'));
+  console.log("[auth-check] \ud83d\udd0d Checking user role for UID:", userUid);
 
-          // Wait until contractor_id is confirmed in localStorage before redirect
-          let attempts = 0;
-          const maxAttempts = 20; // ~2 seconds
-          const interval = setInterval(() => {
-            const stored = localStorage.getItem("contractor_id");
-            if (stored) {
-              console.log("[auth-check] contractor_id confirmed, redirecting to tally.html");
-              clearInterval(interval);
-              window.location.href = "tally.html";
-            } else {
-              attempts++;
-              if (attempts >= maxAttempts) {
-                console.error("[auth-check] contractor_id still missing after timeout, returning to login");
-                clearInterval(interval);
-                firebase.auth().signOut().then(() => {
-                  window.location.href = "login.html";
-                });
-              }
-            }
-          }, 100);
-        } else {
-          console.error("[auth-check] Missing contractorId in staff profile");
-          firebase.auth().signOut().then(() => {
-            window.location.href = "login.html";
-          });
-        }
-      }
+  // Step 1: Check if user is a contractor
+  const contractorRef = db.collection("contractors").doc(userUid);
+  const contractorSnap = await contractorRef.get();
 
-      await waitForContractorIdAndRedirect();
-      return;
+  if (contractorSnap.exists && contractorSnap.data().role === "contractor") {
+    console.log("[auth-check] \u2705 User is a contractor");
+    localStorage.setItem("contractor_id", userUid);
+    await waitForContractorIdAndRedirect();
+    return;
+  }
+
+  // Step 2: Search all contractor/staff subcollections for this staff UID
+  console.log("[auth-check] \ud83d\udd0d Not a contractor, searching staff subcollections...");
+
+  const staffQuery = await db
+    .collectionGroup("staff")
+    .where(firebase.firestore.FieldPath.documentId(), "==", userUid)
+    .get();
+
+  if (!staffQuery.empty) {
+    const doc = staffQuery.docs[0];
+    const data = doc.data();
+    const contractorId = data.contractorId;
+    console.log("[auth-check] \u2705 Found staff record:", data);
+    console.log("[auth-check] \ud83c\udd94 contractorId:", contractorId);
+
+    if (contractorId) {
+      localStorage.setItem("contractor_id", contractorId);
+      console.log("[auth-check] \ud83d\udcbe contractor_id stored in localStorage:", contractorId);
+      window.location.href = "tally.html";
     } else {
-      console.error("User document not found in contractors collection");
+      console.error("[auth-check] \u26a0\ufe0f contractorId missing from staff profile");
+      await firebase.auth().signOut();
+      window.location.href = "login.html";
     }
-
-    // If we reach this point without a contractor ID, return to login
-    window.location.href = 'login.html';
   } else {
+    console.error("[auth-check] \u274c Staff user not found in any subcollection");
+    await firebase.auth().signOut();
     window.location.href = "login.html";
   }
 });
