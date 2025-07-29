@@ -43,6 +43,7 @@
   </style>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="firebase-init.js"></script>
 </head>
 <body>
@@ -50,16 +51,6 @@
   <div id="message"> Checking login… Please wait.</div>
   <div class="loader"></div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      firebase.auth().onAuthStateChanged(function(user) {
-        if (user) {
-          window.location.replace('tally.html');
-        } else {
-          window.location.replace('login.html');
-        }
-    });
-  });
-</script>
+  <script src="auth-check.js"></script>
 </body>
 </html>
