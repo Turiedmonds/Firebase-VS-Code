@@ -13,30 +13,36 @@ firebase.auth().onAuthStateChanged(async function (user) {
         await waitForContractorIdAndRedirect();
         return;
       } else if (role === "staff") {
-        const staffSnapshot = await firebase.firestore()
-          .collection("users")
-          .where("email", "==", user.email)
-          .limit(1)
-          .get();
+        const contractorId = userData.contractorId;
+        if (contractorId) {
+          localStorage.setItem("contractor_id", contractorId);
+          console.log("[auth-check] Saved contractor_id to localStorage:", contractorId);
 
-        if (!staffSnapshot.empty) {
-          const staffData = staffSnapshot.docs[0].data();
-          const contractorId = staffData.contractorId;
-
-          if (contractorId) {
-            localStorage.setItem("contractor_id", contractorId);
-            console.log("[auth-check.js] \u2705 Stored contractor_id in localStorage for staff:", contractorId);
-            await waitForContractorIdAndRedirect();
-            return;
-          } else {
-            console.error("[auth-check.js] \u274C Missing contractorId in staff document");
-            window.location.href = "login.html";
-            return;
-          }
+          // Wait until contractor_id is confirmed in localStorage before redirect
+          let attempts = 0;
+          const maxAttempts = 20; // ~2 seconds
+          const interval = setInterval(() => {
+            const stored = localStorage.getItem("contractor_id");
+            if (stored) {
+              console.log("[auth-check] contractor_id confirmed, redirecting to tally.html");
+              clearInterval(interval);
+              window.location.href = "tally.html";
+            } else {
+              attempts++;
+              if (attempts >= maxAttempts) {
+                console.error("[auth-check] contractor_id still missing after timeout, returning to login");
+                clearInterval(interval);
+                firebase.auth().signOut().then(() => {
+                  window.location.href = "login.html";
+                });
+              }
+            }
+          }, 100);
         } else {
-          console.error("[auth-check.js] \u274C Staff user not found in Firestore");
-          window.location.href = "login.html";
-          return;
+          console.error("[auth-check] Missing contractorId in staff profile");
+          firebase.auth().signOut().then(() => {
+            window.location.href = "login.html";
+          });
         }
       }
 
