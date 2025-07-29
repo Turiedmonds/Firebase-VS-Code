@@ -2007,14 +2007,13 @@ export async function listSessionsFromFirestore() {
         return [];
     }
 
-    const currentUser = firebase.auth().currentUser;
-    if (!currentUser) {
-        alert('You must be signed in to load sessions from the cloud.');
+    const contractorId = localStorage.getItem('contractor_id');
+    if (!contractorId) {
+        alert('No contractor ID found');
         return [];
     }
 
     try {
-        const contractorId = currentUser.uid;
         const snap = await firebase.firestore()
             .collection('contractors')
             .doc(contractorId)
@@ -2043,14 +2042,13 @@ export async function loadSessionFromFirestore(id) {
         return null;
     }
 
-    const currentUser = firebase.auth().currentUser;
-    if (!currentUser) {
-        alert('You must be signed in to load sessions from the cloud.');
+    const contractorId = localStorage.getItem('contractor_id');
+    if (!contractorId) {
+        alert('No contractor ID found');
         return null;
     }
 
     try {
-        const contractorId = currentUser.uid;
         const docSnap = await firebase.firestore()
             .collection('contractors')
             .doc(contractorId)
