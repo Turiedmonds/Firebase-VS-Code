@@ -15,8 +15,8 @@ firebase.auth().onAuthStateChanged(async function (user) {
         return;
       } else if (role === "staff") {
         console.log("[auth-check] Found matching staff");
-        const contractorId = userData.contractorId;
-        console.log("[auth-check] Retrieved contractorId:", contractorId);
+        const contractorId = docSnap.data().contractorId;
+        console.log('[auth-check] contractorId from staff profile:', contractorId);
         if (contractorId) {
           localStorage.setItem("contractor_id", contractorId);
           console.log(`[auth-check] localStorage.setItem('contractor_id', '${contractorId}') called`);
