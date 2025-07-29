@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const contractorDoc = await db.collection('contractors').doc(uid).get();
       if (contractorDoc.exists) {
         // Use replace to ensure a hard reload after login
-        window.location.replace('dashboard.html');
+        console.log('[login] ✅ Contractor document found, would redirect to dashboard.html');
         return;
       }
 
@@ -35,8 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const query = await staffRef.where('email', '==', userEmail).limit(1).get();
 
       if (!query.empty) {
-        // Staff member found
-        window.location.replace('tally.html');
+        console.log('[login] ✅ Staff member found, would redirect to tally.html');
       } else {
         // No matching staff record
         alert('No role found in staff records for this user.');
