@@ -15,12 +15,15 @@ firebase.auth().onAuthStateChanged(async function (user) {
         return;
       } else if (role === "staff") {
         console.log("[auth-check] Found matching staff");
+        console.log('[auth-check] Staff docSnap data:', docSnap.data());
         const contractorId = docSnap.data().contractorId;
+        console.log('[auth-check] Retrieved contractorId:', contractorId);
         console.log('[auth-check] contractorId from staff profile:', contractorId);
         if (contractorId) {
           localStorage.setItem("contractor_id", contractorId);
           console.log(`[auth-check] localStorage.setItem('contractor_id', '${contractorId}') called`);
           console.log("[auth-check] contractor_id after set:", localStorage.getItem("contractor_id"));
+          console.log('[auth-check] contractor_id in localStorage:', localStorage.getItem('contractor_id'));
 
           // Wait until contractor_id is confirmed in localStorage before redirect
           let attempts = 0;
