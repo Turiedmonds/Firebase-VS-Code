@@ -32,10 +32,25 @@ document.addEventListener('DOMContentLoaded', () => {
         .doc(contractorId)
         .collection('staff');
 
-      const query = await staffRef.where('email', '==', userEmail).limit(1).get();
+      const staffSnapshot = await staffRef
+        .where('email', '==', userEmail)
+        .limit(1)
+        .get();
 
-      if (!query.empty) {
-        console.log('[login] ✅ Staff member found, would redirect to tally.html');
+      if (!staffSnapshot.empty) {
+        // ✅ Staff match found, fetch contractor_id and redirect
+        const staffDoc = staffSnapshot.docs[0];
+        const staffData = staffDoc.data();
+        const contractorId = staffData.contractorId;
+
+        if (contractorId) {
+          localStorage.setItem('contractor_id', contractorId);
+          console.log('[login] 💾 contractor_id stored in localStorage:', contractorId);
+          window.location.href = 'tally.html';
+        } else {
+          console.error('[login] ⚠️ contractorId missing from staff document, cannot continue');
+          alert('Your account is missing a contractor ID. Please contact your admin.');
+        }
       } else {
         // No matching staff record
         alert('No role found in staff records for this user.');
@@ -51,4 +66,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
- 
