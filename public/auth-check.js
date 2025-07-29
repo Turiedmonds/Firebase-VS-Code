@@ -2,6 +2,7 @@ firebase.auth().onAuthStateChanged(async function (user) {
   if (user) {
     const db = firebase.firestore();
     const docRef = db.collection("contractors").doc(user.uid);
+    console.log("[auth-check] Querying Firestore for UID:", user.uid);
     const docSnap = await docRef.get();
 
     if (docSnap.exists) {
@@ -13,10 +14,13 @@ firebase.auth().onAuthStateChanged(async function (user) {
         await waitForContractorIdAndRedirect();
         return;
       } else if (role === "staff") {
+        console.log("[auth-check] Found matching staff");
         const contractorId = userData.contractorId;
+        console.log("[auth-check] Retrieved contractorId:", contractorId);
         if (contractorId) {
           localStorage.setItem("contractor_id", contractorId);
-          console.log("[auth-check] Saved contractor_id to localStorage:", contractorId);
+          console.log(`[auth-check] localStorage.setItem('contractor_id', '${contractorId}') called`);
+          console.log("[auth-check] contractor_id after set:", localStorage.getItem("contractor_id"));
 
           // Wait until contractor_id is confirmed in localStorage before redirect
           let attempts = 0;
