@@ -142,6 +142,8 @@ let isSetupComplete = false;
 let hasUserStartedEnteringData = false;
 // Track whether any tally or shed staff inputs have been interacted with
 let hasTouchedTallyInputs = false;
+// Ensure the Finish Time warning is only shown once
+let hasShownFinishTimeWarning = false;
 
 // === Autosave state ===
 let autosaveTimer = null;
@@ -1123,12 +1125,19 @@ function calculateHoursWorked() {
     }
     updateLunchToggleButton();
    if (end) {
-     end.addEventListener("change", calculateHoursWorked);
-     end.addEventListener('focus', (e) => {
-       if (!hasTouchedTallyInputs) {
-         e.preventDefault();
-         e.target.blur();
-         showFinishTimeWarningModal();
+     end.addEventListener('change', () => {
+       if (!hasTouchedTallyInputs && !hasShownFinishTimeWarning) {
+         const enteredTime = end.value;
+         end.value = '';
+         showFinishTimeWarningModal(() => {
+           end.value = enteredTime;
+           hasShownFinishTimeWarning = true;
+           calculateHoursWorked();
+         }, () => {
+           end.value = '';
+         });
+       } else {
+         calculateHoursWorked();
        }
      });
    }
@@ -2135,15 +2144,15 @@ function confirmSaveReset(full) {
     }
 }
 
-function showFinishTimeWarningModal() {
+function showFinishTimeWarningModal(onConfirm, onCancel) {
     const modal = document.createElement('div');
     modal.id = 'finishWarningModal';
     modal.className = 'modal-overlay';
     modal.innerHTML = `
       <div class="modal-box">
-        <h2>Warning</h2>
-        <p>If you enter a Finish Time now, all blank rows and columns will be removed. 
-           Make sure you\u2019ve entered all shearers, shed staff, and tallies first.</p>
+        <h2>⚠️ Heads up</h2>
+        <p>Entering a Finish Time now will trigger automatic cleanup — all empty rows and columns will be removed. 
+        Make sure you’ve entered all shearers, shed staff, and tallies first.</p>
         <div class="modal-buttons">
           <button id="confirmFinishTime">OK, Continue</button>
           <button id="cancelFinishTime">Cancel</button>
@@ -2151,14 +2160,16 @@ function showFinishTimeWarningModal() {
       </div>
     `;
     document.body.appendChild(modal);
+    modal.style.display = 'flex';
 
     document.getElementById('confirmFinishTime').onclick = () => {
         modal.remove();
-        document.getElementById('finishTime').focus();
+        if (typeof onConfirm === 'function') onConfirm();
     };
 
     document.getElementById('cancelFinishTime').onclick = () => {
         modal.remove();
+        if (typeof onCancel === 'function') onCancel();
     };
 }
 
