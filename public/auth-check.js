@@ -37,8 +37,25 @@ firebase.auth().onAuthStateChanged(async function (user) {
 
     if (contractorId) {
       localStorage.setItem("contractor_id", contractorId);
-      console.log("[auth-check] \ud83d\udcbe contractor_id stored in localStorage:", contractorId);
-      window.location.href = "tally.html";
+      console.log("[auth-check] \ud83d\udcbe contractor_id set to:", contractorId);
+
+      let tries = 0;
+      const maxTries = 20;
+      const checkInterval = setInterval(() => {
+        const stored = localStorage.getItem("contractor_id");
+        console.log(`[auth-check] \u23F1 Try ${tries + 1}: contractor_id in localStorage =`, stored);
+        if (stored === contractorId) {
+          clearInterval(checkInterval);
+          console.log("[auth-check] \u2705 contractor_id confirmed in localStorage — redirecting");
+          window.location.href = "tally.html";
+        } else if (++tries >= maxTries) {
+          clearInterval(checkInterval);
+          console.error("[auth-check] \u274c Failed to confirm contractor_id in localStorage after timeout");
+          firebase.auth().signOut().then(() => {
+            window.location.href = "login.html";
+          });
+        }
+      }, 100);
     } else {
       console.error("[auth-check] \u26a0\ufe0f contractorId missing from staff profile");
       await firebase.auth().signOut();
