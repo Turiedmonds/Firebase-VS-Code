@@ -1777,56 +1777,60 @@ export function collectExportData() {
          shedStaff: [],
          sheepTypeTotals: []
      };
+
+     const finishTime = document.getElementById('finishTime')?.value;
+     const sessionHasEnded = finishTime && finishTime.trim() !== '';
  
      const header = document.getElementById('headerRow');
      const tbody = document.getElementById('tallyBody');
      if (!header || !tbody) return data;
  
-     for (let s = 1; s <= numStands; s++) {
-         const headerInput = header.children[s]?.querySelector('input');
-         const name = headerInput && headerInput.value.trim() ? headerInput.value.trim() : `Stand ${s}`;
-         let hasData = !!(headerInput && headerInput.value.trim());
-         if (!hasData) {
-             for (let r = 0; r < tbody.children.length; r++) {
-                 const val = tbody.children[r].children[s]?.querySelector('input[type="number"]')?.value;
-                 if (val && val.trim()) { hasData = true; break; }
-             }
-         }
-         if (hasData) {
-             data.stands.push({ index: s, name });
-         }
-     }
+    for (let s = 1; s <= numStands; s++) {
+        const headerInput = header.children[s]?.querySelector('input');
+        const name = headerInput && headerInput.value.trim() ? headerInput.value.trim() : `Stand ${s}`;
+        let hasData = !!(headerInput && headerInput.value.trim());
+        if (!hasData) {
+            for (let r = 0; r < tbody.children.length; r++) {
+                const val = tbody.children[r].children[s]?.querySelector('input[type="number"]')?.value;
+                if (val && val.trim()) { hasData = true; break; }
+            }
+        }
+        if (!sessionHasEnded || hasData) {
+            data.stands.push({ index: s, name });
+        }
+    }
  
-     Array.from(tbody.querySelectorAll('tr')).forEach((row, idx) => {
-         let rowHasData = false;
-         const standVals = [];
-         data.stands.forEach(s => {
-             const input = row.children[s.index]?.querySelector('input[type="number"]');
-             const val = input ? input.value : '';
-             if (val.trim()) rowHasData = true;
-             standVals.push(val);
+    Array.from(tbody.querySelectorAll('tr')).forEach((row, idx) => {
+        let rowHasData = false;
+        const standVals = [];
+        data.stands.forEach(s => {
+            const input = row.children[s.index]?.querySelector('input[type="number"]');
+            const val = input ? input.value : '';
+            if (val.trim()) rowHasData = true;
+            standVals.push(val);
+
+        });
+        const typeInput = row.querySelector('.sheep-type input');
+        const sheepType = typeInput ? typeInput.value : '';
+        if (sheepType.trim()) rowHasData = true;
+        if (!sessionHasEnded || rowHasData) {
+            data.shearerCounts.push({
+                count: idx + 1,
+                stands: standVals,
+                total: row.querySelector('.run-total')?.innerText || '0',
+                sheepType
+            });
+        }
+    });
  
-         });
-         const typeInput = row.querySelector('.sheep-type input');
-         const sheepType = typeInput ? typeInput.value : '';
-         if (sheepType.trim()) rowHasData = true;
-         if (rowHasData) {
-             data.shearerCounts.push({
-                 count: idx + 1,
-                 stands: standVals,
-                 total: row.querySelector('.run-total')?.innerText || '0',
-                 sheepType
-             });
-         }
-     });
- 
-     document.querySelectorAll('#shedStaffTable tr').forEach(row => {
-         const name = row.querySelector('td:nth-child(1) input');
-         const hours = row.querySelector('td:nth-child(2) input');
-         if (name && hours && (name.value.trim() || hours.value.trim())) {
-             data.shedStaff.push({ name: name.value, hours: hours.value });
-         }
-     });
+    document.querySelectorAll('#shedStaffTable tr').forEach(row => {
+        const name = row.querySelector('td:nth-child(1) input');
+        const hours = row.querySelector('td:nth-child(2) input');
+        const hasData = name && hours && (name.value.trim() || hours.value.trim());
+        if (!sessionHasEnded || hasData) {
+            data.shedStaff.push({ name: name?.value || '', hours: hours?.value || '' });
+        }
+    });
  
      document.querySelectorAll('#sheepTypeTotalsTable tbody tr').forEach(tr => {
          const cells = tr.querySelectorAll('td');
