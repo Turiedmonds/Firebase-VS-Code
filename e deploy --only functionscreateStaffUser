@@ -1,0 +1,363 @@
+[33mcommit feb8d3549b5828e36797ef9a0114cadf6cd895df[m
+Author: Turiedmonds <turi-edmonds@hotmail.com>
+Date:   Wed Jul 30 02:13:34 2025 +1200
+
+    Use auth UID for staff doc ID
+
+[1mdiff --git a/functions/index.js b/functions/index.js[m
+[1mindex c5562b8..8e6df0f 100644[m
+[1m--- a/functions/index.js[m
+[1m+++ b/functions/index.js[m
+[36m@@ -3,16 +3,27 @@[m [mconst { onCall } = require('firebase-functions/v2/https');[m
+ const admin = require('firebase-admin');[m
+ const nodemailer = require('nodemailer');[m
+ admin.initializeApp();[m
+[32m+[m[32mconst firestore = admin.firestore();[m
+ [m
+ exports.createStaffUser = onCall(async (request) => {[m
+[31m-  const { email, password = "Test1234!" } = request.data;[m
+[31m-  console.log("📥 Received data in function:", { email });[m
+[32m+[m[32m  const { email, password = "Test1234!", name, role, contractorId } = request.data;[m
+[32m+[m[32m  console.log("📥 Received data in function:", { email, name, role, contractorId });[m
+ [m
+   if (!email) {[m
+     throw new Error('Missing email');[m
+   }[m
+ [m
+   const userRecord = await admin.auth().createUser({ email, password });[m
+[32m+[m
+[32m+[m[32m  const staffDocRef = firestore.collection(`contractors/${contractorId}/staff`).doc(userRecord.uid);[m
+[32m+[m[32m  await staffDocRef.set({[m
+[32m+[m[32m    name,[m
+[32m+[m[32m    email,[m
+[32m+[m[32m    role,[m
+[32m+[m[32m    contractorId,[m
+[32m+[m[32m    createdAt: admin.firestore.FieldValue.serverTimestamp()[m
+[32m+[m[32m  });[m
+[32m+[m
+   return { uid: userRecord.uid };[m
+ });[m
+ [m
+
+[33mcommit 4bb77f30e240fe7cdcb6b80535a6f1eb7848f10d[m
+Author: Turiedmonds <turi-edmonds@hotmail.com>
+Date:   Tue Jul 29 18:30:29 2025 +1200
+
+    feat: add default password for staff
+
+[1mdiff --git a/functions/index.js b/functions/index.js[m
+[1mindex 5468e2d..c5562b8 100644[m
+[1m--- a/functions/index.js[m
+[1m+++ b/functions/index.js[m
+[36m@@ -5,11 +5,11 @@[m [mconst nodemailer = require('nodemailer');[m
+ admin.initializeApp();[m
+ [m
+ exports.createStaffUser = onCall(async (request) => {[m
+[31m-  const { email, password } = request.data;[m
+[32m+[m[32m  const { email, password = "Test1234!" } = request.data;[m
+   console.log("📥 Received data in function:", { email });[m
+ [m
+[31m-  if (!email || !password) {[m
+[31m-    throw new Error('Missing email or password');[m
+[32m+[m[32m  if (!email) {[m
+[32m+[m[32m    throw new Error('Missing email');[m
+   }[m
+ [m
+   const userRecord = await admin.auth().createUser({ email, password });[m
+
+[33mcommit c075ff13655c8dc2a48a0a040b1c3d8d357ba9ca[m
+Author: Turi Edmonds <turi.edmonds@hotmail.com>
+Date:   Tue Jul 29 14:30:07 2025 +1200
+
+    Update login.js to fetch role from contractor staff collection
+
+[1mdiff --git a/functions/index.js b/functions/index.js[m
+[1mindex 94b50a1..5468e2d 100644[m
+[1m--- a/functions/index.js[m
+[1m+++ b/functions/index.js[m
+[36m@@ -16,9 +16,17 @@[m [mexports.createStaffUser = onCall(async (request) => {[m
+   return { uid: userRecord.uid };[m
+ });[m
+ [m
+[31m-exports.sendStaffCredentials = onCall(async (request) => {[m
+[32m+[m[32mexports.sendStaffCredentials = onCall([m
+[32m+[m[32m  {[m
+[32m+[m[32m    secrets: ["GMAIL_USER", "GMAIL_PASS"][m
+[32m+[m[32m  },[m
+[32m+[m[32m  async (request) => {[m
+[32m+[m
+   const { staffName, staffEmail, password, contractorEmail } = request.data;[m
+ [m
+[32m+[m[32mconsole.log("DEBUG - GMAIL_USER:", process.env.GMAIL_USER);[m
+[32m+[m[32mconsole.log("DEBUG - GMAIL_PASS is set:", !!process.env.GMAIL_PASS);[m
+[32m+[m
+   try {[m
+     const transporter = nodemailer.createTransport({[m
+       service: 'gmail',[m
+[36m@@ -42,3 +50,4 @@[m [mexports.sendStaffCredentials = onCall(async (request) => {[m
+     return { success: false, error: error.message };[m
+   }[m
+ });[m
+[32m+[m[32m// Trigger redeploy[m
+
+[33mcommit 19237d7f97e9ad8def414db292fecb635c26f385[m
+Author: Turiedmonds <turi-edmonds@hotmail.com>
+Date:   Mon Jul 28 18:27:26 2025 +1200
+
+    feat: add sendStaffCredentials function
+
+[1mdiff --git a/functions/index.js b/functions/index.js[m
+[1mindex aacaa22..94b50a1 100644[m
+[1m--- a/functions/index.js[m
+[1m+++ b/functions/index.js[m
+[36m@@ -1,6 +1,7 @@[m
+ const functions = require('firebase-functions');[m
+ const { onCall } = require('firebase-functions/v2/https');[m
+ const admin = require('firebase-admin');[m
+[32m+[m[32mconst nodemailer = require('nodemailer');[m
+ admin.initializeApp();[m
+ [m
+ exports.createStaffUser = onCall(async (request) => {[m
+[36m@@ -14,3 +15,30 @@[m [mexports.createStaffUser = onCall(async (request) => {[m
+   const userRecord = await admin.auth().createUser({ email, password });[m
+   return { uid: userRecord.uid };[m
+ });[m
+[32m+[m
+[32m+[m[32mexports.sendStaffCredentials = onCall(async (request) => {[m
+[32m+[m[32m  const { staffName, staffEmail, password, contractorEmail } = request.data;[m
+[32m+[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const transporter = nodemailer.createTransport({[m
+[32m+[m[32m      service: 'gmail',[m
+[32m+[m[32m      auth: {[m
+[32m+[m[32m        user: process.env.GMAIL_USER,[m
+[32m+[m[32m        pass: process.env.GMAIL_PASS,[m
+[32m+[m[32m      },[m
+[32m+[m[32m    });[m
+[32m+[m
+[32m+[m[32m    const mailOptions = {[m
+[32m+[m[32m      from: process.env.GMAIL_USER,[m
+[32m+[m[32m      to: contractorEmail,[m
+[32m+[m[32m      subject: 'New Staff Login Created',[m
+[32m+[m[32m      text: `Kia ora,\n\nYou've created a new SHE\u0394R iQ staff login.\n\nName: ${staffName}\nEmail: ${staffEmail}\nTemporary Password: ${password}\n\nPlease forward these details to your staff member. They will be prompted to change their password on first login.\n\nNg\u0101 mihi,\nThe SHE\u0394R iQ Team`,[m
+[32m+[m[32m    };[m
+[32m+[m
+[32m+[m[32m    await transporter.sendMail(mailOptions);[m
+[32m+[m[32m    return { success: true };[m
+[32m+[m[32m  } catch (error) {[m
+[32m+[m[32m    console.error('Error sending staff credentials', error);[m
+[32m+[m[32m    return { success: false, error: error.message };[m
+[32m+[m[32m  }[m
+[32m+[m[32m});[m
+
+[33mcommit e50c6ad25e264494254806d50fa5bc5f941557b2[m
+Author: Turiedmonds <turi-edmonds@hotmail.com>
+Date:   Mon Jul 28 16:41:48 2025 +1200
+
+    refactor createStaffUser to use functions v2
+
+[1mdiff --git a/functions/index.js b/functions/index.js[m
+[1mindex c0e12fd..aacaa22 100644[m
+[1m--- a/functions/index.js[m
+[1m+++ b/functions/index.js[m
+[36m@@ -1,23 +1,16 @@[m
+[31m- const functions = require('firebase-functions');[m
+[32m+[m[32mconst functions = require('firebase-functions');[m
+[32m+[m[32mconst { onCall } = require('firebase-functions/v2/https');[m
+ const admin = require('firebase-admin');[m
+ admin.initializeApp();[m
+ [m
+[31m-exports.createStaffUser = functions.https.onCall(async (data, context) => {[m
+[31m-  console.log("📥 Received data in function:", {[m
+[31m-    email: data.email,[m
+[31m-    password: '[REDACTED]'[m
+[31m-  });[m
+[32m+[m[32mexports.createStaffUser = onCall(async (request) => {[m
+[32m+[m[32m  const { email, password } = request.data;[m
+[32m+[m[32m  console.log("📥 Received data in function:", { email });[m
+ [m
+[31m-  const { email, password } = data;[m
+   if (!email || !password) {[m
+[31m-    throw new functions.https.HttpsError('invalid-argument', 'Missing email or password');[m
+[32m+[m[32m    throw new Error('Missing email or password');[m
+   }[m
+ [m
+[31m-  try {[m
+[31m-    const userRecord = await admin.auth().createUser({ email, password });[m
+[31m-    return { uid: userRecord.uid };[m
+[31m-  } catch (err) {[m
+[31m-    console.error('Failed to create user', err);[m
+[31m-    throw new functions.https.HttpsError('internal', err.message);[m
+[31m-  }[m
+[32m+[m[32m  const userRecord = await admin.auth().createUser({ email, password });[m
+[32m+[m[32m  return { uid: userRecord.uid };[m
+ });[m
+
+[33mcommit fbd8417e27a5e1cc6657e682b46b5dcab3bcaee7[m[33m ([m[1;31morigin/codex/update-node-version-in-package.json[m[33m)[m
+Author: Turiedmonds <turi-edmonds@hotmail.com>
+Date:   Mon Jul 28 13:23:55 2025 +1200
+
+    Update Node version and redact password
+
+[1mdiff --git a/functions/index.js b/functions/index.js[m
+[1mindex 65380a4..c0e12fd 100644[m
+[1m--- a/functions/index.js[m
+[1m+++ b/functions/index.js[m
+[36m@@ -5,7 +5,7 @@[m [madmin.initializeApp();[m
+ exports.createStaffUser = functions.https.onCall(async (data, context) => {[m
+   console.log("📥 Received data in function:", {[m
+     email: data.email,[m
+[31m-    password: data.password[m
+[32m+[m[32m    password: '[REDACTED]'[m
+   });[m
+ [m
+   const { email, password } = data;[m
+
+[33mcommit ac541a3b4dfdc2f921f95e3221a2fe8f46998418[m
+Author: Turi Edmonds <turi.edmonds@hotmail.com>
+Date:   Mon Jul 28 00:21:31 2025 +1200
+
+    fix: correct debug log key for password in Manage Staff
+
+[1mdiff --git a/functions/index.js b/functions/index.js[m
+[1mindex 3ceb36e..65380a4 100644[m
+[1m--- a/functions/index.js[m
+[1m+++ b/functions/index.js[m
+[36m@@ -3,7 +3,10 @@[m [mconst admin = require('firebase-admin');[m
+ admin.initializeApp();[m
+ [m
+ exports.createStaffUser = functions.https.onCall(async (data, context) => {[m
+[31m-  console.log("📥 Received data in function:", JSON.stringify(data)); // 👈 Add this[m
+[32m+[m[32m  console.log("📥 Received data in function:", {[m
+[32m+[m[32m    email: data.email,[m
+[32m+[m[32m    password: data.password[m
+[32m+[m[32m  });[m
+ [m
+   const { email, password } = data;[m
+   if (!email || !password) {[m
+
+[33mcommit ccd339fe73063c86378b2fb0e6587d826e2da9a5[m
+Author: Turi Edmonds <turi.edmonds@hotmail.com>
+Date:   Mon Jul 28 00:05:59 2025 +1200
+
+    fix: correct debug log key for password in Manage Staff
+
+[1mdiff --git a/functions/index.js b/functions/index.js[m
+[1mindex d136523..3ceb36e 100644[m
+[1m--- a/functions/index.js[m
+[1m+++ b/functions/index.js[m
+[36m@@ -3,6 +3,8 @@[m [mconst admin = require('firebase-admin');[m
+ admin.initializeApp();[m
+ [m
+ exports.createStaffUser = functions.https.onCall(async (data, context) => {[m
+[32m+[m[32m  console.log("📥 Received data in function:", JSON.stringify(data)); // 👈 Add this[m
+[32m+[m
+   const { email, password } = data;[m
+   if (!email || !password) {[m
+     throw new functions.https.HttpsError('invalid-argument', 'Missing email or password');[m
+
+[33mcommit 9dc391d5eef8b0d8192b46b0debcc666d7e5fed3[m
+Author: Turi Edmonds <turi.edmonds@hotmail.com>
+Date:   Sun Jul 27 23:17:53 2025 +1200
+
+    fix: update verifyContractorUser to support both contractor and staff logins
+
+[1mdiff --git a/functions/index.js b/functions/index.js[m
+[1mindex e397937..d136523 100644[m
+[1m--- a/functions/index.js[m
+[1m+++ b/functions/index.js[m
+[36m@@ -1,4 +1,4 @@[m
+[31m-const functions = require('firebase-functions');[m
+[32m+[m[32m const functions = require('firebase-functions');[m
+ const admin = require('firebase-admin');[m
+ admin.initializeApp();[m
+ [m
+
+[33mcommit 25dd80bcecc810607a7dad2cff7d5bc78b10b6fa[m
+Author: Turiedmonds <turi-edmonds@hotmail.com>
+Date:   Sun Jul 27 23:07:24 2025 +1200
+
+    refactor: switch createStaffUser to onCall
+
+[1mdiff --git a/functions/index.js b/functions/index.js[m
+[1mindex 40f80fc..e397937 100644[m
+[1m--- a/functions/index.js[m
+[1m+++ b/functions/index.js[m
+[36m@@ -1,26 +1,18 @@[m
+ const functions = require('firebase-functions');[m
+ const admin = require('firebase-admin');[m
+[31m-const cors = require('cors')({ origin: true });[m
+[31m-[m
+ admin.initializeApp();[m
+ [m
+[31m-exports.createStaffUser = functions.https.onRequest((req, res) => {[m
+[31m-  cors(req, res, async () => {[m
+[31m-    if (req.method !== 'POST') {[m
+[31m-      return res.status(405).send('Method Not Allowed');[m
+[31m-    }[m
+[31m-[m
+[31m-    const { email, password } = req.body;[m
+[31m-    if (!email || !password) {[m
+[31m-      return res.status(400).json({ error: 'Missing email or password' });[m
+[31m-    }[m
+[32m+[m[32mexports.createStaffUser = functions.https.onCall(async (data, context) => {[m
+[32m+[m[32m  const { email, password } = data;[m
+[32m+[m[32m  if (!email || !password) {[m
+[32m+[m[32m    throw new functions.https.HttpsError('invalid-argument', 'Missing email or password');[m
+[32m+[m[32m  }[m
+ [m
+[31m-    try {[m
+[31m-      const userRecord = await admin.auth().createUser({ email, password });[m
+[31m-      res.status(200).json({ uid: userRecord.uid });[m
+[31m-    } catch (err) {[m
+[31m-      console.error('Failed to create user', err);[m
+[31m-      res.status(500).json({ error: err.message });[m
+[31m-    }[m
+[31m-  });[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    const userRecord = await admin.auth().createUser({ email, password });[m
+[32m+[m[32m    return { uid: userRecord.uid };[m
+[32m+[m[32m  } catch (err) {[m
+[32m+[m[32m    console.error('Failed to create user', err);[m
+[32m+[m[32m    throw new functions.https.HttpsError('internal', err.message);[m
+[32m+[m[32m  }[m
+ });[m
+
+[33mcommit acee52db6f459684ff26dd7c55f3690f2fcbef7e[m
+Author: Turiedmonds <turi-edmonds@hotmail.com>
+Date:   Sun Jul 27 23:00:55 2025 +1200
+
+    Add CORS support to createStaffUser Cloud Function
+
+[1mdiff --git a/functions/index.js b/functions/index.js[m
+[1mnew file mode 100644[m
+[1mindex 0000000..40f80fc[m
+[1m--- /dev/null[m
+[1m+++ b/functions/index.js[m
+[36m@@ -0,0 +1,26 @@[m
+[32m+[m[32mconst functions = require('firebase-functions');[m
+[32m+[m[32mconst admin = require('firebase-admin');[m
+[32m+[m[32mconst cors = require('cors')({ origin: true });[m
+[32m+[m
+[32m+[m[32madmin.initializeApp();[m
+[32m+[m
+[32m+[m[32mexports.createStaffUser = functions.https.onRequest((req, res) => {[m
+[32m+[m[32m  cors(req, res, async () => {[m
+[32m+[m[32m    if (req.method !== 'POST') {[m
+[32m+[m[32m      return res.status(405).send('Method Not Allowed');[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    const { email, password } = req.body;[m
+[32m+[m[32m    if (!email || !password) {[m
+[32m+[m[32m      return res.status(400).json({ error: 'Missing email or password' });[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      const userRecord = await admin.auth().createUser({ email, password });[m
+[32m+[m[32m      res.status(200).json({ uid: userRecord.uid });[m
+[32m+[m[32m    } catch (err) {[m
+[32m+[m[32m      console.error('Failed to create user', err);[m
+[32m+[m[32m      res.status(500).json({ error: err.message });[m
+[32m+[m[32m    }[m
+[32m+[m[32m  });[m
+[32m+[m[32m});[m
