@@ -2009,7 +2009,7 @@ export async function listSessionsFromFirestore() {
 
     const contractorId = localStorage.getItem('contractor_id');
     if (!contractorId) {
-        alert('No contractor ID found');
+        console.error('[farm summary] No contractor_id found in localStorage');
         return [];
     }
 
@@ -2044,7 +2044,7 @@ export async function loadSessionFromFirestore(id) {
 
     const contractorId = localStorage.getItem('contractor_id');
     if (!contractorId) {
-        alert('No contractor ID found');
+        console.error('[farm summary] No contractor_id found in localStorage');
         return null;
     }
 
