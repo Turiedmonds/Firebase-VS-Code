@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const contractorDoc = await db.collection('contractors').doc(uid).get();
       if (contractorDoc.exists) {
         // Use replace to ensure a hard reload after login
-        console.log('[login] ✅ Contractor document found, would redirect to dashboard.html');
+        window.location.href = 'dashboard.html';
         return;
       }
 
