@@ -2443,8 +2443,8 @@ const body = document.getElementById('tallyBody');
 window.rebuildRowsFromSession = rebuildRowsFromSession;
 window.resetTallySheet = resetTallySheet;
 
-function setup() {
-  verifyContractorUser();
+async function setup() {
+  await verifyContractorUser();
 }
 
 firebase.auth().onAuthStateChanged(user => {
