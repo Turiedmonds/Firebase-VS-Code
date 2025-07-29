@@ -8,24 +8,41 @@ firebase.auth().onAuthStateChanged(async function (user) {
       const userData = docSnap.data();
       const role = userData.role;
 
-      let contractorId;
-
       if (role === "contractor") {
-        contractorId = user.uid;
+        localStorage.setItem("contractor_id", user.uid);
       } else if (role === "staff") {
-        contractorId = userData.contractorId;
+        const contractorId = userData.contractorId;
+        if (contractorId) {
+          localStorage.setItem("contractor_id", contractorId);
+        } else {
+          console.error("Missing contractorId in staff profile");
+          alert("Your staff profile is incomplete. Please contact your contractor.");
+          firebase.auth().signOut();
+          return;
+        }
       }
 
-      if (contractorId) {
-        localStorage.setItem('contractor_id', contractorId);
-        console.log('[auth-check] contractor_id stored, redirecting to tally.html');
-        setTimeout(() => {
-          window.location.href = 'tally.html';
-        }, 200); // short delay to ensure it sticks
-        return;
-      } else {
-        console.error("Missing contractorId in profile");
-      }
+      // ✅ Wait for contractor_id to be truly available
+      let attempts = 0;
+      const maxAttempts = 20; // ~2 seconds total
+
+      const checkContractorIdReady = setInterval(() => {
+        const readyId = localStorage.getItem("contractor_id");
+        if (readyId) {
+          clearInterval(checkContractorIdReady);
+          console.log("✅ contractor_id is ready:", readyId);
+          window.location.href = "tally.html";
+        }
+
+        attempts++;
+        if (attempts >= maxAttempts) {
+          clearInterval(checkContractorIdReady);
+          console.error("❌ contractor_id still not found after waiting");
+          alert("Something went wrong while signing in. Please try again.");
+          firebase.auth().signOut();
+        }
+      }, 100);
+      return;
     } else {
       console.error("User document not found in contractors collection");
     }
