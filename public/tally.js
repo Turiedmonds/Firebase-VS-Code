@@ -1961,54 +1961,42 @@ export async function verifyContractorUser() {
 // Save the current session to Firestore under
 // contractors/{contractorId}/sessions/[stationName_date_teamLeader]
 export async function saveSessionToFirestore(showStatus = false) {
-    if (typeof firebase === 'undefined' ||
-        !firebase.firestore ||
-        !firebase.auth) {
-        return; // Firebase not ready
-    }
+  if (typeof firebase === 'undefined' || !firebase.firestore || !firebase.auth) {
+    return;
+  }
 
-    const currentUser = firebase.auth().currentUser;
-    if (!currentUser) {
-        return; // User not signed in
-    }
+  const currentUser = firebase.auth().currentUser;
+  if (!currentUser) return;
 
-    try {
-        const data = collectExportData();
-        const station = (data.stationName || '').trim().replace(/\s+/g, '_');
-        const date = data.date || '';
-        const leader = (data.teamLeader || '').trim().replace(/\s+/g, '_');
+  const data = collectExportData();
+  const station = (data.stationName || '').trim().replace(/\s+/g, '_');
+  const date = data.date || '';
+  const leader = (data.teamLeader || '').trim().replace(/\s+/g, '_');
+  if (!(station && date && leader)) return;
 
-        // Skip cloud save if any key info is missing
-        const hasAllKeys = station && date && leader;
-        if (!hasAllKeys) {
-            console.warn('Skipping Firestore save - missing station/date/leader');
-            return;
-        }
+  if (!firestoreSessionId) {
+    firestoreSessionId = `${station}_${date}_${leader}`;
+  }
 
-        // Generate session ID once when all fields are provided
-        if (!firestoreSessionId) {
-            firestoreSessionId = `${station}_${date}_${leader}`;
-        }
+  // ✅ Use contractorId from localStorage
+  const contractorId = localStorage.getItem('contractor_id');
+  if (!contractorId) {
+    console.error('Missing contractor_id in localStorage');
+    return;
+  }
 
-        const contractorId = currentUser.uid;
-        const path = `contractors/${contractorId}/sessions/${firestoreSessionId}`;
-        console.log('Saving session to Firestore path:', path);
+  const path = `contractors/${contractorId}/sessions/${firestoreSessionId}`;
+  await firebase.firestore()
+    .doc(path)
+    .set({
+      ...data,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+    });
 
-        await firebase.firestore()
-            .doc(path)
-            .set({
-                ...data,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-        console.log('✅ Session saved to Firestore:', firestoreSessionId);
-        if (showStatus) {
-            alert('✅ Session saved to the cloud!');
-            showAutosaveStatus('\u2601\ufe0f Saved to cloud');
-        }
-    } catch (err) {
-        console.error('❌ Failed to save session to Firestore:', err);
-    }
+  if (showStatus) {
+    alert('✅ Session saved to the cloud!');
+    showAutosaveStatus('\u2601\ufe0f Saved to cloud');
+  }
 }
 
 // Fetch list of all sessions for this contractor from Firestore
