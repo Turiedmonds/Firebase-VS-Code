@@ -32,37 +32,27 @@ firebase.auth().onAuthStateChanged(async function (user) {
     const docSnap = staffQuery.docs[0];
     const role = docSnap.data().role;
 
-    if (role === "staff") {
-      console.log("[auth-check] \u2705 Found matching staff");
-      const data = docSnap.data();
-      console.log("[auth-check] \ud83d\udce6 Staff docSnap data:", data);
+      if (role === "staff") {
+        const data = docSnap.data();
+        console.log("[auth-check] \u2705 Found staff record:", data);
 
-      const contractorId = data.contractorId;
-      console.log("[auth-check] \ud83c\udd94 contractorId:", contractorId);
+        const contractorId = data.contractorId;
+        console.log("contractorId:", contractorId);
 
-      if (contractorId) {
-        try {
-          localStorage.setItem("contractor_id", contractorId);
-          const confirmed = localStorage.getItem("contractor_id");
-          console.log("\u2705 contractor_id saved in localStorage:", confirmed);
-
-          if (confirmed === contractorId) {
+        if (contractorId) {
+          try {
+            localStorage.setItem("contractor_id", contractorId);
             window.location.href = "tally.html";
-          } else {
-            console.error("\u274c contractor_id not stored properly \u2014 halting");
+          } catch (e) {
+            console.error("\u274c Failed to set contractor_id in localStorage:", e);
             await firebase.auth().signOut();
             window.location.href = "login.html";
           }
-        } catch (e) {
-          console.error("\u274c Failed to set contractor_id in localStorage:", e);
+        } else {
+          console.warn("\u26a0\ufe0f contractorId is missing in staff record");
           await firebase.auth().signOut();
           window.location.href = "login.html";
         }
-      } else {
-        console.warn("\u26a0\ufe0f contractorId is missing in staff record");
-        await firebase.auth().signOut();
-        window.location.href = "login.html";
-      }
     } else {
       console.error("[auth-check] \u274c Staff user not found in any subcollection");
       await firebase.auth().signOut();
