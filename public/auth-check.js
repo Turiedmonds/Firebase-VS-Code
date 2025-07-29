@@ -22,26 +22,7 @@ firebase.auth().onAuthStateChanged(async function (user) {
         }
       }
 
-      // ✅ Wait for contractor_id to be truly available
-      let attempts = 0;
-      const maxAttempts = 20; // ~2 seconds total
-
-      const checkContractorIdReady = setInterval(() => {
-        const readyId = localStorage.getItem("contractor_id");
-        if (readyId) {
-          clearInterval(checkContractorIdReady);
-          console.log("✅ contractor_id is ready:", readyId);
-          window.location.href = "tally.html";
-        }
-
-        attempts++;
-        if (attempts >= maxAttempts) {
-          clearInterval(checkContractorIdReady);
-          console.error("❌ contractor_id still not found after waiting");
-          alert("Something went wrong while signing in. Please try again.");
-          firebase.auth().signOut();
-        }
-      }, 100);
+      waitForContractorId();
       return;
     } else {
       console.error("User document not found in contractors collection");
@@ -53,3 +34,17 @@ firebase.auth().onAuthStateChanged(async function (user) {
     window.location.href = "login.html";
   }
 });
+
+function waitForContractorId() {
+  let attempts = 0;
+  const interval = setInterval(() => {
+    if (localStorage.getItem('contractor_id')) {
+      clearInterval(interval);
+      window.location.href = 'tally.html';
+    } else if (++attempts >= 20) {
+      clearInterval(interval);
+      console.error('contractor_id not available after waiting');
+      window.location.href = 'login.html';
+    }
+  }, 100);
+}
