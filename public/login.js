@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-
+ 
   const auth = firebase.auth();
   const db = firebase.firestore ? firebase.firestore() : null;
 
@@ -11,28 +11,33 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const cred = await auth.signInWithEmailAndPassword(email, password);
       console.log("Login success");
-      if (db && cred.user) {
-        const docRef = db.collection('contractors').doc(cred.user.uid);
-        try {
-          const snap = await docRef.get();
-          const role = snap.exists ? snap.data().role : null;
 
-          if (role === 'contractor') {
-            window.location.href = 'dashboard.html';
-            return;
-          } else if (role === 'staff') {
-            window.location.href = 'tally.html';
-            return;
-          }
-        } catch (err) {
-          console.error('Failed to fetch user role:', err);
+      const contractorId = "USc1VVmUDHQiWW3yvvcaHbyJVFX2"; // <- Your contractor UID
+      const staffRef = db.collection('contractors')
+                         .doc(contractorId)
+                         .collection('staff');
+
+      const query = await staffRef.where("email", "==", email).limit(1).get();
+
+      if (!query.empty) {
+        const userDoc = query.docs[0].data();
+        const role = userDoc.role;
+
+        if (role === "contractor") {
+          window.location.href = 'dashboard.html';
+        } else if (role === "staff") {
+          window.location.href = 'tally.html';
+        } else {
+          alert("Unauthorized role: " + role);
         }
+      } else {
+        alert("No role found in staff records for this user.");
       }
-      // Default redirect for authenticated users if no specific role is found
-      window.location.href = 'tally.html';
+
     } catch (err) {
       console.error("Login error:", err);
       alert("Login failed: " + err.message);
     }
   });
 });
+ 

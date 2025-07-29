@@ -16,8 +16,16 @@ exports.createStaffUser = onCall(async (request) => {
   return { uid: userRecord.uid };
 });
 
-exports.sendStaffCredentials = onCall(async (request) => {
+exports.sendStaffCredentials = onCall(
+  {
+    secrets: ["GMAIL_USER", "GMAIL_PASS"]
+  },
+  async (request) => {
+
   const { staffName, staffEmail, password, contractorEmail } = request.data;
+
+console.log("DEBUG - GMAIL_USER:", process.env.GMAIL_USER);
+console.log("DEBUG - GMAIL_PASS is set:", !!process.env.GMAIL_PASS);
 
   try {
     const transporter = nodemailer.createTransport({
@@ -42,3 +50,4 @@ exports.sendStaffCredentials = onCall(async (request) => {
     return { success: false, error: error.message };
   }
 });
+// Trigger redeploy
