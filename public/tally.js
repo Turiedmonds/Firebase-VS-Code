@@ -140,6 +140,8 @@ let promptedNineHour = false;
 let layoutBuilt = false
 let isSetupComplete = false;
 let hasUserStartedEnteringData = false;
+// Track whether any tally or shed staff inputs have been interacted with
+let hasTouchedTallyInputs = false;
 
 // === Autosave state ===
 let autosaveTimer = null;
@@ -1120,7 +1122,16 @@ function calculateHoursWorked() {
       updateLunchIndicatorText();
     }
     updateLunchToggleButton();
-   if (end) end.addEventListener("change", calculateHoursWorked);
+   if (end) {
+     end.addEventListener("change", calculateHoursWorked);
+     end.addEventListener('focus', (e) => {
+       if (!hasTouchedTallyInputs) {
+         e.preventDefault();
+         e.target.blur();
+         showFinishTimeWarningModal();
+       }
+     });
+   }
  if (hours) {
          hours.addEventListener("input", () => updateShedStaffHours(hours.value));
          updateShedStaffHours(hours.value);
@@ -2124,6 +2135,33 @@ function confirmSaveReset(full) {
     }
 }
 
+function showFinishTimeWarningModal() {
+    const modal = document.createElement('div');
+    modal.id = 'finishWarningModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-box">
+        <h2>Warning</h2>
+        <p>If you enter a Finish Time now, all blank rows and columns will be removed. 
+           Make sure you\u2019ve entered all shearers, shed staff, and tallies first.</p>
+        <div class="modal-buttons">
+          <button id="confirmFinishTime">OK, Continue</button>
+          <button id="cancelFinishTime">Cancel</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('confirmFinishTime').onclick = () => {
+        modal.remove();
+        document.getElementById('finishTime').focus();
+    };
+
+    document.getElementById('cancelFinishTime').onclick = () => {
+        modal.remove();
+    };
+}
+
 // Clears the current tally layout and counters without prompting
 function resetTallySheet() {
     const headerRowEl = document.getElementById('headerRow');
@@ -2327,6 +2365,9 @@ const interceptReset = (full) => (e) => {
             e.target.matches('#shedStaffTable td:nth-child(1) input')
         )) {
             hasUserStartedEnteringData = true;
+        }
+        if (e.target.closest('#tallyBody') || e.target.closest('#shedStaffTable')) {
+            hasTouchedTallyInputs = true;
         }
         if (e.target.matches('input, textarea')) {
             scheduleAutosave();
