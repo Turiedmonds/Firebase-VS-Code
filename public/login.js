@@ -25,32 +25,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Not a contractor - check staff records for the predefined contractorId
-      const contractorId = 'USc1VVmUDHQiWW3yvvcaHbyJVFX2';
-      const staffRef = db
-        .collection('contractors')
-        .doc(contractorId)
-        .collection('staff');
+      // Not a contractor - search staff subcollections across all contractors
+      const staffSnapshot = await db.collectionGroup('staff').get();
+      let foundContractorId = null;
 
-      const staffSnapshot = await staffRef
-        .where('email', '==', userEmail)
-        .limit(1)
-        .get();
-
-      if (!staffSnapshot.empty) {
-        // ✅ Staff match found, fetch contractor_id and redirect
-        const staffDoc = staffSnapshot.docs[0];
-        const staffData = staffDoc.data();
-        const contractorId = staffData.contractorId;
-
-        if (contractorId) {
-          localStorage.setItem('contractor_id', contractorId);
-          console.log('[login] 💾 contractor_id stored in localStorage:', contractorId);
-          window.location.href = 'tally.html';
-        } else {
-          console.error('[login] ⚠️ contractorId missing from staff document, cannot continue');
-          alert('Your account is missing a contractor ID. Please contact your admin.');
+      staffSnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (
+          data.email &&
+          data.email.toLowerCase() === userEmail.toLowerCase()
+        ) {
+          foundContractorId = data.contractorId;
         }
+      });
+
+      if (foundContractorId) {
+        localStorage.setItem('contractor_id', foundContractorId);
+        console.log('[login] 💾 contractor_id stored in localStorage:', foundContractorId);
+        window.location.href = 'tally.html';
       } else {
         // No matching staff record
         alert('No role found in staff records for this user.');
