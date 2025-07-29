@@ -3,16 +3,27 @@ const { onCall } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 admin.initializeApp();
+const firestore = admin.firestore();
 
 exports.createStaffUser = onCall(async (request) => {
-  const { email, password = "Test1234!" } = request.data;
-  console.log("📥 Received data in function:", { email });
+  const { email, password = "Test1234!", name, role, contractorId } = request.data;
+  console.log("📥 Received data in function:", { email, name, role, contractorId });
 
   if (!email) {
     throw new Error('Missing email');
   }
 
   const userRecord = await admin.auth().createUser({ email, password });
+
+  const staffDocRef = firestore.collection(`contractors/${contractorId}/staff`).doc(userRecord.uid);
+  await staffDocRef.set({
+    name,
+    email,
+    role,
+    contractorId,
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
   return { uid: userRecord.uid };
 });
 
