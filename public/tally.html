@@ -367,6 +367,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function performReset(full) {
   clearCommonFields();
+  // Always clear cached session metadata so a new day doesn't reuse the old ID
+  if (window.resetForNewDay) window.resetForNewDay();
 
   if (full) {
     // Clear input fields
