@@ -2064,7 +2064,11 @@ export async function loadSessionFromFirestore(id) {
             .collection('sessions')
             .doc(id)
             .get();
-        return docSnap.exists ? docSnap.data() : null;
+        if (docSnap.exists) {
+            firestoreSessionId = id; // ensure subsequent saves update this doc
+            return docSnap.data();
+        }
+        return null;
     } catch (err) {
         console.error('❌ Failed to load session from Firestore:', err);
         return null;
@@ -2202,6 +2206,26 @@ function resetForNewDay() {
 }
 
 function loadSessionObject(session) {
+    // Cancel any pending autosave to avoid unintended saves while loading
+    if (autosaveTimer) {
+        clearTimeout(autosaveTimer);
+        autosaveTimer = null;
+    }
+
+    // Precompute the Firestore document ID for this session
+    firestoreSessionId = '';
+    if (session.stationName && session.date && session.teamLeader) {
+        const station = String(session.stationName).trim().replace(/\s+/g, '_');
+        const leader = String(session.teamLeader).trim().replace(/\s+/g, '_');
+        firestoreSessionId = `${station}_${session.date}_${leader}`;
+    }
+
+    // Mark the loaded data as the latest saved state
+    lastSavedJson = JSON.stringify(session);
+    const now = Date.now();
+    lastLocalSave = now;
+    lastCloudSave = now;
+    
     // Always enforce locking first so any subsequent DOM manipulation
     // doesn't accidentally trigger focus events while unlocked
     enforceSessionLock(session.date);
