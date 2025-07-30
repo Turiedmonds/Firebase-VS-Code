@@ -49,6 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // Sign in with Firebase Auth
       const cred = await auth.signInWithEmailAndPassword(email, password);
       console.log('Login success');
+      const errorDiv = document.getElementById('login-error');
+      if (errorDiv) errorDiv.textContent = '';
 
       // Get UID and email of the authenticated user
       const { uid, email: userEmail } = cred.user;
@@ -95,7 +97,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (err) {
       console.error('Login error:', err);
-      alert('Login failed: ' + err.message);
+      const errorDiv = document.getElementById('login-error');
+      let message = 'Login failed';
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+        message = 'Incorrect email or password';
+      } else if (err.code === 'auth/too-many-requests') {
+        message = 'Too many failed attempts. Try again later';
+      }
+      if (errorDiv) {
+        errorDiv.textContent = message;
+      } else {
+        alert(message);
+      }
     }
   });
 });
