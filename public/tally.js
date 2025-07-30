@@ -2189,6 +2189,18 @@ function resetTallySheet() {
     hasUserStartedEnteringData = false;
 }
 
+// Clear any stored metadata so a new day's session doesn't reuse old values
+function resetForNewDay() {
+    // ID used when saving to Firestore
+    firestoreSessionId = null;
+    // Optional globals that may hold last session's metadata
+    if (typeof stationName !== 'undefined') stationName = null;
+    if (typeof teamLeader !== 'undefined') teamLeader = null;
+    if (typeof sessionDate !== 'undefined') sessionDate = null;
+    // Remove cached session data if present
+    try { localStorage.removeItem('session_data'); } catch (e) { /* ignore */ }
+}
+
 function loadSessionObject(session) {
     // Always enforce locking first so any subsequent DOM manipulation
     // doesn't accidentally trigger focus events while unlocked
@@ -2449,6 +2461,7 @@ const body = document.getElementById('tallyBody');
 
 window.rebuildRowsFromSession = rebuildRowsFromSession;
 window.resetTallySheet = resetTallySheet;
+window.resetForNewDay = resetForNewDay;
 
 async function setup() {
   await verifyContractorUser();
