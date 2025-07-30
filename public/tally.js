@@ -2020,7 +2020,7 @@ export async function listSessionsFromFirestore() {
             .collection('sessions')
             .get();
 
-        return snap.docs.map(doc => {
+        const sessions = snap.docs.map(doc => {
             const d = doc.data() || {};
             return {
                 id: doc.id,
@@ -2029,6 +2029,15 @@ export async function listSessionsFromFirestore() {
                 teamLeader: d.teamLeader
             };
         });
+
+        const seen = new Set();
+        const uniqueSessions = sessions.filter(session => {
+            if (seen.has(session.id)) return false;
+            seen.add(session.id);
+            return true;
+        });
+
+        return uniqueSessions;
     } catch (err) {
         console.error('❌ Failed to list sessions from Firestore:', err);
         return [];
