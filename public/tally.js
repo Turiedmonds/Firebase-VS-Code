@@ -526,7 +526,14 @@ function populateStationOptions() {
     const list = document.getElementById('loadStationList');
     if (!list) return;
     list.innerHTML = '';
-    const names = Array.from(new Set(getStoredSessions().map(s => s.stationName).filter(Boolean)));
+    const nameMap = new Map();
+    getStoredSessions().forEach(s => {
+        const trimmed = (s.stationName || '').trim();
+        if (!trimmed) return;
+        const key = trimmed.toLowerCase();
+        if (!nameMap.has(key)) nameMap.set(key, trimmed);
+    });
+    const names = Array.from(nameMap.values());
     names.forEach(n => {
         const opt = document.createElement('option');
         opt.value = n;
@@ -538,8 +545,9 @@ function populateDateOptions(station) {
     const list = document.getElementById('loadDateList');
     if (!list) return;
     list.innerHTML = '';
+    const target = (station || '').trim().toLowerCase();
     const dates = getStoredSessions()
-        .filter(s => s.stationName.trim().toLowerCase() === station.trim().toLowerCase())
+        .filter(s => (s.stationName || '').trim().toLowerCase() === target)
         .map(s => s.date);
     Array.from(new Set(dates)).forEach(d => {
         const opt = document.createElement('option');
@@ -1506,9 +1514,16 @@ function handleSaveOption(option) {
  function populateStationDropdown() {
      const select = document.getElementById('stationSelect');
      if (!select) return;
-     const sessions = getStoredSessions();
-     const current = select.value;
-     const names = Array.from(new Set(sessions.map(s => s.stationName).filter(Boolean)));
+    const sessions = getStoredSessions();
+    const current = select.value;
+    const nameMap = new Map();
+    sessions.forEach(s => {
+        const trimmed = (s.stationName || '').trim();
+        if (!trimmed) return;
+        const key = trimmed.toLowerCase();
+        if (!nameMap.has(key)) nameMap.set(key, trimmed);
+    });
+    const names = Array.from(nameMap.values());
     select.innerHTML = '';
      const blank = document.createElement('option');
      blank.value = '';
@@ -1803,8 +1818,8 @@ export function clearStationSummaryView() {
 export function collectExportData() {
      const data = {
          date: document.getElementById('date')?.value || '',
-         stationName: document.getElementById('stationName')?.value || '',
-         teamLeader: document.getElementById('teamLeader')?.value || '',
+        stationName: document.getElementById('stationName')?.value.trim() || '',
+        teamLeader: document.getElementById('teamLeader')?.value.trim() || '',
          combType: document.getElementById('combType')?.value || '',
          startTime: document.getElementById('startTime')?.value || '',
          finishTime: document.getElementById('finishTime')?.value || '',
