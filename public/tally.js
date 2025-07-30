@@ -2052,12 +2052,7 @@ export async function listSessionsFromFirestore() {
 
         const sessions = snap.docs.map(doc => {
             const d = doc.data() || {};
-            return {
-                id: doc.id,
-                stationName: d.stationName,
-                date: d.date,
-                teamLeader: d.teamLeader
-            };
+            return { id: doc.id, ...d };
         });
 
         const seen = new Set();
