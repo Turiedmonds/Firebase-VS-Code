@@ -2195,14 +2195,23 @@ function resetTallySheet() {
 
 // Clear any stored metadata so a new day's session doesn't reuse old values
 function resetForNewDay() {
-    // ID used when saving to Firestore
-    firestoreSessionId = null;
-    // Optional globals that may hold last session's metadata
-    if (typeof stationName !== 'undefined') stationName = null;
-    if (typeof teamLeader !== 'undefined') teamLeader = null;
-    if (typeof sessionDate !== 'undefined') sessionDate = null;
-    // Remove cached session data if present
-    try { localStorage.removeItem('session_data'); } catch (e) { /* ignore */ }
+  firestoreSessionId = null;
+
+  // Clean up old session metadata safely
+  try {
+    stationName = null;
+    teamLeader = null;
+    sessionDate = null;
+  } catch (e) {
+    // Ignore if not declared — this prevents crashes
+  }
+
+  // Clear saved data from localStorage if it exists
+  try {
+    localStorage.removeItem('session_data');
+  } catch (e) {
+    // Ignore any errors
+  }
 }
 
 function loadSessionObject(session) {
