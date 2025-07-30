@@ -1,7 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
- 
+
   const auth = firebase.auth();
   const db = firebase.firestore ? firebase.firestore() : null;
+
+  const rememberMeCheckbox = document.getElementById('rememberMe');
+  if (rememberMeCheckbox) {
+    const saved = localStorage.getItem('rememberMe');
+    if (saved === 'true') {
+      rememberMeCheckbox.checked = true;
+    }
+  }
 
   const passwordInput = document.getElementById('password');
   const togglePasswordBtn = document.getElementById('togglePassword');
@@ -18,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value.trim();
     const remember = document.getElementById('rememberMe').checked;
+    localStorage.setItem('rememberMe', remember ? 'true' : 'false');
 
     try {
       const persistence = remember
