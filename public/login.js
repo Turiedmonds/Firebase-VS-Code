@@ -3,6 +3,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const auth = firebase.auth();
   const db = firebase.firestore ? firebase.firestore() : null;
 
+  const emailInput = document.getElementById('email');
+  if (emailInput) {
+    const savedEmail = localStorage.getItem('savedEmail');
+    if (savedEmail) {
+      emailInput.value = savedEmail;
+    }
+  }
+
   const rememberMeCheckbox = document.getElementById('rememberMe');
   if (rememberMeCheckbox) {
     const saved = localStorage.getItem('rememberMe');
@@ -27,6 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const password = document.getElementById('password').value.trim();
     const remember = document.getElementById('rememberMe').checked;
     localStorage.setItem('rememberMe', remember ? 'true' : 'false');
+    if (remember) {
+      localStorage.setItem('savedEmail', email);
+    } else {
+      localStorage.removeItem('savedEmail');
+    }
 
     try {
       const persistence = remember
