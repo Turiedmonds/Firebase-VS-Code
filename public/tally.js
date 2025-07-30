@@ -492,6 +492,19 @@ function unlockSession() {
     sessionLocked = false;
     document.querySelectorAll('#tallySheetView input').forEach(inp => inp.readOnly = false);
     document.querySelectorAll('#tallySheetView select').forEach(sel => sel.disabled = false);
+
+    // Ensure a Firestore document ID exists when unlocking a view-only session
+    if (!firestoreSessionId &&
+        document.getElementById('stationName') &&
+        document.getElementById('date') &&
+        document.getElementById('teamLeader')) {
+        const station = document.getElementById('stationName').value.trim().replace(/\s+/g, '_');
+        const date = document.getElementById('date').value;
+        const leader = document.getElementById('teamLeader').value.trim().replace(/\s+/g, '_');
+        if (station && date && leader) {
+            firestoreSessionId = `${station}_${date}_${leader}`;
+        }
+    }
 }
 
 function promptForPinUnlock() {
