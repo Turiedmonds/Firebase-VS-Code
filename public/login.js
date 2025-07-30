@@ -17,8 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value.trim();
+    const remember = document.getElementById('rememberMe').checked;
 
     try {
+      const persistence = remember
+        ? firebase.auth.Auth.Persistence.LOCAL
+        : firebase.auth.Auth.Persistence.SESSION;
+      await auth.setPersistence(persistence);
       // Sign in with Firebase Auth
       const cred = await auth.signInWithEmailAndPassword(email, password);
       console.log('Login success');
