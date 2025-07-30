@@ -2065,7 +2065,6 @@ export async function loadSessionFromFirestore(id) {
             .doc(id)
             .get();
         if (docSnap.exists) {
-            firestoreSessionId = id; // ensure subsequent saves update this doc
             return docSnap.data();
         }
         return null;
@@ -2223,7 +2222,7 @@ function loadSessionObject(session) {
 
     // Precompute the Firestore document ID for this session
     firestoreSessionId = '';
-    if (session.stationName && session.date && session.teamLeader) {
+    if (!session.viewOnly && session.stationName && session.date && session.teamLeader) {
         const station = String(session.stationName).trim().replace(/\s+/g, '_');
         const leader = String(session.teamLeader).trim().replace(/\s+/g, '_');
         firestoreSessionId = `${station}_${session.date}_${leader}`;
