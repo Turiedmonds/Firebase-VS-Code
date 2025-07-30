@@ -2064,7 +2064,11 @@ export async function loadSessionFromFirestore(id) {
             .collection('sessions')
             .doc(id)
             .get();
-        return docSnap.exists ? docSnap.data() : null;
+        if (docSnap.exists) {
+            firestoreSessionId = id; // ensure subsequent saves update this doc
+            return docSnap.data();
+        }
+        return null;
     } catch (err) {
         console.error('❌ Failed to load session from Firestore:', err);
         return null;
