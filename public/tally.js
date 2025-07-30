@@ -1511,11 +1511,11 @@ function handleSaveOption(option) {
     }
 }
  
- function populateStationDropdown() {
-     const select = document.getElementById('stationSelect');
-     if (!select) return;
-    const sessions = getStoredSessions();
+async function populateStationDropdown() {
+    const select = document.getElementById('stationSelect');
+    if (!select) return;
     const current = select.value;
+    const sessions = await listSessionsFromFirestore();
     const nameMap = new Map();
     sessions.forEach(s => {
         const trimmed = (s.stationName || '').trim();
@@ -1525,17 +1525,17 @@ function handleSaveOption(option) {
     });
     const names = Array.from(nameMap.values());
     select.innerHTML = '';
-     const blank = document.createElement('option');
-     blank.value = '';
-     select.appendChild(blank);
-     names.forEach(n => {
-         const opt = document.createElement('option');
-         opt.value = n;
-         opt.textContent = n;
-         select.appendChild(opt);
-     });
-     if (current) select.value = current;
- }
+    const blank = document.createElement('option');
+    blank.value = '';
+    select.appendChild(blank);
+    names.forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n;
+        opt.textContent = n;
+        select.appendChild(opt);
+    });
+    if (current) select.value = current;
+}
  
  function aggregateStationData(sessions) {
      const optionSet = new Set(Array.from(document.querySelectorAll('#sheepTypes option')).map(o => o.value));
@@ -1613,10 +1613,10 @@ export function detectSheepCategory(sheepTypeName) {
   return 'unknown';
 }
  
- export function buildStationSummary() {
-     const stationInput = document.getElementById('stationSelect');
-     const startInput = document.getElementById('summaryStart');
-     const endInput = document.getElementById('summaryEnd');
+export async function buildStationSummary() {
+    const stationInput = document.getElementById('stationSelect');
+    const startInput = document.getElementById('summaryStart');
+    const endInput = document.getElementById('summaryEnd');
  
      const station = stationInput?.value.trim() || '';
      const start = startInput?.value;
@@ -1625,7 +1625,7 @@ export function detectSheepCategory(sheepTypeName) {
      console.log('Selected station:', station);
      console.log('Selected start:', start, 'end:', end);
  
-     const allSessions = getStoredSessions();
+    const allSessions = await listSessionsFromFirestore();
 
     // Normalize station names for comparison
     const targetStation = station.toLowerCase();
@@ -2042,6 +2042,8 @@ export async function listSessionsFromFirestore() {
     }
 
     try {
+        // Sessions are stored under the contractor UID so this
+        // will return sessions saved by any user on the account
         const snap = await firebase.firestore()
             .collection('contractors')
             .doc(contractorId)
