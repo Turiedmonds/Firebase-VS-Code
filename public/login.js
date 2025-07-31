@@ -97,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (err) {
       console.error('Login error:', err);
+      console.log('Firebase Auth error code:', err.code);
       const errorDiv = document.getElementById('login-error');
       let message = '';
 
@@ -106,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
           break;
         case 'auth/user-not-found':
         case 'auth/wrong-password':
+        case 'auth/invalid-login-credentials':
           message = 'Incorrect email or password';
           break;
         case 'auth/too-many-requests':
