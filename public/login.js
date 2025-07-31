@@ -98,12 +98,29 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.error('Login error:', err);
       const errorDiv = document.getElementById('login-error');
-      let message = 'Login failed';
-      if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
-        message = 'Incorrect email or password';
-      } else if (err.code === 'auth/too-many-requests') {
-        message = 'Too many failed attempts. Try again later';
+      let message = '';
+
+      switch (err.code) {
+        case 'auth/invalid-email':
+          message = 'Please enter a valid email address';
+          break;
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+          message = 'Incorrect email or password';
+          break;
+        case 'auth/too-many-requests':
+          message = 'Too many failed attempts. Try again later';
+          break;
+        case 'auth/network-request-failed':
+          message = 'Network error. Check your internet connection';
+          break;
+        case 'auth/user-disabled':
+          message = 'This account has been disabled. Contact your administrator';
+          break;
+        default:
+          message = 'Login failed. Please try again';
       }
+
       if (errorDiv) {
         errorDiv.textContent = message;
       } else {
