@@ -407,9 +407,9 @@ button {
 }
 
 .spinner-logo {
-  width: 100px;
-  height: 100px;
-  animation: spinner-rotate 6s linear infinite;
+  width: 70px;
+  height: 70px;
+  animation: spinner-rotate 4s linear infinite;
   margin-bottom: 10px;
   border-radius: 50%;
   object-fit: cover;
