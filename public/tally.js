@@ -2521,7 +2521,13 @@ window.resetTallySheet = resetTallySheet;
 window.resetForNewDay = resetForNewDay;
 
 async function setup() {
-  await verifyContractorUser();
+  const overlay = document.getElementById('loading-overlay');
+  if (overlay) overlay.style.display = 'flex';
+  try {
+    await verifyContractorUser();
+  } finally {
+    if (overlay) overlay.style.display = 'none';
+  }
 }
 
 firebase.auth().onAuthStateChanged(user => {
