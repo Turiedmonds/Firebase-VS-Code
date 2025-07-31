@@ -29,8 +29,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  const loginForm = document.getElementById('loginForm');
+
+  loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const submitButton = loginForm.querySelector('button[type="submit"]');
+    if (loadingIndicator) loadingIndicator.style.display = 'block';
+    if (submitButton) submitButton.disabled = true;
+
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value.trim();
     const remember = document.getElementById('rememberMe').checked;
@@ -128,6 +136,9 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         alert(message);
       }
+    } finally {
+      if (loadingIndicator) loadingIndicator.style.display = 'none';
+      if (submitButton) submitButton.disabled = false;
     }
   });
 });
