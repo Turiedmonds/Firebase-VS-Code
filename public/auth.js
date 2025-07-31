@@ -6,7 +6,7 @@ firebase.auth().onAuthStateChanged(user => {
 
 export function logout() {
   const confirmed = confirm(
-    'Logging out now will prevent offline access. Continue?'
+    'Warning: You won’t be able to log back in without internet access. Are you sure you want to log out?'
   );
   if (!confirmed) {
     return;
