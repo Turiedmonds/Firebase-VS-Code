@@ -382,3 +382,38 @@ button {
     font-size: 18px;
     font-weight: 500;
 }
+
+/* Login loading overlay */
+#login-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  text-align: center;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#login-loading-overlay.show {
+  opacity: 1;
+}
+
+.spinner-logo {
+  width: 80px;
+  height: 80px;
+  animation: spinner-rotate 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spinner-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

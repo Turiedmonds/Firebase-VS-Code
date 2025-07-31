@@ -34,9 +34,12 @@ document.addEventListener('DOMContentLoaded', () => {
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const loadingIndicator = document.getElementById('loading-indicator');
+    const loadingOverlay = document.getElementById('login-loading-overlay');
     const submitButton = loginForm.querySelector('button[type="submit"]');
-    if (loadingIndicator) loadingIndicator.style.display = 'block';
+    if (loadingOverlay) {
+      loadingOverlay.style.display = 'flex';
+      requestAnimationFrame(() => loadingOverlay.classList.add('show'));
+    }
     if (submitButton) submitButton.disabled = true;
 
     const email = document.getElementById('email').value.trim();
@@ -137,7 +140,10 @@ document.addEventListener('DOMContentLoaded', () => {
         alert(message);
       }
     } finally {
-      if (loadingIndicator) loadingIndicator.style.display = 'none';
+      if (loadingOverlay) {
+        loadingOverlay.classList.remove('show');
+        loadingOverlay.style.display = 'none';
+      }
       if (submitButton) submitButton.disabled = false;
     }
   });
