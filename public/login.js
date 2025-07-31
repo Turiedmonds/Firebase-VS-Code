@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const loadingOverlay = document.getElementById('login-loading-overlay');
+    const loadingOverlay = document.getElementById('loading-overlay');
     const submitButton = loginForm.querySelector('button[type="submit"]');
     if (loadingOverlay) {
       loadingOverlay.style.display = 'flex';
