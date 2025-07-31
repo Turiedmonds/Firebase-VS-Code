@@ -383,8 +383,8 @@ button {
     font-weight: 500;
 }
 
-/* Login loading overlay */
-#login-loading-overlay {
+/* Loading overlay */
+#loading-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -402,14 +402,14 @@ button {
   transition: opacity 0.3s ease;
 }
 
-#login-loading-overlay.show {
+#loading-overlay.show {
   opacity: 1;
 }
 
 .spinner-logo {
-  width: 50px;
-  height: 50px;
-  animation: spinner-rotate 4s linear infinite;
+  width: 70px;
+  height: 70px;
+  animation: spinner-rotate 6s linear infinite;
   margin-bottom: 10px;
   border-radius: 50%;
   object-fit: cover;
