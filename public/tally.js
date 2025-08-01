@@ -1955,28 +1955,29 @@ export async function verifyContractorUser() {
   console.log('[verifyContractorUser] Current user:', user);
 
   const db = firebase.firestore();
-  const contractorId = 'USc1VVmUDHQiWW3yvvcaHbyJVFX2'; // hardcoded contractor UID
 
-  // First, check if this user is a contractor
-  const contractorRef = db.collection('contractors').doc(user.uid);
-  const contractorSnap = await contractorRef.get();
-
+  // First, check if this user is a contractor by UID
+  const contractorSnap = await db.collection('contractors').doc(user.uid).get();
   if (contractorSnap.exists) {
     console.log('[verifyContractorUser] User is a contractor');
+    localStorage.setItem('contractor_id', user.uid);
     return 'contractor';
   }
 
   console.log('[verifyContractorUser] Not a contractor, scanning staff collections');
 
-  // Then check if they are listed under the contractor's staff collection
-  const staffRef = db.collection('contractors')
-                     .doc(contractorId)
-                     .collection('staff');
-
-  const query = await staffRef.where('email', '==', user.email).limit(1).get();
+  // Search across all contractors/{contractorId}/staff subcollections
+  const query = await db.collectionGroup('staff')
+                        .where('email', '==', user.email)
+                        .where('role', '==', 'staff')
+                        .limit(1)
+                        .get();
 
   if (!query.empty) {
-    console.log('[verifyContractorUser] Found matching staff');
+    const staffDoc = query.docs[0];
+    const contractorId = staffDoc.ref.parent.parent.id;
+    localStorage.setItem('contractor_id', contractorId);
+    console.log('[verifyContractorUser] Found matching staff for contractor', contractorId);
     return 'staff';
   }
 
