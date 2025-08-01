@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const { onCall } = require('firebase-functions/v2/https');
+const { onDocumentDeleted } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 admin.initializeApp();
@@ -80,14 +81,14 @@ exports.deleteStaffUser = onCall(async (request) => {
 // Trigger redeploy
 // ✅ Uses Secret Manager (future-safe)
 
-// Listen for deleted staff user documents
-exports.onStaffDeleted = functions.firestore
-  .document('contractors/{contractorId}/staff/{staffId}')
-  .onDelete((snap, context) => {
-    const { contractorId, staffId } = context.params;
-    const data = snap.data() || {};
-    const { name, email } = data;
-
+// Listen for deleted staff user documents using v2 syntax
+exports.onStaffDeleted = onDocumentDeleted(
+  'contractors/{contractorId}/staff/{staffId}',
+  (event) => {
+    const { contractorId, staffId } = event.params;
+    const fields = event.data?.oldValue?.fields || {};
+    const name = fields.name?.stringValue;
+    const email = fields.email?.stringValue;
     const deletedAt = new Date().toISOString();
 
     console.log('Staff deleted', {
@@ -97,4 +98,5 @@ exports.onStaffDeleted = functions.firestore
       email,
       deletedAt,
     });
-  });
+  }
+);
