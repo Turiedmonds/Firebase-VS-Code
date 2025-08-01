@@ -41,7 +41,7 @@ console.log("DEBUG - GMAIL_PASS is set:", !!process.env.GMAIL_PASS);
       // Send to both contractor and staff
       to: [contractorEmail, staffEmail],
       subject: 'New Staff Login Created',
-      text: `Kia ora,\n\nYou've created a new SHE\u0394R iQ staff login.\n\nName: ${staffName}\nEmail: ${staffEmail}\nTemporary Password: ${password}\n\nPlease forward these details to your staff member. They will be prompted to change their password on first login.\n\nNg\u0101 mihi,\nThe SHE\u0394R iQ Team`,
+      text: `Kia ora,\n\nYou've successfully created a new SHE\u0394R iQ staff login.\n\nHere are the details for your records:\n\nName: ${staffName}\nEmail: ${staffEmail}\nPassword: ${password}\n\nPlease share these login details with your staff member so they can access the SHE\u0394R iQ app.\n\nNg\u0101 mihi,\nThe SHE\u0394R iQ Team`,
     };
 
     await transporter.sendMail(mailOptions);
