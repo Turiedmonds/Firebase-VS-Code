@@ -16,20 +16,51 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
+const STAFF_LIMIT = 10;
 
 async function loadStaffList(contractorId) {
-  const list = document.getElementById('staffList');
-  list.innerHTML = '';
+  const tbody = document.querySelector('#staffTable tbody');
+  const summaryEl = document.getElementById('staffSummary');
+  tbody.innerHTML = '';
+
   const snapshot = await getDocs(collection(db, 'contractors', contractorId, 'staff'));
-  snapshot.forEach(docSnap => {
+  const docs = snapshot.docs;
+  docs.forEach((docSnap, index) => {
     const data = docSnap.data();
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <span>${data.name || ''} - ${data.email}</span>
-      <button class="deleteStaffBtn" data-uid="${docSnap.id}" data-email="${data.email}">🗑️ Delete</button>`;
-    list.appendChild(li);
+    let lastActiveMs = 0;
+    if (data.lastActive) {
+      if (typeof data.lastActive === 'number') {
+        lastActiveMs = data.lastActive;
+      } else if (data.lastActive.toMillis) {
+        lastActiveMs = data.lastActive.toMillis();
+      } else if (data.lastActive.seconds) {
+        lastActiveMs = data.lastActive.seconds * 1000;
+      }
+    }
+    const diff = Date.now() - lastActiveMs;
+    let status = '⚫ Last seen unknown';
+    if (lastActiveMs && diff <= 5 * 60 * 1000) {
+      status = '🟢 Online now';
+    } else if (lastActiveMs) {
+      const mins = Math.round(diff / 60000);
+      status = `⚫ Last seen ${mins} mins ago`;
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${data.name || ''}</td>
+      <td>${data.email}</td>
+      <td>${status}</td>
+      <td><button class="deleteStaffBtn" data-uid="${docSnap.id}" data-email="${data.email}">🗑 Delete</button></td>`;
+    tbody.appendChild(tr);
   });
-  list.querySelectorAll('.deleteStaffBtn').forEach(btn => {
+
+  if (summaryEl) {
+    summaryEl.textContent = `👥 ${docs.length} staff added (limit: ${STAFF_LIMIT})`;
+  }
+
+  tbody.querySelectorAll('.deleteStaffBtn').forEach(btn => {
     btn.addEventListener('click', () => deleteStaff(btn.dataset.uid, btn.dataset.email));
   });
 }
@@ -87,6 +118,7 @@ async function deleteStaff(uid, email) {
       if (overlay) overlay.style.display = 'none';
 
       const contractorUid = user.uid;
+      localStorage.setItem('contractor_id', contractorUid);
       await loadStaffList(contractorUid);
 
       const addBtn = document.getElementById('addStaffBtn');
