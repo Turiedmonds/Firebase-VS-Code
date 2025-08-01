@@ -51,5 +51,15 @@ console.log("DEBUG - GMAIL_PASS is set:", !!process.env.GMAIL_PASS);
     return { success: false, error: error.message };
   }
 });
+
+exports.deleteStaffUser = onCall(async (request) => {
+  const { uid, contractorId } = request.data || {};
+  if (!uid || !contractorId) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing uid or contractorId');
+  }
+  await admin.firestore().doc(`contractors/${contractorId}/staff/${uid}`).delete();
+  await admin.auth().deleteUser(uid);
+  return { success: true };
+});
 // Trigger redeploy
 // ✅ Uses Secret Manager (future-safe)
