@@ -2524,7 +2524,16 @@ async function setup() {
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
   try {
-    await verifyContractorUser();
+    const role = await verifyContractorUser();
+    if (role === 'contractor') {
+      const btn = document.getElementById('back-to-dashboard-btn');
+      if (btn) {
+        btn.style.display = 'inline-block';
+        btn.addEventListener('click', () => {
+          window.location.href = 'dashboard.html';
+        });
+      }
+    }
   } finally {
     if (overlay) overlay.style.display = 'none';
   }

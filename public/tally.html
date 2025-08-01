@@ -120,14 +120,18 @@
   <tbody>
   </tbody>
 </table>
-<div class="button-row">
+  <div class="button-row">
     <button id="saveButton" onclick="saveData(true)">Save</button>
     <button id="loadSessionBtn">Load Session</button>
     <button onclick="restoreTodaySession()">Return to Today’s Session</button>
     <button onclick="showExportPrompt()">Export Data</button>
   </div>
-   
-<div class="button-row" style="justify-content:flex-end;">
+
+  <div class="button-row">
+    <button id="back-to-dashboard-btn" class="btn btn-primary" style="display: none;">Return to Dashboard</button>
+  </div>
+
+  <div class="button-row" style="justify-content:flex-end;">
     <button id="logoutBtn">Logout</button>
   </div>
 
