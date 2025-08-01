@@ -38,7 +38,8 @@ console.log("DEBUG - GMAIL_PASS is set:", !!process.env.GMAIL_PASS);
 
     const mailOptions = {
       from: process.env.GMAIL_USER,
-      to: contractorEmail,
+      // Send to both contractor and staff
+      to: [contractorEmail, staffEmail],
       subject: 'New Staff Login Created',
       text: `Kia ora,\n\nYou've created a new SHE\u0394R iQ staff login.\n\nName: ${staffName}\nEmail: ${staffEmail}\nTemporary Password: ${password}\n\nPlease forward these details to your staff member. They will be prompted to change their password on first login.\n\nNg\u0101 mihi,\nThe SHE\u0394R iQ Team`,
     };
