@@ -69,11 +69,11 @@
         try {
           const docRef = firebase.firestore().collection('contractors').doc(user.uid);
           const snap = await docRef.get();
-          const data = snap.exists ? snap.data() : {};
-          if (data.role !== 'contractor') {
+          if (!snap.exists) {
             window.location.replace('login.html');
             return;
           }
+          const data = snap.data() || {};
           const name = data.displayName || data.businessName || user.displayName || 'Contractor';
           document.getElementById('welcomeMessage').textContent = `Welcome, ${name}!`;
         } catch (err) {
