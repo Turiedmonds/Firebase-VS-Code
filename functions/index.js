@@ -79,3 +79,22 @@ exports.deleteStaffUser = onCall(async (request) => {
 });
 // Trigger redeploy
 // ✅ Uses Secret Manager (future-safe)
+
+// Listen for deleted staff user documents
+exports.onStaffDeleted = functions.firestore
+  .document('contractors/{contractorId}/staff/{staffId}')
+  .onDelete((snap, context) => {
+    const { contractorId, staffId } = context.params;
+    const data = snap.data() || {};
+    const { name, email } = data;
+
+    const deletedAt = new Date().toISOString();
+
+    console.log('Staff deleted', {
+      contractorId,
+      staffId,
+      name,
+      email,
+      deletedAt,
+    });
+  });
