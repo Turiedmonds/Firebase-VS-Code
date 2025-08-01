@@ -406,13 +406,15 @@ button {
   opacity: 1;
 }
 
-.spinner-logo {
-  width: 70px;
-  height: 70px;
-  animation: spinner-rotate 6s linear infinite;
-  margin-bottom: 10px;
+/* Gold circular spinner */
+.circle-spinner {
+  width: 80px;
+  height: 80px;
+  border: 8px solid gold;
+  border-top-color: transparent;
   border-radius: 50%;
-  object-fit: cover;
+  animation: spinner-rotate 1s linear infinite;
+  margin-bottom: 10px;
 }
 
 @keyframes spinner-rotate {
