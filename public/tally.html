@@ -29,7 +29,8 @@
   <button class="tab-button active" data-view="tallySheetView">Tally Sheet</button>
   <button class="tab-button" data-view="summaryView">Daily Summary</button>
   <button class="tab-button" data-view="stationSummaryView">Farm Summary</button>
-   </div>
+  <button id="back-to-dashboard-btn" class="btn btn-primary" style="display: none;">Return to Dashboard</button>
+  </div>
 <div id="tallySheetView" class="view">
 <div class="logo-container">
       <img src="logo.png" alt="SHEΔR iQ logo" />
@@ -127,9 +128,6 @@
     <button onclick="showExportPrompt()">Export Data</button>
   </div>
 
-  <div class="button-row">
-    <button id="back-to-dashboard-btn" class="btn btn-primary" style="display: none;">Return to Dashboard</button>
-  </div>
 
   <div class="button-row" style="justify-content:flex-end;">
     <button id="logoutBtn">Logout</button>
