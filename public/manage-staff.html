@@ -50,128 +50,16 @@
     <label for="staff-name">Staff Name</label>
     <input type="text" id="staff-name" placeholder="Enter staff member’s name" required>
     <input type="email" id="staffEmailInput" placeholder="Email" required>
+    <label for="staff-password">Temporary Password</label>
+    <input type="password" id="staff-password" placeholder="Temporary Password" required>
     <select id="staffRoleSelect">
       <option value="staff">staff</option>
     </select>
     <button type="button" id="addStaffBtn">Add Staff Member</button>
   </form>
   <div id="staffList"></div>
+  <script type="module" src="manage-staff.js"></script>
 
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-    import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
-
-    const firebaseConfig = {
-      apiKey: 'AIzaSyD529f2jn9mb8OAip4x6l3IQb7KOaPNxaM',
-      authDomain: 'sheariq-tally-app.firebaseapp.com',
-      projectId: 'sheariq-tally-app',
-      storageBucket: 'sheariq-tally-app.firebasestorage.app',
-      messagingSenderId: '201669876235',
-      appId: '1:201669876235:web:379fc4035da99f4b09450e'
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const functions = getFunctions(app);
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const overlay = document.getElementById('loading-overlay');
-      if (overlay) overlay.style.display = 'flex';
-      onAuthStateChanged(auth, async user => {
-        if (!user) {
-          window.location.replace('login.html');
-          return;
-        }
-
-        try {
-          const docRef = doc(collection(db, 'contractors'), user.uid);
-          const snap = await getDoc(docRef);
-          const data = snap.exists() ? snap.data() : {};
-          if (data.role !== 'contractor') {
-            window.location.replace('login.html');
-            return;
-          }
-        } catch (err) {
-          console.error('Failed to verify role', err);
-          window.location.replace('login.html');
-          return;
-        }
-        if (overlay) overlay.style.display = 'none';
-        
-        const addBtn = document.getElementById('addStaffBtn');
-        addBtn.addEventListener('click', async () => {
-          const currentUser = auth.currentUser;
-          if (!currentUser) {
-            alert('Not authenticated');
-            return;
-          }
-
-          const contractorUid = currentUser.uid;
-          const staffName = document.getElementById('staff-name').value.trim();
-          const email = document.getElementById('staffEmailInput').value.trim();
-          const role = document.getElementById('staffRoleSelect').value;
-          if (!staffName) {
-            alert('Please enter a name');
-            return;
-          }
-          if (!email) {
-            alert('Please enter an email address');
-            return;
-          }
-
-          const generatePassword = (len = 10) => {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-          };
-
-          const password = generatePassword();
-          console.log('📤 Creating staff user with', { email, password });
-
-          try {
-            const createStaffUser = httpsCallable(functions, 'createStaffUser');
-            const result = await createStaffUser({ email, password });
-            const uid = result.data.uid;
-            console.log('Created staff user UID:', uid);
-
-            const staffRef = doc(db, 'contractors', contractorUid, 'staff', uid);
-            await setDoc(staffRef, {
-              name: staffName,
-              email,
-              role,
-              contractorId: contractorUid,
-              createdAt: serverTimestamp()
-            });
-
-            console.log("✅ Reached sendStaffCredentials function");
-            console.log("📧 Contractor email:", auth.currentUser?.email);
-            console.log("staffName:", staffName, "staffEmail:", email, "password:", password);
-
-            try {
-              const sendStaffCredentials = httpsCallable(functions, 'sendStaffCredentials');
-              const response = await sendStaffCredentials({
-                staffName,
-                staffEmail: email,
-                password,
-                contractorEmail: auth.currentUser.email
-              });
-              console.log("📨 Staff credentials email sent successfully:", response.data);
-            } catch (error) {
-              console.error("❌ Email function failed:", error.message || error);
-            }
-
-            console.log('Staff member added successfully');
-            alert('Staff member added!');
-          } catch (err) {
-            console.error('Failed to add staff member', err);
-            alert('Error creating staff member: ' + (err.message || err));
-          }
-        });
-    });
-  });
-  </script>
   <div id="loading-overlay">
     <div class="circle-spinner"></div>
     <div>Authenticating… Please wait</div>
