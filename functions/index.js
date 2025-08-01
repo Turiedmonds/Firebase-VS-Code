@@ -57,8 +57,24 @@ exports.deleteStaffUser = onCall(async (request) => {
   if (!uid || !contractorId) {
     throw new functions.https.HttpsError('invalid-argument', 'Missing uid or contractorId');
   }
-  await admin.firestore().doc(`contractors/${contractorId}/staff/${uid}`).delete();
-  await admin.auth().deleteUser(uid);
+  try {
+    await admin.firestore().doc(`contractors/${contractorId}/staff/${uid}`).delete();
+  } catch (error) {
+    console.error('Error deleting staff document', error);
+    throw new functions.https.HttpsError('internal', 'Unable to delete staff record');
+  }
+
+  try {
+    await admin.auth().deleteUser(uid);
+  } catch (error) {
+    if (error.code === 'auth/user-not-found') {
+      console.log(`Auth user ${uid} already deleted.`);
+    } else {
+      console.error('Error deleting auth user', error);
+      throw new functions.https.HttpsError('internal', error.message);
+    }
+  }
+
   return { success: true };
 });
 // Trigger redeploy
