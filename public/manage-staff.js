@@ -22,6 +22,15 @@ const functions = getFunctions(app);
     const createOverlay = document.getElementById('add-staff-loading');
     const successModal = document.getElementById('staffSuccessModal');
     const successOkBtn = document.getElementById('successOkBtn');
+    const staffPasswordInput = document.getElementById('staff-password');
+    const toggleStaffPasswordBtn = document.getElementById('toggleStaffPassword');
+    if (toggleStaffPasswordBtn && staffPasswordInput) {
+      toggleStaffPasswordBtn.addEventListener('click', () => {
+        const isPassword = staffPasswordInput.type === 'password';
+        staffPasswordInput.type = isPassword ? 'text' : 'password';
+        toggleStaffPasswordBtn.textContent = isPassword ? 'Hide' : 'Show';
+      });
+    }
     if (overlay) overlay.style.display = 'flex';
     onAuthStateChanged(auth, async user => {
       if (!user) {
