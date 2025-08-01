@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 
 const firebaseConfig = {
@@ -16,6 +16,40 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
+
+async function loadStaffList(contractorId) {
+  const list = document.getElementById('staffList');
+  list.innerHTML = '';
+  const snapshot = await getDocs(collection(db, 'contractors', contractorId, 'staff'));
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span>${data.name || ''} - ${data.email}</span>
+      <button class="deleteStaffBtn" data-uid="${docSnap.id}" data-email="${data.email}">🗑️ Delete</button>`;
+    list.appendChild(li);
+  });
+  list.querySelectorAll('.deleteStaffBtn').forEach(btn => {
+    btn.addEventListener('click', () => deleteStaff(btn.dataset.uid, btn.dataset.email));
+  });
+}
+
+async function deleteStaff(uid, email) {
+  if (!confirm('Are you sure you want to delete this staff user?')) return;
+  const contractorId = localStorage.getItem('contractor_id');
+  if (!contractorId) {
+    alert('Missing contractor id');
+    return;
+  }
+  try {
+    const fn = httpsCallable(functions, 'deleteStaffUser');
+    await fn({ uid, contractorId });
+    await loadStaffList(contractorId);
+  } catch (err) {
+    console.error('Failed to delete staff user', err);
+    alert('Error deleting staff member: ' + (err.message || err));
+  }
+}
 
   document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('loading-overlay');
@@ -51,6 +85,9 @@ const functions = getFunctions(app);
       return;
     }
       if (overlay) overlay.style.display = 'none';
+
+      const contractorUid = user.uid;
+      await loadStaffList(contractorUid);
 
       const addBtn = document.getElementById('addStaffBtn');
       if (successOkBtn) {
@@ -126,6 +163,7 @@ const functions = getFunctions(app);
         console.log('Staff member added successfully');
         if (createOverlay) createOverlay.style.display = 'none';
         if (successModal) successModal.style.display = 'flex';
+        await loadStaffList(contractorUid);
         } catch (err) {
           console.error('Failed to add staff member', err);
           alert('Error creating staff member: ' + (err.message || err));

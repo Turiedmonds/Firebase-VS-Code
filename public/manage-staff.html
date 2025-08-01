@@ -56,6 +56,22 @@
       width: 100%;
       max-width: 400px;
     }
+    #staffList li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 0;
+    }
+    #staffList button {
+      background: #333;
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    #staffList button:hover {
+      background: #555;
+    }
 
     /* Spinner overlay for creating staff */
     #add-staff-loading {
@@ -111,7 +127,7 @@
     </select>
     <button type="button" id="addStaffBtn">Add Staff Member</button>
   </form>
-  <div id="staffList"></div>
+  <ul id="staffList"></ul>
   <script type="module" src="manage-staff.js"></script>
 
   <div id="loading-overlay">
