@@ -51,3 +51,4 @@ console.log("DEBUG - GMAIL_PASS is set:", !!process.env.GMAIL_PASS);
   }
 });
 // Trigger redeploy
+// ✅ Uses Secret Manager (future-safe)
