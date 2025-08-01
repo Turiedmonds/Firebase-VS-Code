@@ -17,13 +17,16 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
 
-document.addEventListener('DOMContentLoaded', () => {
-  const overlay = document.getElementById('loading-overlay');
-  if (overlay) overlay.style.display = 'flex';
-  onAuthStateChanged(auth, async user => {
-    if (!user) {
-      window.location.replace('login.html');
-      return;
+  document.addEventListener('DOMContentLoaded', () => {
+    const overlay = document.getElementById('loading-overlay');
+    const createOverlay = document.getElementById('add-staff-loading');
+    const successModal = document.getElementById('staffSuccessModal');
+    const successOkBtn = document.getElementById('successOkBtn');
+    if (overlay) overlay.style.display = 'flex';
+    onAuthStateChanged(auth, async user => {
+      if (!user) {
+        window.location.replace('login.html');
+        return;
     }
     try {
       const docRef = doc(collection(db, 'contractors'), user.uid);
@@ -38,17 +41,26 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.replace('login.html');
       return;
     }
-    if (overlay) overlay.style.display = 'none';
+      if (overlay) overlay.style.display = 'none';
 
-    const addBtn = document.getElementById('addStaffBtn');
-    addBtn.addEventListener('click', async () => {
-      const currentUser = auth.currentUser;
-      if (!currentUser) {
-        alert('Not authenticated');
-        return;
+      const addBtn = document.getElementById('addStaffBtn');
+      if (successOkBtn) {
+        successOkBtn.addEventListener('click', () => {
+          if (successModal) successModal.style.display = 'none';
+          document.getElementById('staff-name').value = '';
+          document.getElementById('staffEmailInput').value = '';
+          document.getElementById('staff-password').value = '';
+          document.getElementById('staffRoleSelect').value = 'staff';
+        });
       }
+      addBtn.addEventListener('click', async () => {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          alert('Not authenticated');
+          return;
+        }
 
-      const contractorUid = currentUser.uid;
+        const contractorUid = currentUser.uid;
       const staffName = document.getElementById('staff-name').value.trim();
       const email = document.getElementById('staffEmailInput').value.trim();
       const password = document.getElementById('staff-password').value.trim();
@@ -66,13 +78,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      console.log('\uD83D\uDCE4 Creating staff user with', { email, password });
+        console.log('\uD83D\uDCE4 Creating staff user with', { email, password });
 
-      try {
-        const createStaffUser = httpsCallable(functions, 'createStaffUser');
-        const result = await createStaffUser({ email, password });
-        const uid = result.data.uid;
-        console.log('Created staff user UID:', uid);
+        try {
+          if (createOverlay) createOverlay.style.display = 'flex';
+          const createStaffUser = httpsCallable(functions, 'createStaffUser');
+          const result = await createStaffUser({ email, password });
+          const uid = result.data.uid;
+          console.log('Created staff user UID:', uid);
 
         const staffRef = doc(db, 'contractors', contractorUid, 'staff', uid);
         await setDoc(staffRef, {
@@ -98,14 +111,17 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('\uD83D\uDCE8 Staff credentials email sent successfully:', response.data);
         } catch (error) {
           console.error('\u274C Email function failed:', error.message || error);
+          throw error;
         }
 
         console.log('Staff member added successfully');
-        alert('Staff member added!');
-      } catch (err) {
-        console.error('Failed to add staff member', err);
-        alert('Error creating staff member: ' + (err.message || err));
-      }
+        if (createOverlay) createOverlay.style.display = 'none';
+        if (successModal) successModal.style.display = 'flex';
+        } catch (err) {
+          console.error('Failed to add staff member', err);
+          alert('Error creating staff member: ' + (err.message || err));
+          if (createOverlay) createOverlay.style.display = 'none';
+        }
+      });
     });
   });
-});

@@ -42,6 +42,43 @@
       width: 100%;
       max-width: 400px;
     }
+
+    /* Spinner overlay for creating staff */
+    #add-staff-loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      z-index: 2000;
+    }
+
+    /* Success modal */
+    #staffSuccessModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2001;
+    }
+    #staffSuccessModal .box {
+      background: #fff;
+      color: #000;
+      padding: 20px;
+      border-radius: 4px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -63,6 +100,18 @@
   <div id="loading-overlay">
     <div class="circle-spinner"></div>
     <div>Authenticating… Please wait</div>
+  </div>
+
+  <div id="add-staff-loading">
+    <div class="circle-spinner"></div>
+    <div>Creating staff…</div>
+  </div>
+
+  <div id="staffSuccessModal">
+    <div class="box">
+      <p>Staff member created successfully.</p>
+      <button id="successOkBtn">OK</button>
+    </div>
   </div>
 </body>
 </html>
