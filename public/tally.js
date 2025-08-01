@@ -1976,6 +1976,12 @@ export async function verifyContractorUser() {
   if (!query.empty) {
     const staffDoc = query.docs[0];
     const contractorId = staffDoc.ref.parent.parent.id;
+    const staffUid = firebase.auth().currentUser.uid;
+    await db.collection('contractors')
+            .doc(contractorId)
+            .collection('staff')
+            .doc(staffUid)
+            .update({ lastActive: firebase.firestore.FieldValue.serverTimestamp() });
     localStorage.setItem('contractor_id', contractorId);
     console.log('[verifyContractorUser] Found matching staff for contractor', contractorId);
     return 'staff';
