@@ -11,7 +11,14 @@ export function logout() {
   if (!confirmed) {
     return;
   }
+  const overlay = document.getElementById('loading-overlay');
+  if (overlay) {
+    overlay.style.display = 'flex';
+  }
   firebase.auth().signOut().then(() => {
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
     // Clear any cached session data after sign out
     localStorage.clear();
     sessionStorage.clear();
