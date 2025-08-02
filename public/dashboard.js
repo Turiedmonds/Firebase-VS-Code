@@ -11,6 +11,27 @@ document.addEventListener('DOMContentLoaded', () => {
       logoutBtn.addEventListener('click', handleLogout);
     }
 
+    const btnManageStaff = document.getElementById('btnManageStaff');
+    if (btnManageStaff) {
+      btnManageStaff.addEventListener('click', () => {
+        window.location.href = 'manage-staff.html';
+      });
+    }
+
+    const btnStationSummary = document.getElementById('btnStationSummary');
+    if (btnStationSummary) {
+      btnStationSummary.addEventListener('click', () => {
+        window.location.href = 'station-summary.html';
+      });
+    }
+
+    const btnChangePin = document.getElementById('btnChangePin');
+    if (btnChangePin) {
+      btnChangePin.addEventListener('click', () => {
+        window.location.href = 'change-pin.html';
+      });
+    }
+
     const btnViewSavedSessions = document.getElementById('btnViewSavedSessions');
     if (btnViewSavedSessions) {
       btnViewSavedSessions.addEventListener('click', () => {
@@ -18,11 +39,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    const btnReturnToSession = document.getElementById('btnReturnToSession');
+    const btnReturnToActive = document.getElementById('btnReturnToActive');
     const activeSession = localStorage.getItem('tally_session');
-    if (btnReturnToSession && activeSession) {
-      btnReturnToSession.style.display = 'block';
-      btnReturnToSession.addEventListener('click', () => {
+    if (btnReturnToActive && activeSession) {
+      btnReturnToActive.style.display = 'block';
+      btnReturnToActive.addEventListener('click', () => {
         window.location.href = 'tally.html';
       });
     }
