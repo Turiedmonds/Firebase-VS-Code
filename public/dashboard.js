@@ -19,13 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const btnFarmSummary = document.getElementById('btnFarmSummary');
-    // Redirect to the farm summary page instead of the tally sheet
-    if (btnFarmSummary) {
-      btnFarmSummary.addEventListener('click', (event) => {
-        event.preventDefault();
-        window.location.href = 'farm-summary.html';
-      });
-    }
+    btnFarmSummary?.addEventListener('click', (event) => {
+      event.preventDefault();
+      window.location.href = 'farm-summary.html';
+    });
 
     const btnChangePin = document.getElementById('btnChangePin');
     if (btnChangePin) {
