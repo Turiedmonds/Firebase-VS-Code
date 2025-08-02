@@ -132,6 +132,19 @@ async function loadDeletedStaff(contractorId) {
   tbody.querySelectorAll('.restoreStaffBtn').forEach(btn => {
     btn.addEventListener('click', () => restoreStaff(btn));
   });
+
+  applyDeletedStaffFilter();
+}
+
+function applyDeletedStaffFilter() {
+  const input = document.getElementById('deletedStaffSearch');
+  const filter = input ? input.value.trim().toLowerCase() : '';
+  const rows = document.querySelectorAll('#deletedStaffTable tbody tr');
+  rows.forEach(row => {
+    const name = row.children[0]?.textContent.toLowerCase() || '';
+    const email = row.children[1]?.textContent.toLowerCase() || '';
+    row.style.display = !filter || name.includes(filter) || email.includes(filter) ? '' : 'none';
+  });
 }
 
 async function deleteStaff(btn) {
@@ -229,6 +242,11 @@ async function restoreStaff(btn) {
       localStorage.setItem('contractor_id', contractorUid);
       await loadStaffList(contractorUid);
       await loadDeletedStaff(contractorUid);
+
+      const deletedSearchInput = document.getElementById('deletedStaffSearch');
+      if (deletedSearchInput) {
+        deletedSearchInput.addEventListener('input', applyDeletedStaffFilter);
+      }
 
       const addBtn = document.getElementById('addStaffBtn');
       if (successOkBtn) {

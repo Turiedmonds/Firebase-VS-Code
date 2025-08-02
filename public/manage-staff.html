@@ -92,6 +92,21 @@
       background: #555;
     }
 
+    #deletedStaffSearch {
+      margin-top: 10px;
+      margin-bottom: 10px;
+      width: 100%;
+      max-width: 600px;
+      padding: 8px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 4px;
+    }
+    #deletedStaffSearch::placeholder {
+      color: #bbb;
+    }
+
     /* Spinner overlay for creating staff */
     #add-staff-loading {
       position: fixed;
@@ -213,6 +228,7 @@
     <tbody></tbody>
   </table>
   <h3>Deleted Staff</h3>
+  <input type="text" id="deletedStaffSearch" placeholder="Search deleted staff…">
   <table id="deletedStaffTable">
     <thead>
       <tr>
