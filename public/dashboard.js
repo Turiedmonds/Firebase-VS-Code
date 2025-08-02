@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnFarmSummary = document.getElementById('btnFarmSummary');
     // Redirect to the farm summary page instead of the tally sheet
     if (btnFarmSummary) {
-      btnFarmSummary.addEventListener('click', () => {
+      btnFarmSummary.addEventListener('click', (event) => {
+        event.preventDefault();
         window.location.href = 'farm-summary.html';
       });
     }
