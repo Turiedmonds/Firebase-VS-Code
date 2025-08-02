@@ -1,15 +1,21 @@
 import { handleLogout } from './auth.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', handleLogout);
-  }
+  firebase.auth().onAuthStateChanged(user => {
+    if (!user) {
+      return;
+    }
 
-  const viewSessionsBtn = document.getElementById('btnViewSavedSessions');
-  if (viewSessionsBtn) {
-    viewSessionsBtn.addEventListener('click', () => {
-      window.location.href = 'view-sessions.html';
-    });
-  }
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', handleLogout);
+    }
+
+    const btnViewSavedSessions = document.getElementById('btnViewSavedSessions');
+    if (btnViewSavedSessions) {
+      btnViewSavedSessions.addEventListener('click', () => {
+        window.location.href = 'view-sessions.html';
+      });
+    }
+  });
 });
