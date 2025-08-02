@@ -17,6 +17,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
 const STAFF_LIMIT = 10;
+const DELETED_STAFF_STATE_KEY = 'deletedStaffSectionState';
 
 let actionOverlay, actionOverlayText, confirmModal, confirmMessage, confirmYesBtn, confirmCancelBtn;
 
@@ -99,6 +100,23 @@ async function loadStaffList(contractorId) {
   tbody.querySelectorAll('.deleteStaffBtn').forEach(btn => {
     btn.addEventListener('click', () => deleteStaff(btn));
   });
+
+  await loadDeletedStaff(contractorId);
+  const deletedRows = document.querySelectorAll('#deletedStaffTable tbody tr').length;
+  const toggleDeletedStaffBtn = document.getElementById('toggleDeletedStaffBtn');
+  const deletedStaffSection = document.getElementById('deletedStaffSection');
+  if (toggleDeletedStaffBtn && deletedStaffSection) {
+    if (deletedRows === 0) {
+      deletedStaffSection.classList.add('collapsed');
+      toggleDeletedStaffBtn.textContent = '🔽 Show Deleted Staff';
+      localStorage.setItem(DELETED_STAFF_STATE_KEY, 'collapsed');
+    } else {
+      const storedState = localStorage.getItem(DELETED_STAFF_STATE_KEY);
+      const collapsed = storedState === 'collapsed';
+      deletedStaffSection.classList.toggle('collapsed', collapsed);
+      toggleDeletedStaffBtn.textContent = collapsed ? '🔽 Show Deleted Staff' : '🔼 Hide Deleted Staff';
+    }
+  }
 }
 
 async function loadDeletedStaff(contractorId) {
@@ -162,7 +180,6 @@ async function deleteStaff(btn) {
     const fn = httpsCallable(functions, 'deleteStaffUser');
     await fn({ uid, contractorId });
     await loadStaffList(contractorId);
-    await loadDeletedStaff(contractorId);
   } catch (err) {
     console.error('Failed to delete staff user', err);
     alert('Error deleting staff member: ' + (err.message || err));
@@ -187,7 +204,6 @@ async function restoreStaff(btn) {
     const fn = httpsCallable(functions, 'restoreStaffUser');
     await fn({ logId: logid, contractorId });
     await loadStaffList(contractorId);
-    await loadDeletedStaff(contractorId);
   } catch (err) {
     console.error('Failed to restore staff user', err);
     alert('Error restoring staff member: ' + (err.message || err));
@@ -210,7 +226,6 @@ async function restoreStaff(btn) {
     confirmCancelBtn = document.getElementById('confirmCancelBtn');
     const toggleDeletedStaffBtn = document.getElementById('toggleDeletedStaffBtn');
     const deletedStaffSection = document.getElementById('deletedStaffSection');
-    const DELETED_STAFF_STATE_KEY = 'deletedStaffSectionState';
     if (toggleDeletedStaffBtn && deletedStaffSection) {
       const storedState = localStorage.getItem(DELETED_STAFF_STATE_KEY);
       if (storedState === 'collapsed') {
@@ -259,7 +274,6 @@ async function restoreStaff(btn) {
       const contractorUid = user.uid;
       localStorage.setItem('contractor_id', contractorUid);
       await loadStaffList(contractorUid);
-      await loadDeletedStaff(contractorUid);
 
       const deletedSearchInput = document.getElementById('deletedStaffSearch');
       if (deletedSearchInput) {
