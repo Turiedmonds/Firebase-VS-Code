@@ -107,17 +107,31 @@
       color: #bbb;
     }
 
-    #toggleDeletedStaffBtn {
+    .collapsible-header {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 600px;
       margin-top: 30px;
-      background: #333;
-      color: #fff;
-      border: none;
-      padding: 8px 12px;
+      margin-bottom: 10px;
       cursor: pointer;
-      border-radius: 4px;
+      user-select: none;
     }
-    #toggleDeletedStaffBtn:hover {
-      background: #555;
+    .collapsible-header:hover {
+      color: #bbb;
+    }
+    .collapsible-header .arrow {
+      display: inline-block;
+      margin-right: 8px;
+      transition: transform 0.3s ease;
+    }
+    .collapsible-header.expanded .arrow {
+      transform: rotate(90deg);
+    }
+    .collapsible-header h3 {
+      margin: 0;
+      width: auto;
+      max-width: none;
     }
     #deletedStaffSection {
       width: 100%;
@@ -138,9 +152,6 @@
       margin-top: 20px;
       margin-bottom: 10px;
       text-align: left;
-    }
-    #deletedStaffHeading {
-      margin-top: 50px;
     }
 
     /* Spinner overlay for creating staff */
@@ -264,9 +275,11 @@
     </thead>
     <tbody></tbody>
   </table>
-  <button id="toggleDeletedStaffBtn">🔼 Hide Deleted Staff</button>
-  <div id="deletedStaffSection">
+  <div id="deletedStaffHeader" class="collapsible-header">
+    <span class="arrow">▶</span>
     <h3 id="deletedStaffHeading" class="table-heading">Deleted Staff</h3>
+  </div>
+  <div id="deletedStaffSection">
     <input type="text" id="deletedStaffSearch" placeholder="Search deleted staff…">
     <table id="deletedStaffTable">
       <thead>
