@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, getDocs, addDoc, deleteDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
 
 const firebaseConfig = {
@@ -65,6 +65,39 @@ async function loadStaffList(contractorId) {
   });
 }
 
+async function loadDeletedStaff(contractorId) {
+  const tbody = document.querySelector('#deletedStaffTable tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const q = query(collection(db, 'contractors', contractorId, 'logs'), where('type', '==', 'staff_deleted'));
+  const snapshot = await getDocs(q);
+
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    let deletedAt = '';
+    if (data.deletedAt) {
+      if (typeof data.deletedAt.toMillis === 'function') {
+        deletedAt = new Date(data.deletedAt.toMillis()).toLocaleString();
+      } else if (data.deletedAt.seconds) {
+        deletedAt = new Date(data.deletedAt.seconds * 1000).toLocaleString();
+      }
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${data.name || ''}</td>
+      <td>${data.email || ''}</td>
+      <td>${deletedAt}</td>
+      <td><button class="restoreStaffBtn" data-logid="${docSnap.id}" data-name="${data.name || ''}" data-email="${data.email || ''}">↩ Restore</button></td>`;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('.restoreStaffBtn').forEach(btn => {
+    btn.addEventListener('click', () => restoreStaff(btn.dataset.logid, btn.dataset.name, btn.dataset.email));
+  });
+}
+
 async function deleteStaff(uid, email) {
   if (!confirm('Are you sure you want to delete this staff user?')) return;
   const contractorId = localStorage.getItem('contractor_id');
@@ -76,9 +109,33 @@ async function deleteStaff(uid, email) {
     const fn = httpsCallable(functions, 'deleteStaffUser');
     await fn({ uid, contractorId });
     await loadStaffList(contractorId);
+    await loadDeletedStaff(contractorId);
   } catch (err) {
     console.error('Failed to delete staff user', err);
     alert('Error deleting staff member: ' + (err.message || err));
+  }
+}
+
+async function restoreStaff(logId, name, email) {
+  const contractorId = localStorage.getItem('contractor_id');
+  if (!contractorId) {
+    alert('Missing contractor id');
+    return;
+  }
+  try {
+    await addDoc(collection(db, 'contractors', contractorId, 'staff'), {
+      name,
+      email,
+      role: 'staff',
+      contractorId,
+      createdAt: serverTimestamp(),
+    });
+    await deleteDoc(doc(db, 'contractors', contractorId, 'logs', logId));
+    await loadStaffList(contractorId);
+    await loadDeletedStaff(contractorId);
+  } catch (err) {
+    console.error('Failed to restore staff user', err);
+    alert('Error restoring staff member: ' + (err.message || err));
   }
 }
 
@@ -120,6 +177,7 @@ async function deleteStaff(uid, email) {
       const contractorUid = user.uid;
       localStorage.setItem('contractor_id', contractorUid);
       await loadStaffList(contractorUid);
+      await loadDeletedStaff(contractorUid);
 
       const addBtn = document.getElementById('addStaffBtn');
       if (successOkBtn) {
