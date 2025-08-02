@@ -89,12 +89,12 @@ async function loadDeletedStaff(contractorId) {
       <td>${data.name || ''}</td>
       <td>${data.email || ''}</td>
       <td>${deletedAt}</td>
-      <td><button class="restoreStaffBtn" data-logid="${docSnap.id}" data-name="${data.name || ''}" data-email="${data.email || ''}">↩ Restore</button></td>`;
+      <td><button class="restoreStaffBtn" data-logid="${docSnap.id}">↩ Restore</button></td>`;
     tbody.appendChild(tr);
   });
 
   tbody.querySelectorAll('.restoreStaffBtn').forEach(btn => {
-    btn.addEventListener('click', () => restoreStaff(btn.dataset.logid, btn.dataset.name, btn.dataset.email));
+    btn.addEventListener('click', () => restoreStaff(btn.dataset.logid));
   });
 }
 
@@ -116,21 +116,15 @@ async function deleteStaff(uid, email) {
   }
 }
 
-async function restoreStaff(logId, name, email) {
+async function restoreStaff(logId) {
   const contractorId = localStorage.getItem('contractor_id');
   if (!contractorId) {
     alert('Missing contractor id');
     return;
   }
   try {
-    await addDoc(collection(db, 'contractors', contractorId, 'staff'), {
-      name,
-      email,
-      role: 'staff',
-      contractorId,
-      createdAt: serverTimestamp(),
-    });
-    await deleteDoc(doc(db, 'contractors', contractorId, 'logs', logId));
+    const fn = httpsCallable(functions, 'restoreStaffUser');
+    await fn({ logId, contractorId });
     await loadStaffList(contractorId);
     await loadDeletedStaff(contractorId);
   } catch (err) {
