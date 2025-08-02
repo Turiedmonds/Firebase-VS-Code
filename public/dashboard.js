@@ -17,5 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'view-sessions.html';
       });
     }
+
+    const btnReturnToSession = document.getElementById('btnReturnToSession');
+    const activeSession = localStorage.getItem('tally_session');
+    if (btnReturnToSession && activeSession) {
+      btnReturnToSession.style.display = 'block';
+      btnReturnToSession.addEventListener('click', () => {
+        window.location.href = 'tally.html';
+      });
+    }
   });
 });
