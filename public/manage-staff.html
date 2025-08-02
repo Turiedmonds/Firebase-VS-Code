@@ -246,58 +246,60 @@
   </style>
 </head>
 <body>
-  <div class="logo-container">
-    <img src="logo.png" alt="SHEΔR iQ logo" />
-    <h2>Manage Staff</h2>
-  </div>
-  <div class="tabs">
-    <button id="back-to-dashboard-btn" class="tab-button" style="display: none;">⬅ Return to Dashboard</button>
-  </div>
-  <form id="staffForm">
-    <label for="staff-name">Staff Name</label>
-    <input type="text" id="staff-name" placeholder="Enter staff member’s name" required>
-    <input type="email" id="staffEmailInput" placeholder="Email" required>
-    <label for="staff-password">New Password</label>
-    <div class="password-container">
-      <input type="password" id="staff-password" placeholder="New Password" required>
-      <button type="button" id="toggleStaffPassword">Show</button>
+  <div id="page-content" style="display: none;">
+    <div class="logo-container">
+      <img src="logo.png" alt="SHEΔR iQ logo" />
+      <h2>Manage Staff</h2>
     </div>
-    <select id="staffRoleSelect">
-      <option value="staff">staff</option>
-    </select>
-    <button type="button" id="addStaffBtn">Add Staff Member</button>
-  </form>
-  <p id="staffSummary"></p>
-  <h3 id="activeStaffHeading" class="table-heading">Active Staff</h3>
-  <table id="staffTable">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Status</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <div id="deletedStaffHeader" class="collapsible-header">
-    <span class="arrow">▶</span>
-    <h3 id="deletedStaffHeading" class="table-heading">Deleted Staff</h3>
-  </div>
-  <div id="deletedStaffSection">
-    <input type="text" id="deletedStaffSearch" placeholder="Search deleted staff…">
-    <table id="deletedStaffTable">
+    <div class="tabs">
+      <button id="back-to-dashboard-btn" class="tab-button" style="display: none;">⬅ Return to Dashboard</button>
+    </div>
+    <form id="staffForm">
+      <label for="staff-name">Staff Name</label>
+      <input type="text" id="staff-name" placeholder="Enter staff member’s name" required>
+      <input type="email" id="staffEmailInput" placeholder="Email" required>
+      <label for="staff-password">New Password</label>
+      <div class="password-container">
+        <input type="password" id="staff-password" placeholder="New Password" required>
+        <button type="button" id="toggleStaffPassword">Show</button>
+      </div>
+      <select id="staffRoleSelect">
+        <option value="staff">staff</option>
+      </select>
+      <button type="button" id="addStaffBtn">Add Staff Member</button>
+    </form>
+    <p id="staffSummary"></p>
+    <h3 id="activeStaffHeading" class="table-heading">Active Staff</h3>
+    <table id="staffTable">
       <thead>
         <tr>
+          <th>#</th>
           <th>Name</th>
           <th>Email</th>
-          <th>Deleted</th>
+          <th>Status</th>
           <th>Action</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
+    <div id="deletedStaffHeader" class="collapsible-header">
+      <span class="arrow">▶</span>
+      <h3 id="deletedStaffHeading" class="table-heading">Deleted Staff</h3>
+    </div>
+    <div id="deletedStaffSection">
+      <input type="text" id="deletedStaffSearch" placeholder="Search deleted staff…">
+      <table id="deletedStaffTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Deleted</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
   <script type="module" src="manage-staff.js"></script>
 

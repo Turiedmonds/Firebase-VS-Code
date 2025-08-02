@@ -211,6 +211,7 @@ async function restoreStaff(btn) {
 
   document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('loading-overlay');
+    const pageContent = document.getElementById('page-content');
     const createOverlay = document.getElementById('add-staff-loading');
     const successModal = document.getElementById('staffSuccessModal');
     const successOkBtn = document.getElementById('successOkBtn');
@@ -247,28 +248,30 @@ async function restoreStaff(btn) {
       if (!user) {
         window.location.replace('login.html');
         return;
-    }
-    try {
-      const docRef = doc(collection(db, 'contractors'), user.uid);
-      const snap = await getDoc(docRef);
-      const data = snap.exists() ? snap.data() : {};
-      if (data.role !== 'contractor') {
+      }
+      try {
+        const docRef = doc(collection(db, 'contractors'), user.uid);
+        const snap = await getDoc(docRef);
+        const data = snap.exists() ? snap.data() : {};
+        if (data.role !== 'contractor') {
+          window.location.replace('login.html');
+          return;
+        }
+        const backBtn = document.getElementById('back-to-dashboard-btn');
+        if (backBtn) {
+          backBtn.style.display = 'inline-block';
+          backBtn.addEventListener('click', () => {
+            window.location.href = 'dashboard.html';
+          });
+        }
+        if (pageContent) pageContent.style.display = 'block';
+      } catch (err) {
+        console.error('Failed to verify role', err);
         window.location.replace('login.html');
         return;
+      } finally {
+        if (overlay) overlay.style.display = 'none';
       }
-      const backBtn = document.getElementById('back-to-dashboard-btn');
-      if (backBtn) {
-        backBtn.style.display = 'inline-block';
-        backBtn.addEventListener('click', () => {
-          window.location.href = 'dashboard.html';
-        });
-      }
-    } catch (err) {
-      console.error('Failed to verify role', err);
-      window.location.replace('login.html');
-      return;
-    }
-      if (overlay) overlay.style.display = 'none';
 
       const contractorUid = user.uid;
       localStorage.setItem('contractor_id', contractorUid);
