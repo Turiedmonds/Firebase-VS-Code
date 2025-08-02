@@ -18,10 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    const btnStationSummary = document.getElementById('btnStationSummary');
-    if (btnStationSummary) {
-      btnStationSummary.addEventListener('click', () => {
-        window.location.href = 'station-summary.html';
+    const btnFarmSummary = document.getElementById('btnFarmSummary');
+    if (btnFarmSummary) {
+      btnFarmSummary.addEventListener('click', () => {
+        window.location.href = 'farm-summary.html';
       });
     }
 
