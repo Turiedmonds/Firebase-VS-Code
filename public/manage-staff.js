@@ -18,6 +18,42 @@ const db = getFirestore(app);
 const functions = getFunctions(app);
 const STAFF_LIMIT = 10;
 
+let actionOverlay, actionOverlayText, confirmModal, confirmMessage, confirmYesBtn, confirmCancelBtn;
+
+function showActionOverlay(message) {
+  if (!actionOverlay) return;
+  if (actionOverlayText) actionOverlayText.textContent = message;
+  actionOverlay.style.display = 'flex';
+  requestAnimationFrame(() => actionOverlay.classList.add('show'));
+}
+
+function hideActionOverlay() {
+  if (!actionOverlay) return;
+  actionOverlay.classList.remove('show');
+  actionOverlay.style.display = 'none';
+}
+
+function showConfirm(message) {
+  return new Promise(resolve => {
+    if (!confirmModal || !confirmMessage || !confirmYesBtn || !confirmCancelBtn) {
+      resolve(false);
+      return;
+    }
+    confirmMessage.textContent = message;
+    confirmModal.style.display = 'flex';
+    function cleanup(result) {
+      confirmModal.style.display = 'none';
+      confirmYesBtn.removeEventListener('click', onYes);
+      confirmCancelBtn.removeEventListener('click', onCancel);
+      resolve(result);
+    }
+    function onYes() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    confirmYesBtn.addEventListener('click', onYes);
+    confirmCancelBtn.addEventListener('click', onCancel);
+  });
+}
+
 async function loadStaffList(contractorId) {
   const tbody = document.querySelector('#staffTable tbody');
   const summaryEl = document.getElementById('staffSummary');
@@ -52,7 +88,7 @@ async function loadStaffList(contractorId) {
       <td>${data.name || ''}</td>
       <td>${data.email}</td>
       <td>${status}</td>
-      <td><button class="deleteStaffBtn" data-uid="${docSnap.id}" data-email="${data.email}">🗑 Delete</button></td>`;
+      <td><button class="deleteStaffBtn" data-uid="${docSnap.id}" data-email="${data.email}" data-name="${data.name || ''}">🗑 Delete</button></td>`;
     tbody.appendChild(tr);
   });
 
@@ -61,7 +97,7 @@ async function loadStaffList(contractorId) {
   }
 
   tbody.querySelectorAll('.deleteStaffBtn').forEach(btn => {
-    btn.addEventListener('click', () => deleteStaff(btn.dataset.uid, btn.dataset.email));
+    btn.addEventListener('click', () => deleteStaff(btn));
   });
 }
 
@@ -89,23 +125,27 @@ async function loadDeletedStaff(contractorId) {
       <td>${data.name || ''}</td>
       <td>${data.email || ''}</td>
       <td>${deletedAt}</td>
-      <td><button class="restoreStaffBtn" data-logid="${docSnap.id}">↩ Restore</button></td>`;
+      <td><button class="restoreStaffBtn" data-logid="${docSnap.id}" data-name="${data.name || ''}">↩ Restore</button></td>`;
     tbody.appendChild(tr);
   });
 
   tbody.querySelectorAll('.restoreStaffBtn').forEach(btn => {
-    btn.addEventListener('click', () => restoreStaff(btn.dataset.logid));
+    btn.addEventListener('click', () => restoreStaff(btn));
   });
 }
 
-async function deleteStaff(uid, email) {
-  if (!confirm('Are you sure you want to delete this staff user?')) return;
+async function deleteStaff(btn) {
+  const { uid, name } = btn.dataset;
+  const confirmed = await showConfirm(`Are you sure you want to delete ${name || 'this staff user'}?`);
+  if (!confirmed) return;
   const contractorId = localStorage.getItem('contractor_id');
   if (!contractorId) {
     alert('Missing contractor id');
     return;
   }
   try {
+    btn.disabled = true;
+    showActionOverlay('Deleting staff…');
     const fn = httpsCallable(functions, 'deleteStaffUser');
     await fn({ uid, contractorId });
     await loadStaffList(contractorId);
@@ -113,23 +153,34 @@ async function deleteStaff(uid, email) {
   } catch (err) {
     console.error('Failed to delete staff user', err);
     alert('Error deleting staff member: ' + (err.message || err));
+  } finally {
+    hideActionOverlay();
+    btn.disabled = false;
   }
 }
 
-async function restoreStaff(logId) {
+async function restoreStaff(btn) {
+  const { logid, name } = btn.dataset;
+  const confirmed = await showConfirm(`Are you sure you want to restore ${name || 'this staff user'}?`);
+  if (!confirmed) return;
   const contractorId = localStorage.getItem('contractor_id');
   if (!contractorId) {
     alert('Missing contractor id');
     return;
   }
   try {
+    btn.disabled = true;
+    showActionOverlay('Restoring staff…');
     const fn = httpsCallable(functions, 'restoreStaffUser');
-    await fn({ logId, contractorId });
+    await fn({ logId: logid, contractorId });
     await loadStaffList(contractorId);
     await loadDeletedStaff(contractorId);
   } catch (err) {
     console.error('Failed to restore staff user', err);
     alert('Error restoring staff member: ' + (err.message || err));
+  } finally {
+    hideActionOverlay();
+    btn.disabled = false;
   }
 }
 
@@ -138,6 +189,12 @@ async function restoreStaff(logId) {
     const createOverlay = document.getElementById('add-staff-loading');
     const successModal = document.getElementById('staffSuccessModal');
     const successOkBtn = document.getElementById('successOkBtn');
+    actionOverlay = document.getElementById('action-loading');
+    actionOverlayText = document.getElementById('action-loading-text');
+    confirmModal = document.getElementById('confirmModal');
+    confirmMessage = document.getElementById('confirmMessage');
+    confirmYesBtn = document.getElementById('confirmYesBtn');
+    confirmCancelBtn = document.getElementById('confirmCancelBtn');
     const staffPasswordInput = document.getElementById('staff-password');
     const toggleStaffPasswordBtn = document.getElementById('toggleStaffPassword');
     if (toggleStaffPasswordBtn && staffPasswordInput) {

@@ -128,6 +128,59 @@
       border-radius: 4px;
       text-align: center;
     }
+
+    /* Overlay for delete/restore actions */
+    #action-loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      text-align: center;
+      z-index: 2002;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    #action-loading.show {
+      opacity: 1;
+    }
+
+    /* Confirmation modal */
+    #confirmModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2003;
+    }
+    #confirmModal .modal-box {
+      background: #222;
+      color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+    #confirmModal .modal-buttons button {
+      background: #333;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #confirmModal .modal-buttons button:hover {
+      background: #555;
+    }
   </style>
 </head>
 <body>
@@ -187,6 +240,21 @@
     <div class="box">
       <p>Staff member created successfully.</p>
       <button id="successOkBtn">OK</button>
+    </div>
+  </div>
+
+  <div id="action-loading">
+    <div class="circle-spinner"></div>
+    <div id="action-loading-text">Please wait…</div>
+  </div>
+
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal-box">
+      <p id="confirmMessage"></p>
+      <div class="modal-buttons">
+        <button id="confirmYesBtn">Yes, Continue</button>
+        <button id="confirmCancelBtn">Cancel</button>
+      </div>
     </div>
   </div>
 </body>
