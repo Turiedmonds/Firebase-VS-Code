@@ -256,6 +256,13 @@ async function restoreStaff(btn) {
         window.location.replace('login.html');
         return;
       }
+      const backBtn = document.getElementById('back-to-dashboard-btn');
+      if (backBtn) {
+        backBtn.style.display = 'inline-block';
+        backBtn.addEventListener('click', () => {
+          window.location.href = 'dashboard.html';
+        });
+      }
     } catch (err) {
       console.error('Failed to verify role', err);
       window.location.replace('login.html');
