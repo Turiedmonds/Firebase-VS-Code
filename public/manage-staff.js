@@ -103,18 +103,14 @@ async function loadStaffList(contractorId) {
 
   await loadDeletedStaff(contractorId);
   const deletedRows = document.querySelectorAll('#deletedStaffTable tbody tr').length;
-  const toggleDeletedStaffBtn = document.getElementById('toggleDeletedStaffBtn');
+  const deletedStaffHeader = document.getElementById('deletedStaffHeader');
   const deletedStaffSection = document.getElementById('deletedStaffSection');
-  if (toggleDeletedStaffBtn && deletedStaffSection) {
+  if (deletedStaffHeader && deletedStaffSection) {
+    const collapsed = deletedRows === 0 ? true : localStorage.getItem(DELETED_STAFF_STATE_KEY) === 'collapsed';
+    deletedStaffSection.classList.toggle('collapsed', collapsed);
+    deletedStaffHeader.classList.toggle('expanded', !collapsed);
     if (deletedRows === 0) {
-      deletedStaffSection.classList.add('collapsed');
-      toggleDeletedStaffBtn.textContent = '🔽 Show Deleted Staff';
       localStorage.setItem(DELETED_STAFF_STATE_KEY, 'collapsed');
-    } else {
-      const storedState = localStorage.getItem(DELETED_STAFF_STATE_KEY);
-      const collapsed = storedState === 'collapsed';
-      deletedStaffSection.classList.toggle('collapsed', collapsed);
-      toggleDeletedStaffBtn.textContent = collapsed ? '🔽 Show Deleted Staff' : '🔼 Hide Deleted Staff';
     }
   }
 }
@@ -224,20 +220,16 @@ async function restoreStaff(btn) {
     confirmMessage = document.getElementById('confirmMessage');
     confirmYesBtn = document.getElementById('confirmYesBtn');
     confirmCancelBtn = document.getElementById('confirmCancelBtn');
-    const toggleDeletedStaffBtn = document.getElementById('toggleDeletedStaffBtn');
+    const deletedStaffHeader = document.getElementById('deletedStaffHeader');
     const deletedStaffSection = document.getElementById('deletedStaffSection');
-    if (toggleDeletedStaffBtn && deletedStaffSection) {
+    if (deletedStaffHeader && deletedStaffSection) {
       const storedState = localStorage.getItem(DELETED_STAFF_STATE_KEY);
-      if (storedState === 'collapsed') {
-        deletedStaffSection.classList.add('collapsed');
-        toggleDeletedStaffBtn.textContent = '🔽 Show Deleted Staff';
-      } else {
-        deletedStaffSection.classList.remove('collapsed');
-        toggleDeletedStaffBtn.textContent = '🔼 Hide Deleted Staff';
-      }
-      toggleDeletedStaffBtn.addEventListener('click', () => {
+      const collapsed = storedState === 'collapsed';
+      deletedStaffSection.classList.toggle('collapsed', collapsed);
+      deletedStaffHeader.classList.toggle('expanded', !collapsed);
+      deletedStaffHeader.addEventListener('click', () => {
         const collapsed = deletedStaffSection.classList.toggle('collapsed');
-        toggleDeletedStaffBtn.textContent = collapsed ? '🔽 Show Deleted Staff' : '🔼 Hide Deleted Staff';
+        deletedStaffHeader.classList.toggle('expanded', !collapsed);
         localStorage.setItem(DELETED_STAFF_STATE_KEY, collapsed ? 'collapsed' : 'expanded');
       });
     }
