@@ -55,25 +55,31 @@
       margin-top: 20px;
       font-size: 18px;
     }
-    #staffTable {
+    #staffTable,
+    #deletedStaffTable {
       border-collapse: collapse;
       width: 100%;
       max-width: 600px;
       margin-top: 10px;
     }
     #staffTable th,
-    #staffTable td {
+    #staffTable td,
+    #deletedStaffTable th,
+    #deletedStaffTable td {
       border: 1px solid #555;
       padding: 8px 12px;
       text-align: left;
     }
-    #staffTable th {
+    #staffTable th,
+    #deletedStaffTable th {
       background: #222;
     }
-    #staffTable tbody tr:hover {
+    #staffTable tbody tr:hover,
+    #deletedStaffTable tbody tr:hover {
       background: #111;
     }
-    #staffTable button {
+    #staffTable button,
+    #deletedStaffTable button {
       background: #333;
       color: #fff;
       border: none;
@@ -81,7 +87,8 @@
       cursor: pointer;
       border-radius: 4px;
     }
-    #staffTable button:hover {
+    #staffTable button:hover,
+    #deletedStaffTable button:hover {
       background: #555;
     }
 
@@ -147,6 +154,18 @@
         <th>Name</th>
         <th>Email</th>
         <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <h3>Deleted Staff</h3>
+  <table id="deletedStaffTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Deleted</th>
         <th>Action</th>
       </tr>
     </thead>
