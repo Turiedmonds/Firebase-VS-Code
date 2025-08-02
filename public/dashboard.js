@@ -26,5 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'tally.html';
       });
     }
+
+    const btnStartNewDay = document.getElementById('btnStartNewDay');
+    if (btnStartNewDay) {
+      btnStartNewDay.addEventListener('click', () => {
+        window.location.href = 'tally.html?newDay=true';
+      });
+    }
   });
 });
