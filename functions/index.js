@@ -84,19 +84,29 @@ exports.deleteStaffUser = onCall(async (request) => {
 // Listen for deleted staff user documents using v2 syntax
 exports.onStaffDeleted = onDocumentDeleted(
   'contractors/{contractorId}/staff/{staffId}',
-  (event) => {
+  async (event) => {
     const { contractorId, staffId } = event.params;
-    const fields = event.data?.oldValue?.fields || {};
-    const name = fields.name?.stringValue;
-    const email = fields.email?.stringValue;
-    const deletedAt = new Date().toISOString();
+    const data = event.data?.data() || {};
+    const name = data.name || 'Unknown';
+    const email = data.email || 'Unknown';
+    const deletedAt = admin.firestore.FieldValue.serverTimestamp();
+
+    await admin
+      .firestore()
+      .collection(`contractors/${contractorId}/logs`)
+      .add({
+        type: 'staff_deleted',
+        staffId,
+        name,
+        email,
+        deletedAt,
+      });
 
     console.log('Staff deleted', {
       contractorId,
       staffId,
       name,
       email,
-      deletedAt,
     });
   }
 );
