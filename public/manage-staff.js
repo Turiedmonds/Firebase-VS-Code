@@ -210,10 +210,20 @@ async function restoreStaff(btn) {
     confirmCancelBtn = document.getElementById('confirmCancelBtn');
     const toggleDeletedStaffBtn = document.getElementById('toggleDeletedStaffBtn');
     const deletedStaffSection = document.getElementById('deletedStaffSection');
+    const DELETED_STAFF_STATE_KEY = 'deletedStaffSectionState';
     if (toggleDeletedStaffBtn && deletedStaffSection) {
+      const storedState = localStorage.getItem(DELETED_STAFF_STATE_KEY);
+      if (storedState === 'collapsed') {
+        deletedStaffSection.classList.add('collapsed');
+        toggleDeletedStaffBtn.textContent = '🔽 Show Deleted Staff';
+      } else {
+        deletedStaffSection.classList.remove('collapsed');
+        toggleDeletedStaffBtn.textContent = '🔼 Hide Deleted Staff';
+      }
       toggleDeletedStaffBtn.addEventListener('click', () => {
         const collapsed = deletedStaffSection.classList.toggle('collapsed');
         toggleDeletedStaffBtn.textContent = collapsed ? '🔽 Show Deleted Staff' : '🔼 Hide Deleted Staff';
+        localStorage.setItem(DELETED_STAFF_STATE_KEY, collapsed ? 'collapsed' : 'expanded');
       });
     }
     const staffPasswordInput = document.getElementById('staff-password');
