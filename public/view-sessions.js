@@ -65,8 +65,12 @@ async function fetchSessions(contractorId) {
       viewBtn.textContent = 'View';
       viewBtn.className = 'tab-button';
       viewBtn.addEventListener('click', () => {
-        localStorage.setItem('selected_session_id', doc.id);
-        window.location.href = `tally.html?sessionId=${encodeURIComponent(doc.id)}&viewOnly=1`;
+        // Save session data and ID to localStorage
+        localStorage.setItem('active_session', JSON.stringify(data));
+        localStorage.setItem('firestoreSessionId', doc.id);
+        localStorage.setItem('viewOnlyMode', 'true');
+        // Redirect to tally page with loadedSession flag
+        window.location.href = 'tally.html?loadedSession=true';
       });
       btns.appendChild(viewBtn);
 
@@ -77,8 +81,11 @@ async function fetchSessions(contractorId) {
       editBtn.addEventListener('click', () => {
         const pin = prompt('\uD83D\uDD10 Enter Contractor PIN to edit:');
         if (pin === '1234') {
-          localStorage.setItem('selected_session_id', doc.id);
-          window.location.href = `tally.html?sessionId=${encodeURIComponent(doc.id)}`;
+          const editable = { ...data, viewOnly: false };
+          localStorage.setItem('active_session', JSON.stringify(editable));
+          localStorage.setItem('firestoreSessionId', doc.id);
+          localStorage.setItem('viewOnlyMode', 'false');
+          window.location.href = 'tally.html?loadedSession=true';
         } else if (pin !== null) {
           alert('Incorrect PIN');
         }

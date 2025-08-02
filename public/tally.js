@@ -2319,6 +2319,28 @@ function restoreTodaySession() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const isLoadedSession = params.get('loadedSession') === 'true';
+    const isNewDay = params.get('newDay') === 'true';
+
+    if (isLoadedSession) {
+        const json = localStorage.getItem('active_session');
+        if (json) {
+            try {
+                const session = JSON.parse(json);
+                const viewOnly = localStorage.getItem('viewOnlyMode') === 'true';
+                session.viewOnly = viewOnly;
+                const fsId = localStorage.getItem('firestoreSessionId');
+                if (fsId) firestoreSessionId = fsId;
+                loadSessionObject(session);
+            } catch (e) {
+                console.error('Failed to parse active_session', e);
+            }
+        }
+    } else if (isNewDay) {
+        resetForNewDay();
+    }
+
     const storedRole = sessionStorage.getItem('userRole');
     if (storedRole) updateUIForRole(storedRole);
     document.querySelectorAll('.tab-button').forEach(btn => {
