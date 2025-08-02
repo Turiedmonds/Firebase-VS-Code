@@ -107,6 +107,31 @@
       color: #bbb;
     }
 
+    #toggleDeletedStaffBtn {
+      margin-top: 30px;
+      background: #333;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    #toggleDeletedStaffBtn:hover {
+      background: #555;
+    }
+    #deletedStaffSection {
+      width: 100%;
+      max-width: 600px;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+      overflow: hidden;
+      max-height: 1000px;
+      opacity: 1;
+    }
+    #deletedStaffSection.collapsed {
+      max-height: 0;
+      opacity: 0;
+    }
+
     .table-heading {
       width: 100%;
       max-width: 600px;
@@ -239,19 +264,22 @@
     </thead>
     <tbody></tbody>
   </table>
-  <h3 id="deletedStaffHeading" class="table-heading">Deleted Staff</h3>
-  <input type="text" id="deletedStaffSearch" placeholder="Search deleted staff…">
-  <table id="deletedStaffTable">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Deleted</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <button id="toggleDeletedStaffBtn">🔼 Hide Deleted Staff</button>
+  <div id="deletedStaffSection">
+    <h3 id="deletedStaffHeading" class="table-heading">Deleted Staff</h3>
+    <input type="text" id="deletedStaffSearch" placeholder="Search deleted staff…">
+    <table id="deletedStaffTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Deleted</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
   <script type="module" src="manage-staff.js"></script>
 
   <div id="loading-overlay">
