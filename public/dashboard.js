@@ -5,4 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', handleLogout);
   }
+
+  const viewSessionsBtn = document.getElementById('btnViewSavedSessions');
+  if (viewSessionsBtn) {
+    viewSessionsBtn.addEventListener('click', () => {
+      window.location.href = 'view-sessions.html';
+    });
+  }
 });

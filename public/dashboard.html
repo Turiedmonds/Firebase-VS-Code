@@ -22,15 +22,10 @@
       width: 100%;
       max-width: 400px;
     }
-    #buttonContainer button {
+    #buttonContainer .tab-button {
       margin: 6px 0;
-      padding: 12px 16px;
-      background: #333;
-      color: #fff;
-      border: none;
-      cursor: pointer;
     }
-    #buttonContainer button:hover {
+    #buttonContainer .tab-button:hover {
       background: #555;
     }
   </style>
@@ -47,18 +42,18 @@
       <h2 id="welcomeMessage">Welcome</h2>
     </div>
     <div id="buttonContainer">
-      <button id="btnManageStaff">Manage Staff</button>
-      <button id="btnViewSavedSessions">View Saved Sessions</button>
-      <button id="btnStationSummary">Station Summary</button>
-      <button id="btnLoadPrevious">Load Previous Session</button>
-      <button id="btnChangePin">Change Contractor PIN</button>
-      <button id="btnSaveBackup">Save &amp; Backup Options</button>
-      <button id="btnNewDayReset">New Day Reset</button>
-      <button id="btnEditCurrent">Edit Current Session Details</button>
-      <button id="btnExportAll">Export All Sessions</button>
-      <button id="btnSetDefaultStart">Set Default Start Time / Workday Type</button>
-      <button id="btnSettings">Settings / Preferences</button>
-      <button id="logoutBtn" class="btn btn-primary">Logout</button>
+      <button id="btnManageStaff" class="tab-button">Manage Staff</button>
+      <button id="btnStationSummary" class="tab-button">Station Summary</button>
+      <button id="btnViewSavedSessions" class="tab-button">📂 View Saved Sessions</button>
+      <button id="btnLoadPrevious" class="tab-button">Load Previous Session</button>
+      <button id="btnChangePin" class="tab-button">Change Contractor PIN</button>
+      <button id="btnSaveBackup" class="tab-button">Save &amp; Backup Options</button>
+      <button id="btnNewDayReset" class="tab-button">New Day Reset</button>
+      <button id="btnEditCurrent" class="tab-button">Edit Current Session Details</button>
+      <button id="btnExportAll" class="tab-button">Export All Sessions</button>
+      <button id="btnSetDefaultStart" class="tab-button">Set Default Start Time / Workday Type</button>
+      <button id="btnSettings" class="tab-button">Settings / Preferences</button>
+      <button id="logoutBtn" class="tab-button">Logout</button>
     </div>
   </div>
 
@@ -96,9 +91,6 @@
     // Navigation button handlers
     document.getElementById('btnManageStaff')?.addEventListener('click', () => {
       window.location.href = 'manage-staff.html';
-    });
-    document.getElementById('btnViewSessions')?.addEventListener('click', () => {
-      window.location.href = 'view-sessions.html';
     });
     document.getElementById('btnStationSummary')?.addEventListener('click', () => {
       window.location.href = 'station-summary.html';
