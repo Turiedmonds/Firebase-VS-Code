@@ -107,6 +107,17 @@
       color: #bbb;
     }
 
+    .table-heading {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      text-align: left;
+    }
+    #deletedStaffHeading {
+      margin-top: 50px;
+    }
+
     /* Spinner overlay for creating staff */
     #add-staff-loading {
       position: fixed;
@@ -215,6 +226,7 @@
     <button type="button" id="addStaffBtn">Add Staff Member</button>
   </form>
   <p id="staffSummary"></p>
+  <h3 id="activeStaffHeading" class="table-heading">Active Staff</h3>
   <table id="staffTable">
     <thead>
       <tr>
@@ -227,7 +239,7 @@
     </thead>
     <tbody></tbody>
   </table>
-  <h3>Deleted Staff</h3>
+  <h3 id="deletedStaffHeading" class="table-heading">Deleted Staff</h3>
   <input type="text" id="deletedStaffSearch" placeholder="Search deleted staff…">
   <table id="deletedStaffTable">
     <thead>
