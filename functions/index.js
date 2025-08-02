@@ -3,6 +3,7 @@ const { onCall } = require('firebase-functions/v2/https');
 const { onDocumentDeleted } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 admin.initializeApp();
 
 exports.createStaffUser = onCall(async (request) => {
@@ -17,41 +18,40 @@ exports.createStaffUser = onCall(async (request) => {
   return { uid: userRecord.uid };
 });
 
+async function sendCredentialsEmail({ staffName, staffEmail, password, contractorEmail }) {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.GMAIL_USER,
+    // Send to both contractor and staff
+    to: [contractorEmail, staffEmail],
+    subject: 'New Staff Login Created',
+    text: `Kia ora,\n\nYou've successfully created a new SHE\u0394R iQ staff login.\n\nHere are the details for your records:\n\nName: ${staffName}\nEmail: ${staffEmail}\nPassword: ${password}\n\nPlease share these login details with your staff member so they can access the SHE\u0394R iQ app.\n\nNg\u0101 mihi,\nThe SHE\u0394R iQ Team`,
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
 exports.sendStaffCredentials = onCall(
   {
     secrets: ["GMAIL_USER", "GMAIL_PASS"]
   },
   async (request) => {
-
-  const { staffName, staffEmail, password, contractorEmail } = request.data;
-
-console.log("DEBUG - GMAIL_USER:", process.env.GMAIL_USER);
-console.log("DEBUG - GMAIL_PASS is set:", !!process.env.GMAIL_PASS);
-
-  try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_PASS,
-      },
-    });
-
-    const mailOptions = {
-      from: process.env.GMAIL_USER,
-      // Send to both contractor and staff
-      to: [contractorEmail, staffEmail],
-      subject: 'New Staff Login Created',
-      text: `Kia ora,\n\nYou've successfully created a new SHE\u0394R iQ staff login.\n\nHere are the details for your records:\n\nName: ${staffName}\nEmail: ${staffEmail}\nPassword: ${password}\n\nPlease share these login details with your staff member so they can access the SHE\u0394R iQ app.\n\nNg\u0101 mihi,\nThe SHE\u0394R iQ Team`,
-    };
-
-    await transporter.sendMail(mailOptions);
-    return { success: true };
-  } catch (error) {
-    console.error('Error sending staff credentials', error);
-    return { success: false, error: error.message };
+    try {
+      await sendCredentialsEmail(request.data);
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending staff credentials', error);
+      return { success: false, error: error.message };
+    }
   }
-});
+);
 
 exports.deleteStaffUser = onCall(async (request) => {
   const { uid, contractorId } = request.data || {};
@@ -108,5 +108,73 @@ exports.onStaffDeleted = onDocumentDeleted(
       name,
       email,
     });
+  }
+);
+
+function generatePassword() {
+  // 12 random alphanumeric characters with added complexity
+  const base = crypto.randomBytes(9).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
+  return (base + 'Aa1!').slice(0, 12);
+}
+
+exports.restoreStaffUser = onCall(
+  {
+    secrets: ["GMAIL_USER", "GMAIL_PASS"]
+  },
+  async (request) => {
+    const { logId, contractorId } = request.data || {};
+    if (!logId || !contractorId) {
+      throw new functions.https.HttpsError('invalid-argument', 'Missing logId or contractorId');
+    }
+
+    const logRef = admin.firestore().doc(`contractors/${contractorId}/logs/${logId}`);
+    const logSnap = await logRef.get();
+    if (!logSnap.exists) {
+      throw new functions.https.HttpsError('not-found', 'Log not found');
+    }
+
+    const { name, email } = logSnap.data();
+    if (!email) {
+      throw new functions.https.HttpsError('invalid-argument', 'Log missing email');
+    }
+
+    const password = generatePassword();
+    let uid;
+
+    try {
+      const userRecord = await admin.auth().createUser({ email, password });
+      uid = userRecord.uid;
+
+      await admin
+        .firestore()
+        .doc(`contractors/${contractorId}/staff/${uid}`)
+        .set({
+          name,
+          email,
+          role: 'staff',
+          contractorId,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+      const contractorUser = await admin.auth().getUser(contractorId);
+      await sendCredentialsEmail({
+        staffName: name,
+        staffEmail: email,
+        password,
+        contractorEmail: contractorUser.email,
+      });
+
+      await logRef.delete();
+
+      return { uid };
+    } catch (error) {
+      console.error('Failed to restore staff user', error);
+      // Cleanup on failure to keep Firestore and Auth in sync
+      if (uid) {
+        await admin.firestore().doc(`contractors/${contractorId}/staff/${uid}`).delete().catch(() => {});
+        await admin.auth().deleteUser(uid).catch(() => {});
+      }
+      throw new functions.https.HttpsError('internal', error.message);
+    }
   }
 );
