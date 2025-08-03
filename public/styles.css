@@ -19,6 +19,31 @@ label {
   font-size: 14px;
 }
 
+/* Shared input group styling for password/PIN fields */
+.input-group {
+  position: relative;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 8px;
+  padding-right: 50px;
+  box-sizing: border-box;
+}
+
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: #444;
+  border: none;
+  color: #fff;
+  padding: 4px 8px;
+  cursor: pointer;
+  z-index: 1;
+}
+
 .meta-label {
   font-size: 18px;
   font-weight: 500;

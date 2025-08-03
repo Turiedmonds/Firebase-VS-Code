@@ -22,19 +22,11 @@
       display: flex;
       flex-direction: column;
     }
-    .pin-field {
-      display: flex;
-      align-items: center;
+    #pinForm .input-group {
       margin: 6px 0;
     }
-    .pin-field input {
-      flex: 1;
-      padding: 8px;
+    #pinForm .input-group input {
       text-align: center;
-    }
-    .pin-field button {
-      margin-left: 6px;
-      padding: 6px 8px;
     }
     form button.main-button {
       margin-top: 10px;
@@ -56,19 +48,19 @@
   </div>
   <form id="pinForm">
     <label for="current-pin">Current PIN</label>
-    <div class="pin-field">
+    <div class="input-group">
       <input type="password" id="current-pin" readonly />
-      <button type="button" class="toggle-btn" data-target="current-pin">Show 🔓</button>
+      <button type="button" class="toggle-password" data-target="current-pin">Show</button>
     </div>
     <label for="new-pin">New PIN</label>
-    <div class="pin-field">
+    <div class="input-group">
       <input type="password" id="new-pin" inputmode="numeric" pattern="\d{4}" maxlength="4" required />
-      <button type="button" class="toggle-btn" data-target="new-pin">Show 🔓</button>
+      <button type="button" class="toggle-password" data-target="new-pin">Show</button>
     </div>
     <label for="confirm-pin">Confirm New PIN</label>
-    <div class="pin-field">
+    <div class="input-group">
       <input type="password" id="confirm-pin" inputmode="numeric" pattern="\d{4}" maxlength="4" required />
-      <button type="button" class="toggle-btn" data-target="confirm-pin">Show 🔓</button>
+      <button type="button" class="toggle-password" data-target="confirm-pin">Show</button>
     </div>
     <button type="submit" class="main-button">Save PIN</button>
   </form>
@@ -98,15 +90,15 @@
     });
 
     // Toggle show/hide for PIN inputs
-    document.querySelectorAll('.toggle-btn').forEach((btn) => {
+    document.querySelectorAll('.toggle-password').forEach((btn) => {
       btn.addEventListener('click', () => {
         const target = document.getElementById(btn.dataset.target);
         if (target.type === 'password') {
           target.type = 'text';
-          btn.textContent = 'Hide 🔐';
+          btn.textContent = 'Hide';
         } else {
           target.type = 'password';
-          btn.textContent = 'Show 🔓';
+          btn.textContent = 'Show';
         }
       });
     });
