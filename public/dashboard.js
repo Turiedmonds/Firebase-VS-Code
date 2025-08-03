@@ -31,7 +31,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const btnReturnToActive = document.getElementById('btnReturnToActive');
-    const activeSession = localStorage.getItem('tally_session');
+    const activeSession = localStorage.getItem('active_session');
+
+    // Only reveal the "Return to Active Session" button when an active session exists.
+    // Automatic redirection to tally.html has been removed so contractors choose
+    // when to resume a session.
     if (btnReturnToActive && activeSession) {
       btnReturnToActive.style.display = 'block';
       btnReturnToActive.addEventListener('click', () => {
