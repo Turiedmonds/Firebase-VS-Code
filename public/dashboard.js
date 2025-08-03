@@ -24,9 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.href = 'farm-summary.html';
     });
 
-    document.getElementById('btnChangePin')?.addEventListener('click', () => {
-      window.location.href = 'change-pin.html';
-    });
 
     const btnViewSavedSessions = document.getElementById('btnViewSavedSessions');
     if (btnViewSavedSessions) {
