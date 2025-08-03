@@ -47,5 +47,12 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'tally.html?newDay=true';
       });
     }
+
+    const btnChangePin = document.getElementById('btnChangePin');
+    if (btnChangePin) {
+      btnChangePin.addEventListener('click', () => {
+        window.location.href = 'change-pin.html';
+      });
+    }
   });
 });
