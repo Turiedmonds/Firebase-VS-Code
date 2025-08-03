@@ -19,11 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const btnFarmSummary = document.getElementById('farm-summary-btn');
-    if (btnFarmSummary) {
-      btnFarmSummary.addEventListener('click', () => {
-        window.location.href = 'farm-summary.html';
-      });
-    }
+    btnFarmSummary?.addEventListener('click', () => {
+      window.location.href = 'farm-summary.html';
+    });
 
     const btnViewSavedSessions = document.getElementById('btnViewSavedSessions');
     if (btnViewSavedSessions) {
