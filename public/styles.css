@@ -303,6 +303,7 @@ button {
   }
 
   .tab-button,
+  .dashboard-button,
   .toggle-button,
   .section h2,
   label {
@@ -329,7 +330,8 @@ button {
   display: flex;
   margin-bottom: 10px;
 }
-.tab-button {
+.tab-button,
+.dashboard-button {
   padding: 12px 16px;
   background: #444;
   color: #fff;

@@ -22,10 +22,12 @@
       width: 100%;
       max-width: 400px;
     }
-    #buttonContainer .tab-button {
+    #buttonContainer .tab-button,
+    #buttonContainer .dashboard-button {
       margin: 6px 0;
     }
-    #buttonContainer .tab-button:hover {
+    #buttonContainer .tab-button:hover,
+    #buttonContainer .dashboard-button:hover {
       background: #555;
     }
   </style>
@@ -43,6 +45,7 @@
     </div>
     <div id="buttonContainer">
       <button id="btnManageStaff" class="tab-button">Manage Staff</button>
+      <button id="farm-summary-btn" class="dashboard-button">Farm Summary</button>
       <button id="btnViewSavedSessions" class="tab-button">View Saved Sessions</button>
       <button id="btnReturnToActive" class="tab-button" style="display: none;"> Return to Active Session</button>
       <button id="btnStartNewDay" class="tab-button">Start New Day</button>
