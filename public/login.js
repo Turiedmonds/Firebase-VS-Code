@@ -19,15 +19,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  const passwordInput = document.getElementById('password');
-  const togglePasswordBtn = document.getElementById('togglePassword');
-  if (togglePasswordBtn && passwordInput) {
-    togglePasswordBtn.addEventListener('click', () => {
-      const isPassword = passwordInput.type === 'password';
-      passwordInput.type = isPassword ? 'text' : 'password';
-      togglePasswordBtn.textContent = isPassword ? 'Hide' : 'Show';
+  document.querySelectorAll('.toggle-password').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target);
+      if (target) {
+        const isPassword = target.type === 'password';
+        target.type = isPassword ? 'text' : 'password';
+        btn.textContent = isPassword ? 'Hide' : 'Show';
+      }
     });
-  }
+  });
 
   const loginForm = document.getElementById('loginForm');
 
