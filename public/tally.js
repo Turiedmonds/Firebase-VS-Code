@@ -509,7 +509,8 @@ function unlockSession() {
 
 function promptForPinUnlock() {
     const pin = prompt('\uD83D\uDD10 Enter Contractor PIN to unlock editing:');
-    if (pin === '1234') {
+    const correctPIN = localStorage.getItem('contractor_pin') || '1234';
+    if (pin === correctPIN) {
         unlockSession();
     } else if (pin !== null) {
         alert('Incorrect PIN');
