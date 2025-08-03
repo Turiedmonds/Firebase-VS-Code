@@ -66,6 +66,14 @@
     <button type="button" id="btnReturnToDashboard" class="main-button">Return to Dashboard</button>
   </form>
   <div id="message" class="message"></div>
+  <div id="pinSuccessModal" class="modal-overlay">
+    <div class="modal-box">
+      <p>PIN updated successfully</p>
+      <div class="modal-buttons">
+        <button id="pinModalOkBtn">OK</button>
+      </div>
+    </div>
+  </div>
   <script>
     const currentPinInput = document.getElementById('current-pin');
     const savedPin = localStorage.getItem('contractor_pin');
@@ -82,8 +90,10 @@
       const messageEl = document.getElementById('message');
       if (/^\d{4}$/.test(newPin) && newPin === confirmPin) {
         localStorage.setItem('contractor_pin', newPin);
-        messageEl.textContent = 'PIN saved successfully.';
-        messageEl.style.color = '#0f0';
+        currentPinInput.value = newPin;
+        messageEl.textContent = '';
+        const modal = document.getElementById('pinSuccessModal');
+        if (modal) modal.style.display = 'flex';
       } else {
         messageEl.textContent = 'PINs must match and be 4 digits.';
         messageEl.style.color = '#ff4d4d';
@@ -106,6 +116,13 @@
 
     document.getElementById('btnReturnToDashboard').addEventListener('click', () => {
       window.location.href = 'dashboard.html';
+    });
+
+    document.getElementById('pinModalOkBtn').addEventListener('click', () => {
+      const modal = document.getElementById('pinSuccessModal');
+      if (modal) modal.style.display = 'none';
+      document.getElementById('new-pin').value = '';
+      document.getElementById('confirm-pin').value = '';
     });
   </script>
 </body>
