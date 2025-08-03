@@ -22,12 +22,21 @@
       display: flex;
       flex-direction: column;
     }
-    form input {
+    .pin-field {
+      display: flex;
+      align-items: center;
       margin: 6px 0;
+    }
+    .pin-field input {
+      flex: 1;
       padding: 8px;
       text-align: center;
     }
-    form button {
+    .pin-field button {
+      margin-left: 6px;
+      padding: 6px 8px;
+    }
+    form button.main-button {
       margin-top: 10px;
     }
     #message {
@@ -47,23 +56,36 @@
   </div>
   <form id="pinForm">
     <label for="current-pin">Current PIN</label>
-    <input type="text" id="current-pin" readonly />
-    <label for="newPin">New PIN</label>
-    <input type="password" id="newPin" inputmode="numeric" pattern="\d{4}" maxlength="4" required />
-    <label for="confirmPin">Confirm New PIN</label>
-    <input type="password" id="confirmPin" inputmode="numeric" pattern="\d{4}" maxlength="4" required />
+    <div class="pin-field">
+      <input type="password" id="current-pin" readonly />
+      <button type="button" class="toggle-btn" data-target="current-pin">Show 🔓</button>
+    </div>
+    <label for="new-pin">New PIN</label>
+    <div class="pin-field">
+      <input type="password" id="new-pin" inputmode="numeric" pattern="\d{4}" maxlength="4" required />
+      <button type="button" class="toggle-btn" data-target="new-pin">Show 🔓</button>
+    </div>
+    <label for="confirm-pin">Confirm New PIN</label>
+    <div class="pin-field">
+      <input type="password" id="confirm-pin" inputmode="numeric" pattern="\d{4}" maxlength="4" required />
+      <button type="button" class="toggle-btn" data-target="confirm-pin">Show 🔓</button>
+    </div>
     <button type="submit" class="main-button">Save PIN</button>
   </form>
   <div id="message" class="message"></div>
   <script>
     const currentPinInput = document.getElementById('current-pin');
     const savedPin = localStorage.getItem('contractor_pin');
-    currentPinInput.value = savedPin ? savedPin : 'Not set';
+    if (savedPin) {
+      currentPinInput.value = savedPin;
+    } else {
+      currentPinInput.placeholder = 'Not set';
+    }
 
     document.getElementById('pinForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      const newPin = document.getElementById('newPin').value.trim();
-      const confirmPin = document.getElementById('confirmPin').value.trim();
+      const newPin = document.getElementById('new-pin').value.trim();
+      const confirmPin = document.getElementById('confirm-pin').value.trim();
       const messageEl = document.getElementById('message');
       if (/^\d{4}$/.test(newPin) && newPin === confirmPin) {
         localStorage.setItem('contractor_pin', newPin);
@@ -73,6 +95,20 @@
         messageEl.textContent = 'PINs must match and be 4 digits.';
         messageEl.style.color = '#ff4d4d';
       }
+    });
+
+    // Toggle show/hide for PIN inputs
+    document.querySelectorAll('.toggle-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = document.getElementById(btn.dataset.target);
+        if (target.type === 'password') {
+          target.type = 'text';
+          btn.textContent = 'Hide 🔐';
+        } else {
+          target.type = 'password';
+          btn.textContent = 'Show 🔓';
+        }
+      });
     });
   </script>
 </body>
