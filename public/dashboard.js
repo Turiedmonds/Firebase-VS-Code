@@ -18,13 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    const btnFarmSummary = document.getElementById('btnFarmSummary');
-    btnFarmSummary?.addEventListener('click', (event) => {
-      event.preventDefault();
-      window.location.href = 'farm-summary.html';
-    });
-
-
     const btnViewSavedSessions = document.getElementById('btnViewSavedSessions');
     if (btnViewSavedSessions) {
       btnViewSavedSessions.addEventListener('click', () => {
