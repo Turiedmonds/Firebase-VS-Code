@@ -63,6 +63,7 @@
       <button type="button" class="toggle-password" data-target="confirm-pin">Show</button>
     </div>
     <button type="submit" class="main-button">Save PIN</button>
+    <button type="button" id="btnReturnToDashboard" class="main-button">Return to Dashboard</button>
   </form>
   <div id="message" class="message"></div>
   <script>
@@ -101,6 +102,10 @@
           btn.textContent = 'Show';
         }
       });
+    });
+
+    document.getElementById('btnReturnToDashboard').addEventListener('click', () => {
+      window.location.href = 'dashboard.html';
     });
   </script>
 </body>
