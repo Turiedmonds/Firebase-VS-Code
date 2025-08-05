@@ -29,9 +29,12 @@
       display: flex;
       flex-direction: column;
     }
-    form input, form select {
+    form input,
+    form select {
       margin: 6px 0;
       padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
     }
     form button {
       margin-top: 10px;
@@ -44,8 +47,15 @@
     form button:hover {
       background: #555;
     }
-    .password-container { position: relative; }
-    .password-container input { padding-right: 50px; }
+    .password-container {
+      position: relative;
+      margin: 6px 0;
+    }
+    .password-container input {
+      padding-right: 50px;
+      width: 100%;
+      box-sizing: border-box;
+    }
     .password-container button {
       position: absolute;
       top: 50%;
@@ -69,6 +79,7 @@
       max-width: 600px;
       margin-top: 10px;
       word-break: break-word;
+      table-layout: fixed;
     }
     #staffTable th,
     #staffTable td,
@@ -255,6 +266,50 @@
     }
     #confirmModal .modal-buttons button:hover {
       background: #555;
+    }
+
+    @media (max-width: 500px) {
+      form button {
+        width: 100%;
+      }
+      #staffTable,
+      #deletedStaffTable {
+        border: 0;
+      }
+      #staffTable thead,
+      #deletedStaffTable thead {
+        display: none;
+      }
+      #staffTable tr,
+      #deletedStaffTable tr {
+        display: block;
+        margin-bottom: 10px;
+        border: 1px solid #555;
+      }
+      #staffTable td,
+      #deletedStaffTable td {
+        display: block;
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+        white-space: normal;
+      }
+      #staffTable td::before,
+      #deletedStaffTable td::before {
+        position: absolute;
+        left: 10px;
+        font-weight: bold;
+        text-align: left;
+      }
+      #staffTable td:nth-child(1)::before { content: '#'; }
+      #staffTable td:nth-child(2)::before { content: 'Name'; }
+      #staffTable td:nth-child(3)::before { content: 'Email'; }
+      #staffTable td:nth-child(4)::before { content: 'Status'; }
+      #staffTable td:nth-child(5)::before { content: 'Action'; }
+      #deletedStaffTable td:nth-child(1)::before { content: 'Name'; }
+      #deletedStaffTable td:nth-child(2)::before { content: 'Email'; }
+      #deletedStaffTable td:nth-child(3)::before { content: 'Deleted'; }
+      #deletedStaffTable td:nth-child(4)::before { content: 'Action'; }
     }
 
     @media (max-width: 600px) {
