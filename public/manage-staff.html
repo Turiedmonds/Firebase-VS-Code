@@ -2,10 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Manage Staff - SHEAR iQ</title>
   <link rel="stylesheet" href="styles.css">
   <style>
+    html, body {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
     body {
       display: flex;
       flex-direction: column;
@@ -14,6 +19,8 @@
       background: #000;
       color: #fff;
       font-family: Arial, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
     }
     form {
       margin-top: 20px;
@@ -61,6 +68,7 @@
       width: 100%;
       max-width: 600px;
       margin-top: 10px;
+      word-break: break-word;
     }
     #staffTable th,
     #staffTable td,
@@ -90,6 +98,11 @@
     #staffTable button:hover,
     #deletedStaffTable button:hover {
       background: #555;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
     }
 
     #deletedStaffSearch {
@@ -242,6 +255,30 @@
     }
     #confirmModal .modal-buttons button:hover {
       background: #555;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+        font-size: 16px;
+      }
+      form {
+        max-width: 100%;
+      }
+      #staffTable,
+      #deletedStaffTable {
+        font-size: 14px;
+      }
+      #staffTable th,
+      #staffTable td,
+      #deletedStaffTable th,
+      #deletedStaffTable td {
+        padding: 6px 8px;
+      }
+      .tab-button,
+      form button {
+        width: 100%;
+      }
     }
   </style>
 </head>
