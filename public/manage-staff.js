@@ -237,10 +237,11 @@ async function restoreStaff(btn) {
     const staffPasswordInput = document.getElementById('staff-password');
     const toggleStaffPasswordBtn = document.getElementById('toggleStaffPassword');
     if (toggleStaffPasswordBtn && staffPasswordInput) {
+      const togglePasswordText = toggleStaffPasswordBtn.querySelector('.toggle-text');
       toggleStaffPasswordBtn.addEventListener('click', () => {
         const isPassword = staffPasswordInput.type === 'password';
         staffPasswordInput.type = isPassword ? 'text' : 'password';
-        toggleStaffPasswordBtn.textContent = isPassword ? 'Hide' : 'Show';
+        if (togglePasswordText) togglePasswordText.textContent = isPassword ? 'Hide' : 'Show';
       });
     }
     if (overlay) overlay.style.display = 'flex';

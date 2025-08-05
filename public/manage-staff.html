@@ -56,31 +56,38 @@
       background: #555;
     }
     .password-container {
-      display: flex;
+      position: relative;
       width: 100%;
     }
     .password-container input {
-      flex: 1;
-      width: auto;
-      min-width: 0;
+      width: 100%;
       padding: 8px;
+      padding-right: 60px;
       background: #222;
       color: #fff;
       border: 1px solid #555;
-      border-right: none;
       box-sizing: border-box;
     }
     .password-container button {
-      padding: 8px 12px;
-      background: #444;
-      border: 1px solid #555;
-      border-left: none;
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      padding: 6px 8px;
+      background: #333;
       color: #fff;
+      border: none;
+      border-radius: 4px;
       cursor: pointer;
-      flex-shrink: 0;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     .password-container button:hover {
       background: #555;
+    }
+    .password-container .eye-icon {
+      font-size: 0.8em;
     }
     #staffSummary {
       margin-top: 20px;
@@ -378,7 +385,7 @@
         <label for="staff-password">New Password</label>
         <div class="password-container">
           <input type="password" id="staff-password" placeholder="New Password" required>
-            <button type="button" id="toggleStaffPassword" aria-label="Show password">Show</button>
+          <button type="button" id="toggleStaffPassword" aria-label="Show password"><span class="eye-icon" aria-hidden="true">&#128065;</span> <span class="toggle-text">Show</span></button>
         </div>
       </div>
       <div class="form-group">
