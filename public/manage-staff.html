@@ -29,27 +29,35 @@
       display: flex;
       flex-direction: column;
     }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+      width: 100%;
+    }
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
     form input,
     form select {
-      margin: 6px 0;
       padding: 8px;
       width: 100%;
       box-sizing: border-box;
     }
     form button {
-      margin-top: 10px;
       padding: 12px 16px;
       background: #333;
       color: #fff;
       border: none;
       cursor: pointer;
+      width: 100%;
     }
     form button:hover {
       background: #555;
     }
     .password-container {
       position: relative;
-      margin: 6px 0;
+      width: 100%;
     }
     .password-container input {
       padding-right: 50px;
@@ -72,11 +80,16 @@
       margin-top: 20px;
       font-size: 18px;
     }
+    .table-wrapper {
+      width: 100%;
+      max-width: 600px;
+      overflow-x: auto;
+    }
     #staffTable,
     #deletedStaffTable {
       border-collapse: collapse;
       width: 100%;
-      max-width: 600px;
+      max-width: 100%;
       margin-top: 10px;
       word-break: break-word;
       table-layout: fixed;
@@ -88,6 +101,7 @@
       border: 1px solid #555;
       padding: 8px 12px;
       text-align: left;
+      word-wrap: break-word;
     }
     #staffTable th,
     #deletedStaffTable th {
@@ -347,21 +361,32 @@
       <button id="back-to-dashboard-btn" class="tab-button" style="display: none;">⬅ Return to Dashboard</button>
     </div>
     <form id="staffForm">
-      <label for="staff-name">Staff Name</label>
-      <input type="text" id="staff-name" placeholder="Enter staff member’s name" required>
-      <input type="email" id="staffEmailInput" placeholder="Email" required>
-      <label for="staff-password">New Password</label>
-      <div class="password-container">
-        <input type="password" id="staff-password" placeholder="New Password" required>
-        <button type="button" id="toggleStaffPassword">Show</button>
+      <div class="form-group">
+        <label for="staff-name">Staff Name</label>
+        <input type="text" id="staff-name" placeholder="Enter staff member’s name" required>
       </div>
-      <select id="staffRoleSelect">
-        <option value="staff">staff</option>
-      </select>
-      <button type="button" id="addStaffBtn">Add Staff Member</button>
+      <div class="form-group">
+        <input type="email" id="staffEmailInput" placeholder="Email" required>
+      </div>
+      <div class="form-group">
+        <label for="staff-password">New Password</label>
+        <div class="password-container">
+          <input type="password" id="staff-password" placeholder="New Password" required>
+          <button type="button" id="toggleStaffPassword">Show</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <select id="staffRoleSelect">
+          <option value="staff">staff</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <button type="button" id="addStaffBtn">Add Staff Member</button>
+      </div>
     </form>
     <p id="staffSummary"></p>
     <h3 id="activeStaffHeading" class="table-heading">Active Staff</h3>
+    <div class="table-wrapper">
     <table id="staffTable">
       <thead>
         <tr>
@@ -374,12 +399,14 @@
       </thead>
       <tbody></tbody>
     </table>
+    </div>
     <div id="deletedStaffHeader" class="collapsible-header">
       <span class="arrow">▶</span>
       <h3 id="deletedStaffHeading" class="table-heading">Deleted Staff</h3>
     </div>
     <div id="deletedStaffSection">
       <input type="text" id="deletedStaffSearch" placeholder="Search deleted staff…">
+      <div class="table-wrapper">
       <table id="deletedStaffTable">
         <thead>
           <tr>
@@ -391,6 +418,7 @@
         </thead>
         <tbody></tbody>
       </table>
+      </div>
     </div>
   </div>
   <script type="module" src="manage-staff.js"></script>
