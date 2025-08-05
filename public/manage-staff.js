@@ -55,6 +55,13 @@ function showConfirm(message) {
   });
 }
 
+function togglePasswordVisibility(inputEl, btn) {
+  if (!inputEl) return;
+  const isPassword = inputEl.type === 'password';
+  inputEl.type = isPassword ? 'text' : 'password';
+  if (btn) btn.textContent = isPassword ? 'Hide' : 'Show';
+}
+
 async function loadStaffList(contractorId) {
   const tbody = document.querySelector('#staffTable tbody');
   const summaryEl = document.getElementById('staffSummary');
@@ -237,11 +244,9 @@ async function restoreStaff(btn) {
     const staffPasswordInput = document.getElementById('staff-password');
     const toggleStaffPasswordBtn = document.getElementById('toggleStaffPassword');
     if (toggleStaffPasswordBtn && staffPasswordInput) {
-      toggleStaffPasswordBtn.addEventListener('click', () => {
-        const isPassword = staffPasswordInput.type === 'password';
-        staffPasswordInput.type = isPassword ? 'text' : 'password';
-        toggleStaffPasswordBtn.textContent = isPassword ? 'Hide' : 'Show';
-      });
+      toggleStaffPasswordBtn.addEventListener('click', () =>
+        togglePasswordVisibility(staffPasswordInput, toggleStaffPasswordBtn)
+      );
     }
     if (overlay) overlay.style.display = 'flex';
     onAuthStateChanged(auth, async user => {
