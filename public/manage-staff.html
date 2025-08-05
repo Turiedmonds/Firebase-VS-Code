@@ -55,35 +55,6 @@
     form button:hover {
       background: #555;
     }
-    .password-container {
-      position: relative;
-      width: 100%;
-    }
-
-    .password-input {
-      width: 100%;
-      padding-right: 70px;
-      height: 40px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      box-sizing: border-box;
-    }
-
-    .toggle-password-btn {
-      position: absolute;
-      right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      height: 28px;
-      padding: 0 12px;
-      background-color: #444;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 14px;
-      cursor: pointer;
-    }
     #staffSummary {
       margin-top: 20px;
       font-size: 18px;
@@ -378,10 +349,7 @@
       </div>
       <div class="form-group">
         <label for="new-password">New Password</label>
-        <div class="password-container">
-          <input id="new-password" type="password" class="password-input" placeholder="New Password" required>
-          <button type="button" class="toggle-password-btn">Show</button>
-        </div>
+        <input id="new-password" type="password" placeholder="Enter password" required>
       </div>
       <div class="form-group">
         <select id="staffRoleSelect">
