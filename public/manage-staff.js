@@ -59,7 +59,10 @@ function togglePasswordVisibility(inputEl, btn) {
   if (!inputEl) return;
   const isPassword = inputEl.type === 'password';
   inputEl.type = isPassword ? 'text' : 'password';
-  if (btn) btn.textContent = isPassword ? 'Hide' : 'Show';
+  if (btn) {
+    btn.innerHTML = `👁 ${isPassword ? 'Hide' : 'Show'}`;
+    btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+  }
 }
 
 async function loadStaffList(contractorId) {
