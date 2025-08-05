@@ -376,9 +376,11 @@
       </div>
       <div class="form-group">
         <label for="staff-password">New Password</label>
-        <div class="password-container">
-          <input type="password" id="staff-password" placeholder="New Password" required>
-            <button type="button" id="toggleStaffPassword" aria-label="Show password">Show</button>
+        <div style="position: relative;">
+          <input type="password" id="staff-password" placeholder="New Password" required
+                 style="width: 100%; padding: 8px; padding-right: 50px; box-sizing: border-box;">
+          <button type="button" id="toggleStaffPassword" aria-label="Show password"
+                  style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); background: #444; border: none; color: #fff; padding: 4px 8px; cursor: pointer; font-size: 14px; z-index: 1;">Show</button>
         </div>
       </div>
       <div class="form-group">
