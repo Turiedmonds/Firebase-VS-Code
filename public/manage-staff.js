@@ -55,13 +55,14 @@ function showConfirm(message) {
   });
 }
 
-function togglePasswordVisibility(inputEl, btn) {
-  if (!inputEl) return;
-  const isPassword = inputEl.type === 'password';
-  inputEl.type = isPassword ? 'text' : 'password';
-  if (btn) {
-    btn.innerHTML = `👁 ${isPassword ? 'Hide' : 'Show'}`;
-    btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+function togglePasswordVisibility(inputId, button) {
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    button.textContent = 'Hide';
+  } else {
+    input.type = 'password';
+    button.textContent = 'Show';
   }
 }
 
@@ -244,11 +245,10 @@ async function restoreStaff(btn) {
         localStorage.setItem(DELETED_STAFF_STATE_KEY, collapsed ? 'collapsed' : 'expanded');
       });
     }
-    const staffPasswordInput = document.getElementById('staff-password');
-    const toggleStaffPasswordBtn = document.getElementById('toggleStaffPassword');
-    if (toggleStaffPasswordBtn && staffPasswordInput) {
-      toggleStaffPasswordBtn.addEventListener('click', () =>
-        togglePasswordVisibility(staffPasswordInput, toggleStaffPasswordBtn)
+    const togglePasswordBtn = document.querySelector('.toggle-password-btn');
+    if (togglePasswordBtn) {
+      togglePasswordBtn.addEventListener('click', () =>
+        togglePasswordVisibility('new-password', togglePasswordBtn)
       );
     }
     if (overlay) overlay.style.display = 'flex';
@@ -296,7 +296,7 @@ async function restoreStaff(btn) {
           if (successModal) successModal.style.display = 'none';
           document.getElementById('staff-name').value = '';
           document.getElementById('staffEmailInput').value = '';
-          document.getElementById('staff-password').value = '';
+          document.getElementById('new-password').value = '';
           document.getElementById('staffRoleSelect').value = 'staff';
         });
       }
@@ -310,7 +310,7 @@ async function restoreStaff(btn) {
         const contractorUid = currentUser.uid;
       const staffName = document.getElementById('staff-name').value.trim();
       const email = document.getElementById('staffEmailInput').value.trim();
-      const password = document.getElementById('staff-password').value.trim();
+      const password = document.getElementById('new-password').value.trim();
       const role = document.getElementById('staffRoleSelect').value;
       if (!staffName) {
         alert('Please enter a name');
