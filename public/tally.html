@@ -38,31 +38,31 @@
     </div>
      <button id="newDayResetBtn" class="main-button">New Day Reset</button><br/><br/>
   <label class="meta-label">Date:</label><br/>
-  <input id="date" type="date"/><br/><br/>
+  <input id="date" type="date" data-help="Select the date for this session."/><br/><br/>
   <label for="stationName" class="meta-label">Farm Name:</label><br/>
-  <input id="stationName" class="small-input" type="text"/><br/><br/>
+  <input id="stationName" class="small-input" type="text" data-help="Enter the farm or station name for today’s session."/><br/><br/>
 <label class="meta-label">Team Leader:</label><br/>
-  <input id="teamLeader" class="small-input" type="text"/><br/><br/>
+  <input id="teamLeader" class="small-input" type="text" data-help="Enter the team leader’s name."/><br/><br/>
 <label class="meta-label">Comb Type:</label><br/>
-  <input id="combType" class="small-input" type="text">
+  <input id="combType" class="small-input" type="text" data-help="Enter the comb type for this session.">
 <div style="margin-top: 14px;">
 <div style="display: flex; gap: 14px; margin-bottom: 16px;">
 <div style="flex: 1;">
   <label for="startTime" class="meta-label">Start Time:</label><br/>
-<select id="startTime" class="small-input"></select>
+<select id="startTime" class="small-input" data-help="Choose the start time."></select>
 </div>
 <div style="flex: 1;">
 <label for="finishTime" class="meta-label">Finish Time:</label><br/>
-<select id="finishTime" class="small-input"></select>
+<select id="finishTime" class="small-input" data-help="Choose the finish time."></select>
 </div>
 <div style="flex: 1;">
 <label for="hoursWorked" class="meta-label">Hours Worked:</label><br/>
-<input id="hoursWorked" class="small-input" type="text"/>
+<input id="hoursWorked" class="small-input" type="text" data-help="Total hours worked. Auto-calculated."/>
 </div>
 </div>
-<button id="timeFormatToggle" class="toggle-button">Switch to 12-hour format</button>
-<button id="workdayToggle" class="toggle-button">8 or 9 Hour Day </button>
-<button id="lunchToggle" class="toggle-button">Lunch Break</button>
+<button id="timeFormatToggle" class="toggle-button" data-help="Switch between 24- and 12-hour time display.">Switch to 12-hour format</button>
+<button id="workdayToggle" class="toggle-button" data-help="Toggle between an 8 or 9 hour workday.">8 or 9 Hour Day </button>
+<button id="lunchToggle" class="toggle-button" data-help="Toggle lunch break duration.">Lunch Break</button>
 <div id="timeSystemLabel" class="time-label">Time System: 8-Hour Day</div>
 <p id="lunchIndicator" class="time-label"></p>
 </div>
@@ -468,6 +468,8 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 
+<div id="tt-root" class="tt-hidden" role="tooltip" aria-hidden="true"></div>
+
 <style>
   #tour-help-btn {
     position: fixed; top: 12px; right: 12px; z-index: 9999;
@@ -482,6 +484,33 @@ document.addEventListener('DOMContentLoaded', () => {
   .tour-hidden { display: none; }
   #tour-controls { margin-top: 8px; display: flex; gap: 8px; }
 </style>
+
+<style>
+    #tt-root {
+      position: fixed;
+      max-width: 280px;
+      padding: 10px 12px;
+      background: rgba(20,20,20,0.95);
+      color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      z-index: 99999;
+      font-size: 14px;
+      line-height: 1.35;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 120ms ease, transform 120ms ease;
+    }
+    .tt-show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .tt-hidden { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      #tt-root { transition: none; }
+    }
+  </style>
 
 </body>
 </html>
