@@ -29,22 +29,22 @@
   <button class="tab-button active" data-view="tallySheetView">Tally Sheet</button>
   <button class="tab-button" data-view="summaryView">Daily Summary</button>
   <button class="tab-button" data-view="stationSummaryView">Farm Summary</button>
-  <button id="back-to-dashboard-btn" class="tab-button" style="display: none;">Return to Dashboard</button>
+  <button id="back-to-dashboard-btn" class="tab-button" style="display: none;" data-help="Go back to the Contractor Dashboard.">Return to Dashboard</button>
   </div>
 <div id="tallySheetView" class="view">
 <div class="logo-container">
       <img src="logo.png" alt="SHEΔR iQ logo" />
       <h2 id="app-title">Tally Processor</h2>
     </div>
-     <button id="newDayResetBtn" class="main-button">New Day Reset</button><br/><br/>
+     <button id="newDayResetBtn" class="main-button" data-help="Start a new day. Clears today's entries.">New Day Reset</button><br/><br/>
   <label class="meta-label">Date:</label><br/>
   <input id="date" type="date" data-help="Select the date for this session."/><br/><br/>
   <label for="stationName" class="meta-label">Farm Name:</label><br/>
-  <input id="stationName" class="small-input" type="text" data-help="Enter the farm or station name for today’s session."/><br/><br/>
+  <input id="stationName" class="small-input" type="text" data-help="Enter the farm or station name."/><br/><br/>
 <label class="meta-label">Team Leader:</label><br/>
-  <input id="teamLeader" class="small-input" type="text" data-help="Enter the team leader’s name."/><br/><br/>
+  <input id="teamLeader" class="small-input" type="text" data-help="Enter the team leader's name."/><br/><br/>
 <label class="meta-label">Comb Type:</label><br/>
-  <input id="combType" class="small-input" type="text" data-help="Enter the comb type for this session.">
+  <input id="combType" class="small-input" type="text" data-help="Enter the comb type used.">
 <div style="margin-top: 14px;">
 <div style="display: flex; gap: 14px; margin-bottom: 16px;">
 <div style="flex: 1;">
@@ -60,22 +60,22 @@
 <input id="hoursWorked" class="small-input" type="text" data-help="Total hours worked. Auto-calculated."/>
 </div>
 </div>
-<button id="timeFormatToggle" class="toggle-button" data-help="Switch between 24- and 12-hour time display.">Switch to 12-hour format</button>
-<button id="workdayToggle" class="toggle-button" data-help="Toggle between an 8 or 9 hour workday.">8 or 9 Hour Day </button>
-<button id="lunchToggle" class="toggle-button" data-help="Toggle lunch break duration.">Lunch Break</button>
+<button id="timeFormatToggle" class="toggle-button" data-help="Switch between 24- and 12-hour times.">Switch to 12-hour format</button>
+<button id="workdayToggle" class="toggle-button" data-help="Toggle 8 or 9 hour day.">8 or 9 Hour Day </button>
+<button id="lunchToggle" class="toggle-button" data-help="Toggle lunch break length.">Lunch Break</button>
 <div id="timeSystemLabel" class="time-label">Time System: 8-Hour Day</div>
 <p id="lunchIndicator" class="time-label"></p>
 </div>
 <h2>Shearers </h2>
 <div id="stand-controls" class="button-row">
-  <button id="add-stand-btn" onclick="addStand()">Add Stand</button>
-  <button id="remove-stand-btn" onclick="removeStand()">Remove Stand</button>
+  <button id="add-stand-btn" data-help="Add a new shearer stand (column)." onclick="addStand()">Add Stand</button>
+  <button id="remove-stand-btn" data-help="Remove the last shearer stand." onclick="removeStand()">Remove Stand</button>
 </div>
 <div id="count-controls" class="button-row">
-  <button id="add-count-btn" onclick="addCount()">Add Count</button>
-  <button id="remove-count-btn" onclick="removeCount()">Remove Count</button>
+  <button id="add-count-btn" data-help="Add a new tally run row." onclick="addCount()">Add Count</button>
+  <button id="remove-count-btn" data-help="Remove the last tally run." onclick="removeCount()">Remove Count</button>
 </div>
-<table id="tallyTable">
+<table id="tallyTable" data-help="Enter tallies by run and stand. Add sheep type for each run.">
 <thead>
 <tr id="headerRow">
 <th>Count #</th>
@@ -95,8 +95,8 @@
 <div class="section">
 <h2>Shed Staff</h2>
 <div id="shedstaff-controls" class="button-row">
-  <button id="add-shedstaff-btn" onclick="addShedStaff()">Add Shed Staff</button>
-<button id="remove-shedstaff-btn" onclick="removeShedStaff()">Remove Shed Staff</button>
+  <button id="add-shedstaff-btn" data-help="Add a shed staff row." onclick="addShedStaff()">Add Shed Staff</button>
+<button id="remove-shedstaff-btn" data-help="Remove the last shed staff row." onclick="removeShedStaff()">Remove Shed Staff</button>
 </div>
    <table>
 <thead>
@@ -105,13 +105,13 @@
 <th>Hours Worked</th>
 </tr>
     </thead>
-    <tbody id="shedStaffTable">
+    <tbody id="shedStaffTable" data-help="Enter staff names and hours.">
 <!-- Shed staff rows will be added dynamically -->
 </tbody>
 </table>
 </div>
 
-<table id="sheepTypeTotalsTable">
+<table id="sheepTypeTotalsTable" data-help="Totals by sheep type (auto).">
   <thead>
     <tr>
       <th>Sheep Type</th>
@@ -122,8 +122,8 @@
   </tbody>
 </table>
   <div class="button-row">
-    <button id="saveButton" onclick="saveData(true)">Save</button>
-    <button id="loadSessionBtn">Load Session</button>
+    <button id="saveButton" data-help="Save your session (device or cloud)." onclick="saveData(true)">Save</button>
+    <button id="loadSessionBtn" data-help="Load a previous session from device or cloud.">Load Session</button>
     <button onclick="restoreTodaySession()">Return to Today’s Session</button>
     <button onclick="showExportPrompt()">Export Data</button>
   </div>
@@ -242,7 +242,7 @@
     <thead><tr></tr></thead>
     <tbody></tbody>
   </table>
-  <button id="exportFarmSummaryBtn" class="main-button">Export Farm Summary</button>
+  <button id="exportFarmSummaryBtn" class="main-button" data-help="Export the farm summary (contractor only).">Export Farm Summary</button>
 </div>
  
 <footer id="footer">Logged in as: <span id="userEmail">loading...</span></footer>
@@ -456,6 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
 
 <button id="tour-help-btn" aria-label="Help">?</button>
+<div id="tt-help-menu" class="tt-hidden" aria-hidden="true"></div>
 
 <div id="tt-root" class="tt-hidden" role="tooltip" aria-hidden="true"></div>
 
@@ -475,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
       color: #fff;
       border-radius: 10px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      z-index: 99999;
+      z-index: 900;
       font-size: 14px;
       line-height: 1.35;
       pointer-events: none;
@@ -491,9 +492,10 @@ document.addEventListener('DOMContentLoaded', () => {
       display: flex;
       gap: 8px;
     }
-    .tt-guided-target {
-      outline: 2px solid #fff;
-      outline-offset: 2px;
+    .tt-highlight {
+      outline: 3px solid rgba(255,255,255,0.5);
+      outline-offset: 3px;
+      border-radius: 8px;
     }
     .tt-show {
       opacity: 1;
@@ -502,6 +504,29 @@ document.addEventListener('DOMContentLoaded', () => {
     .tt-hidden { display: none; }
     @media (prefers-reduced-motion: reduce) {
       #tt-root { transition: none; }
+    }
+    #tt-help-menu {
+      position: fixed;
+      background: rgba(20,20,20,0.95);
+      color: #fff;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 900;
+      display: none;
+    }
+    #tt-help-menu button,
+    #tt-help-menu label {
+      display: block;
+      background: none;
+      border: none;
+      color: inherit;
+      margin: 4px 0;
+      text-align: left;
+      font-size: 14px;
+    }
+    #tt-help-menu input[type="checkbox"] {
+      margin-right: 4px;
     }
   </style>
 
