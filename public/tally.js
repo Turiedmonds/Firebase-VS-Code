@@ -2550,156 +2550,7 @@ window.rebuildRowsFromSession = rebuildRowsFromSession;
 window.resetTallySheet = resetTallySheet;
 window.resetForNewDay = resetForNewDay;
 
-function initTallyTour() {
-  const steps = [
-    { selector: '#app-title', text: 'This is your live Tally sheet. Record today\u2019s tallies and staff here.' },
-    { selector: '#add-stand-btn', text: 'Add Stand creates a new shearer column for today\u2019s session.' },
-    { selector: '#save-session-btn', text: 'Save Session stores your progress; with cloud sync it saves to Firestore.' },
-    { selector: '#load-session-btn', text: 'Load a previous session by station and date. Past sessions are view-only unless unlocked.' },
-    { selector: '#export-csv-btn', text: 'Export today\u2019s data to CSV for payroll or records.' },
-    { selector: '#new-day-reset-btn', text: 'Start a fresh day while keeping your setup. Clears today\u2019s entries.' },
-    { selector: '#pin-lock-indicator', text: 'Past sessions open locked. Contractors can unlock with their PIN.' },
-    { selector: '#back-to-dashboard-btn', text: 'Return to the Contractor Dashboard for staff management and summaries.' }
-  ];
-
-  function ready(fn) {
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      fn();
-    } else {
-      document.addEventListener('DOMContentLoaded', fn, { once: true });
-    }
-  }
-
-  ready(() => {
-    const helpBtn = document.getElementById('tour-help-btn');
-    const overlay = document.getElementById('tour-overlay');
-    if (!helpBtn || !overlay) return; // Tour elements not present
-    const backdrop = document.getElementById('tour-backdrop');
-    const tooltip = document.getElementById('tour-tooltip');
-    const content = document.getElementById('tour-content');
-    const prevBtn = document.getElementById('tour-prev-btn');
-    const nextBtn = document.getElementById('tour-next-btn');
-    const skipBtn = document.getElementById('tour-skip-btn');
-
-    let currentIndex = 0;
-    let auto = false;
-    let lastFocused = null;
-
-    function findStep(start, dir) {
-      for (let i = start; i >= 0 && i < steps.length; i += dir) {
-        if (document.querySelector(steps[i].selector)) return i;
-      }
-      return null;
-    }
-
-    function positionTooltip(target) {
-      if (!target) return;
-      target.scrollIntoView({ block: 'center', inline: 'nearest' });
-
-      tooltip.style.visibility = 'hidden';
-      tooltip.style.display = 'block';
-      tooltip.style.top = '0px';
-      tooltip.style.left = '0px';
-
-      const rect = target.getBoundingClientRect();
-      const ttRect = tooltip.getBoundingClientRect();
-      const margin = 8;
-      let top = rect.bottom + margin;
-      if (top + ttRect.height > window.innerHeight) {
-        top = rect.top - ttRect.height - margin;
-      }
-      if (top < 0) {
-        top = Math.max((window.innerHeight - ttRect.height) / 2, margin);
-      }
-      let left = rect.left + rect.width / 2 - ttRect.width / 2;
-      left = Math.min(Math.max(left, margin), window.innerWidth - ttRect.width - margin);
-      tooltip.style.top = `${top}px`;
-      tooltip.style.left = `${left}px`;
-      tooltip.style.visibility = 'visible';
-    }
-
-    function showStep(index) {
-      const step = steps[index];
-      const target = document.querySelector(step.selector);
-      if (!target) {
-        const next = findStep(index + 1, 1);
-        if (next === null) return finish();
-        return showStep(next);
-      }
-      currentIndex = index;
-      content.textContent = step.text;
-      overlay.classList.remove('tour-hidden');
-      overlay.setAttribute('aria-hidden', 'false');
-      prevBtn.disabled = findStep(index - 1, -1) === null;
-      nextBtn.textContent = findStep(index + 1, 1) === null ? 'Finish' : 'Next';
-      positionTooltip(target);
-      tooltip.focus();
-    }
-
-    function next() {
-      const nextIdx = findStep(currentIndex + 1, 1);
-      if (nextIdx === null) {
-        finish();
-      } else {
-        showStep(nextIdx);
-      }
-    }
-
-    function prev() {
-      const prevIdx = findStep(currentIndex - 1, -1);
-      if (prevIdx !== null) showStep(prevIdx);
-    }
-
-    function close() {
-      overlay.classList.add('tour-hidden');
-      overlay.setAttribute('aria-hidden', 'true');
-      document.removeEventListener('keydown', onKey);
-      if (lastFocused) lastFocused.focus();
-    }
-
-    function finish() {
-      if (auto) localStorage.setItem('tally_tour_done', 'true');
-      close();
-    }
-
-    function skip() {
-      if (auto) localStorage.setItem('tally_tour_done', 'true');
-      close();
-    }
-
-    function start(isAuto) {
-      auto = isAuto;
-      lastFocused = document.activeElement;
-      document.addEventListener('keydown', onKey);
-      const first = findStep(0, 1);
-      if (first === null) return; // nothing to show
-      showStep(first);
-    }
-
-    function onKey(e) {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        skip();
-      } else if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        next();
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        prev();
-      }
-    }
-
-    prevBtn.addEventListener('click', prev);
-    nextBtn.addEventListener('click', next);
-    skipBtn.addEventListener('click', skip);
-    backdrop.addEventListener('click', skip);
-    helpBtn.addEventListener('click', () => start(false));
-
-    if (localStorage.getItem('tally_tour_done') !== 'true') {
-      start(true);
-    }
-  });
-}
+// Legacy guided tour removed in favor of tooltip-based guided mode
 
 function initTallyTooltips() {
   if (window.__tallyTooltipsInitialized) return;
@@ -2718,10 +2569,10 @@ function initTallyTooltips() {
   const stored = localStorage.getItem('tooltips_enabled');
   const tooltipsEnabled = (stored === null) ? true : (stored === 'true');
 
-  function tourVisible() {
-    const tour = document.getElementById('tour-overlay');
-    return !!(tour && !tour.classList.contains('tour-hidden') && tour.getAttribute('aria-hidden') !== 'true');
-  }
+  let guidedMode = false;
+  let guidedList = [];
+  let guidedIndex = 0;
+  let guidedCurrent = null;
 
   const SELECTOR = 'button,[role="button"],input,select,textarea,table,[data-help]';
   function findTipTarget(node) {
@@ -2818,14 +2669,87 @@ function initTallyTooltips() {
     tt.setAttribute('aria-hidden', 'true');
   }
 
+  function highlight(el) {
+    if (!el) return;
+    el.classList.add('tt-guided-target');
+    el.scrollIntoView({ block: 'center', inline: 'center' });
+  }
+
+  function clearHighlight() {
+    if (guidedCurrent) {
+      guidedCurrent.classList.remove('tt-guided-target');
+      guidedCurrent = null;
+    }
+  }
+
+  function showGuidedStep() {
+    const el = guidedList[guidedIndex];
+    if (!el) { endGuided(); return; }
+    clearHighlight();
+    guidedCurrent = el;
+    highlight(el);
+    const text = getHelpText(el);
+    tt.innerHTML = `<div>${text}</div><div class="tt-guided-controls"><button type="button" id="tt-next-btn">${guidedIndex === guidedList.length - 1 ? 'Finish' : 'Next'}</button><button type="button" id="tt-skip-btn">Skip</button></div>`;
+    tt.setAttribute('aria-hidden', 'false');
+    tt.classList.remove('tt-hidden');
+    tt.classList.add('tt-show');
+    tt.classList.add('guided');
+    el.setAttribute('aria-describedby', 'tt-root');
+    currentTarget = el;
+
+    const rect = el.getBoundingClientRect();
+    const ttRect = tt.getBoundingClientRect();
+    const margin = 8;
+    let top = rect.bottom + margin;
+    if (top + ttRect.height > window.innerHeight) {
+      top = rect.top - ttRect.height - margin;
+    }
+    top = Math.max(margin, Math.min(top, window.innerHeight - ttRect.height - margin));
+    let left = rect.left + rect.width / 2 - ttRect.width / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - ttRect.width - margin));
+    tt.style.top = `${top}px`;
+    tt.style.left = `${left}px`;
+
+    document.getElementById('tt-next-btn').addEventListener('click', nextGuided);
+    document.getElementById('tt-skip-btn').addEventListener('click', endGuided);
+  }
+
+  function nextGuided() {
+    if (guidedIndex >= guidedList.length - 1) {
+      endGuided();
+    } else {
+      guidedIndex++;
+      showGuidedStep();
+    }
+  }
+
+  function endGuided() {
+    guidedMode = false;
+    tt.classList.remove('guided');
+    hideTooltip();
+    clearHighlight();
+  }
+
+  function startGuided() {
+    if (guidedMode) {
+      endGuided();
+      return;
+    }
+    guidedList = Array.from(document.querySelectorAll('[data-help]'));
+    if (!guidedList.length) return;
+    guidedMode = true;
+    guidedIndex = 0;
+    showGuidedStep();
+  }
+
   document.addEventListener('mouseover', (e) => {
-    if (!tooltipsEnabled || tourVisible()) return;
+    if (!tooltipsEnabled || guidedMode) return;
     const t = findTipTarget(e.target);
     if (!t) return;
     showTooltip(t, getHelpText(t));
   }, true);
   document.addEventListener('focusin', (e) => {
-    if (!tooltipsEnabled || tourVisible()) return;
+    if (!tooltipsEnabled || guidedMode) return;
     const t = findTipTarget(e.target);
     if (!t) return;
     showTooltip(t, getHelpText(t));
@@ -2833,9 +2757,12 @@ function initTallyTooltips() {
   document.addEventListener('mouseout', () => { hideTooltip(); }, true);
   document.addEventListener('focusout', () => { hideTooltip(); }, true);
 
+  const helpBtn = document.getElementById('tour-help-btn');
+  if (helpBtn) helpBtn.addEventListener('click', startGuided);
+
   let touchTimer = null;
   document.addEventListener('touchstart', (e) => {
-    if (!tooltipsEnabled || tourVisible()) return;
+    if (!tooltipsEnabled || guidedMode) return;
     const t = findTipTarget(e.target);
     if (!t) { hideTooltip(); return; }
     touchTimer = setTimeout(() => { showTooltip(t, getHelpText(t)); }, 500);
@@ -2879,11 +2806,9 @@ firebase.auth().onAuthStateChanged(user => {
   const runAll = () => {
     if (user) {
       setup().finally(() => {
-        initTallyTour();
         requestAnimationFrame(() => initTallyTooltips());
       });
     } else {
-      initTallyTour();
       requestAnimationFrame(() => initTallyTooltips());
     }
   };
