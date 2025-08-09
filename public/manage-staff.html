@@ -59,15 +59,10 @@
       margin-top: 20px;
       font-size: 18px;
     }
-    .table-wrapper {
-      width: 100%;
-      overflow-x: auto;
-    }
     #staffTable,
     #deletedStaffTable {
       border-collapse: collapse;
       width: auto;
-      min-width: 100%;
       margin-top: 10px;
       table-layout: auto;
     }
@@ -111,7 +106,6 @@
       margin-top: 10px;
       margin-bottom: 10px;
       width: 100%;
-      max-width: 600px;
       padding: 8px;
       background: #222;
       color: #fff;
@@ -126,7 +120,6 @@
       display: flex;
       align-items: center;
       width: 100%;
-      max-width: 600px;
       margin-top: 30px;
       margin-bottom: 10px;
       cursor: pointer;
@@ -150,9 +143,8 @@
     }
     #deletedStaffSection {
       width: 100%;
-      max-width: 600px;
       transition: max-height 0.3s ease, opacity 0.3s ease;
-      overflow: hidden;
+      overflow-y: hidden;
       max-height: 1000px;
       opacity: 1;
     }
@@ -163,7 +155,6 @@
 
     .table-heading {
       width: 100%;
-      max-width: 600px;
       margin-top: 20px;
       margin-bottom: 10px;
       text-align: left;
@@ -259,50 +250,6 @@
       background: #555;
     }
 
-    @media (max-width: 500px) {
-      form button {
-        width: 100%;
-      }
-      #staffTable,
-      #deletedStaffTable {
-        border: 0;
-      }
-      #staffTable thead,
-      #deletedStaffTable thead {
-        display: none;
-      }
-      #staffTable tr,
-      #deletedStaffTable tr {
-        display: block;
-        margin-bottom: 10px;
-        border: 1px solid #555;
-      }
-      #staffTable td,
-      #deletedStaffTable td {
-        display: block;
-        text-align: right;
-        padding-left: 50%;
-        position: relative;
-        white-space: normal;
-      }
-      #staffTable td::before,
-      #deletedStaffTable td::before {
-        position: absolute;
-        left: 10px;
-        font-weight: bold;
-        text-align: left;
-      }
-      #staffTable td:nth-child(1)::before { content: '#'; }
-      #staffTable td:nth-child(2)::before { content: 'Name'; }
-      #staffTable td:nth-child(3)::before { content: 'Email'; }
-      #staffTable td:nth-child(4)::before { content: 'Status'; }
-      #staffTable td:nth-child(5)::before { content: 'Action'; }
-      #deletedStaffTable td:nth-child(1)::before { content: 'Name'; }
-      #deletedStaffTable td:nth-child(2)::before { content: 'Email'; }
-      #deletedStaffTable td:nth-child(3)::before { content: 'Deleted'; }
-      #deletedStaffTable td:nth-child(4)::before { content: 'Action'; }
-    }
-
     @media (max-width: 600px) {
       body {
         padding: 10px;
@@ -325,6 +272,30 @@
       form button {
         width: 100%;
       }
+    }
+
+    html, body {
+      overflow-x: auto !important;
+    }
+    .table-scroll.staff-card-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table-scroll.staff-card-scroll table {
+      table-layout: auto;
+      width: auto;
+      min-width: max-content;
+      border-collapse: collapse;
+    }
+    .table-scroll.staff-card-scroll th,
+    .table-scroll.staff-card-scroll td {
+      white-space: nowrap !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+    }
+    .table-scroll.staff-card-scroll td:first-child,
+    .table-scroll.staff-card-scroll th:first-child {
+      width: 1%;
     }
   </style>
 </head>
@@ -360,7 +331,7 @@
     </form>
     <p id="staffSummary"></p>
     <h3 id="activeStaffHeading" class="table-heading">Active Staff</h3>
-    <div class="table-wrapper">
+    <div class="table-scroll staff-card-scroll">
     <table id="staffTable">
       <thead>
         <tr>
@@ -380,7 +351,7 @@
     </div>
     <div id="deletedStaffSection">
       <input type="text" id="deletedStaffSearch" placeholder="Search deleted staff…">
-      <div class="table-wrapper">
+      <div class="table-scroll staff-card-scroll">
       <table id="deletedStaffTable">
         <thead>
           <tr>
