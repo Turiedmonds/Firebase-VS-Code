@@ -20,7 +20,6 @@
       color: #fff;
       font-family: Arial, sans-serif;
       min-height: 100vh;
-      overflow-x: auto;
     }
     form {
       margin-top: 20px;
@@ -274,33 +273,70 @@
       }
     }
 
-    html, body {
-      overflow-x: auto !important;
+    .page-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 16px;
     }
-    .table-scroll.staff-card-scroll {
+
+    /* Lock the page width on mobile: no page-level horizontal scroll */
+    html, body {
+      overflow-x: hidden !important;
+    }
+
+    /* Keep forms/inputs inside the viewport */
+    .page-container, .content, .form-section {
+      max-width: 600px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    input, select, button, .btn, .input-group {
+      max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Only tables should scroll sideways */
+    .table-scroll {
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
     }
-    .table-scroll.staff-card-scroll table {
+
+    /* Let the TABLE grow to its content; not the page */
+    .table-scroll .staff-table {
       table-layout: auto;
       width: auto;
       min-width: max-content;
       border-collapse: collapse;
     }
-    .table-scroll.staff-card-scroll th,
-    .table-scroll.staff-card-scroll td {
+
+    /* Prevent wrapping/overlap in table cells */
+    .table-scroll .staff-table th,
+    .table-scroll .staff-table td {
       white-space: nowrap !important;
       word-break: normal !important;
       overflow-wrap: normal !important;
+      padding: 8px;
     }
-    .table-scroll.staff-card-scroll td:first-child,
-    .table-scroll.staff-card-scroll th:first-child {
+
+    /* Make the label column narrow so the email column gets space */
+    .table-scroll .staff-table th:first-child,
+    .table-scroll .staff-table td:first-child {
       width: 1%;
     }
+
+    /* SAFETY: remove global rules that caused the page to overflow */
+    body[data-fix] { /* dummy to help search */ }
+    /* Search and DELETE or override anywhere in this page:
+       - html, body { overflow-x: auto; }
+       - .content/.container { max-width: 600px; } if it was REMOVED earlier, restore it as above
+       - Any min-width:max-content on wrappers (keep it ONLY on .staff-table inside .table-scroll)
+    */
   </style>
 </head>
 <body>
-  <div id="page-content" style="display: none;">
+  <div id="page-content" class="page-container" style="display: none;">
     <div class="logo-container">
       <img src="logo.png" alt="SHEΔR iQ logo" />
       <h2>Manage Staff</h2>
@@ -331,8 +367,8 @@
     </form>
     <p id="staffSummary"></p>
     <h3 id="activeStaffHeading" class="table-heading">Active Staff</h3>
-    <div class="table-scroll staff-card-scroll">
-    <table id="staffTable">
+    <div class="table-scroll">
+      <table id="staffTable" class="staff-table">
       <thead>
         <tr>
           <th>#</th>
@@ -351,8 +387,8 @@
     </div>
     <div id="deletedStaffSection">
       <input type="text" id="deletedStaffSearch" placeholder="Search deleted staff…">
-      <div class="table-scroll staff-card-scroll">
-      <table id="deletedStaffTable">
+      <div class="table-scroll">
+        <table id="deletedStaffTable" class="staff-table">
         <thead>
           <tr>
             <th>Name</th>
@@ -362,7 +398,7 @@
           </tr>
         </thead>
         <tbody></tbody>
-      </table>
+        </table>
       </div>
     </div>
   </div>
