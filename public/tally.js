@@ -2550,6 +2550,157 @@ window.rebuildRowsFromSession = rebuildRowsFromSession;
 window.resetTallySheet = resetTallySheet;
 window.resetForNewDay = resetForNewDay;
 
+function initTallyTour() {
+  const steps = [
+    { selector: '#app-title', text: 'This is your live Tally sheet. Record today\u2019s tallies and staff here.' },
+    { selector: '#add-stand-btn', text: 'Add Stand creates a new shearer column for today\u2019s session.' },
+    { selector: '#save-session-btn', text: 'Save Session stores your progress; with cloud sync it saves to Firestore.' },
+    { selector: '#load-session-btn', text: 'Load a previous session by station and date. Past sessions are view-only unless unlocked.' },
+    { selector: '#export-csv-btn', text: 'Export today\u2019s data to CSV for payroll or records.' },
+    { selector: '#new-day-reset-btn', text: 'Start a fresh day while keeping your setup. Clears today\u2019s entries.' },
+    { selector: '#pin-lock-indicator', text: 'Past sessions open locked. Contractors can unlock with their PIN.' },
+    { selector: '#back-to-dashboard-btn', text: 'Return to the Contractor Dashboard for staff management and summaries.' }
+  ];
+
+  function ready(fn) {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      fn();
+    } else {
+      document.addEventListener('DOMContentLoaded', fn, { once: true });
+    }
+  }
+
+  ready(() => {
+    const helpBtn = document.getElementById('tour-help-btn');
+    const overlay = document.getElementById('tour-overlay');
+    if (!helpBtn || !overlay) return; // Tour elements not present
+    const backdrop = document.getElementById('tour-backdrop');
+    const tooltip = document.getElementById('tour-tooltip');
+    const content = document.getElementById('tour-content');
+    const prevBtn = document.getElementById('tour-prev-btn');
+    const nextBtn = document.getElementById('tour-next-btn');
+    const skipBtn = document.getElementById('tour-skip-btn');
+
+    let currentIndex = 0;
+    let auto = false;
+    let lastFocused = null;
+
+    function findStep(start, dir) {
+      for (let i = start; i >= 0 && i < steps.length; i += dir) {
+        if (document.querySelector(steps[i].selector)) return i;
+      }
+      return null;
+    }
+
+    function positionTooltip(target) {
+      if (!target) return;
+      target.scrollIntoView({ block: 'center', inline: 'nearest' });
+
+      tooltip.style.visibility = 'hidden';
+      tooltip.style.display = 'block';
+      tooltip.style.top = '0px';
+      tooltip.style.left = '0px';
+
+      const rect = target.getBoundingClientRect();
+      const ttRect = tooltip.getBoundingClientRect();
+      const margin = 8;
+      let top = rect.bottom + margin;
+      if (top + ttRect.height > window.innerHeight) {
+        top = rect.top - ttRect.height - margin;
+      }
+      if (top < 0) {
+        top = Math.max((window.innerHeight - ttRect.height) / 2, margin);
+      }
+      let left = rect.left + rect.width / 2 - ttRect.width / 2;
+      left = Math.min(Math.max(left, margin), window.innerWidth - ttRect.width - margin);
+      tooltip.style.top = `${top}px`;
+      tooltip.style.left = `${left}px`;
+      tooltip.style.visibility = 'visible';
+    }
+
+    function showStep(index) {
+      const step = steps[index];
+      const target = document.querySelector(step.selector);
+      if (!target) {
+        const next = findStep(index + 1, 1);
+        if (next === null) return finish();
+        return showStep(next);
+      }
+      currentIndex = index;
+      content.textContent = step.text;
+      overlay.classList.remove('tour-hidden');
+      overlay.setAttribute('aria-hidden', 'false');
+      prevBtn.disabled = findStep(index - 1, -1) === null;
+      nextBtn.textContent = findStep(index + 1, 1) === null ? 'Finish' : 'Next';
+      positionTooltip(target);
+      tooltip.focus();
+    }
+
+    function next() {
+      const nextIdx = findStep(currentIndex + 1, 1);
+      if (nextIdx === null) {
+        finish();
+      } else {
+        showStep(nextIdx);
+      }
+    }
+
+    function prev() {
+      const prevIdx = findStep(currentIndex - 1, -1);
+      if (prevIdx !== null) showStep(prevIdx);
+    }
+
+    function close() {
+      overlay.classList.add('tour-hidden');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.removeEventListener('keydown', onKey);
+      if (lastFocused) lastFocused.focus();
+    }
+
+    function finish() {
+      if (auto) localStorage.setItem('tally_tour_done', 'true');
+      close();
+    }
+
+    function skip() {
+      if (auto) localStorage.setItem('tally_tour_done', 'true');
+      close();
+    }
+
+    function start(isAuto) {
+      auto = isAuto;
+      lastFocused = document.activeElement;
+      document.addEventListener('keydown', onKey);
+      const first = findStep(0, 1);
+      if (first === null) return; // nothing to show
+      showStep(first);
+    }
+
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        skip();
+      } else if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        next();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prev();
+      }
+    }
+
+    prevBtn.addEventListener('click', prev);
+    nextBtn.addEventListener('click', next);
+    skipBtn.addEventListener('click', skip);
+    backdrop.addEventListener('click', skip);
+    helpBtn.addEventListener('click', () => start(false));
+
+    if (localStorage.getItem('tally_tour_done') !== 'true') {
+      start(true);
+    }
+  });
+}
+
 async function setup() {
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
@@ -2571,6 +2722,8 @@ async function setup() {
 
 firebase.auth().onAuthStateChanged(user => {
   if (user) {
-    setup();
+    setup().finally(() => initTallyTour());
+  } else {
+    initTallyTour();
   }
 });
