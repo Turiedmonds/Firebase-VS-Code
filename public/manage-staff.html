@@ -20,7 +20,7 @@
       color: #fff;
       font-family: Arial, sans-serif;
       min-height: 100vh;
-      overflow-x: hidden;
+      overflow-x: auto;
     }
     form {
       margin-top: 20px;
@@ -61,17 +61,15 @@
     }
     .table-wrapper {
       width: 100%;
-      max-width: 600px;
       overflow-x: auto;
     }
     #staffTable,
     #deletedStaffTable {
       border-collapse: collapse;
-      width: 100%;
-      max-width: 100%;
+      width: auto;
+      min-width: 100%;
       margin-top: 10px;
-      word-break: break-word;
-      table-layout: fixed;
+      table-layout: auto;
     }
     #staffTable th,
     #staffTable td,
@@ -80,7 +78,7 @@
       border: 1px solid #555;
       padding: 8px 12px;
       text-align: left;
-      word-wrap: break-word;
+      white-space: nowrap;
     }
     #staffTable th,
     #deletedStaffTable th {
