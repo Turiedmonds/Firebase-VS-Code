@@ -2567,7 +2567,7 @@ function initTallyTooltips() {
   }
 
   const stored = localStorage.getItem('tooltips_enabled');
-  const tooltipsEnabled = (stored === null) ? true : (stored === 'true');
+  let tooltipsEnabled = (stored === null) ? true : (stored === 'true');
 
   let guidedMode = false;
   let guidedList = [];
@@ -2580,22 +2580,37 @@ function initTallyTooltips() {
   }
 
   const tips = {
-    '#add-stand-btn': "Add a new shearer stand (column) to today's tally.",
+    '#add-stand-btn': 'Add a new shearer stand (column).',
     '#remove-stand-btn': 'Remove the last shearer stand.',
     '#add-count-btn': 'Add a new tally run row.',
     '#remove-count-btn': 'Remove the last tally run.',
-    '#add-shedstaff-btn': 'Add a new shed staff member row.',
+    '#add-shedstaff-btn': 'Add a shed staff row.',
     '#remove-shedstaff-btn': 'Remove the last shed staff row.',
-    '#saveButton': 'Save your current progress. With cloud sync, saves to Firestore.',
-    '#loadSessionBtn': 'Load a previous session by station and date.',
-    '#newDayResetBtn': "Start a fresh day. Clears today's entries but keeps your setup.",
-    '#back-to-dashboard-btn': 'Return to the Contractor Dashboard.',
+    '#saveButton': 'Save your session (device or cloud).',
+    '#loadSessionBtn': 'Load a previous session from device or cloud.',
+    '#newDayResetBtn': "Start a new day. Clears today's entries.",
+    '#back-to-dashboard-btn': 'Go back to the Contractor Dashboard.',
     '#pin-lock-indicator': 'Past sessions open locked. Contractors can unlock with a PIN.',
-    '#tallyTable': 'Main tally table. Enter counts and choose sheep types for each run.',
-    '#sheepTypeTotalsTable': 'Totals per sheep type.'
+    '#tallyTable': 'Enter tallies by run and stand. Add sheep type for each run.',
+    '#sheepTypeTotalsTable': 'Totals by sheep type (auto).'
   };
 
   let currentTarget = null;
+
+  function positionTooltip(target) {
+    const rect = target.getBoundingClientRect();
+    const ttRect = tt.getBoundingClientRect();
+    const margin = 8;
+    let top = rect.bottom + margin;
+    if (top + ttRect.height > window.innerHeight) {
+      top = rect.top - ttRect.height - margin;
+    }
+    top = Math.max(margin, Math.min(top, window.innerHeight - ttRect.height - margin));
+    let left = rect.left + rect.width / 2 - ttRect.width / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - ttRect.width - margin));
+    tt.style.top = `${top}px`;
+    tt.style.left = `${left}px`;
+  }
 
   function findLabelText(el) {
     if (!el) return '';
@@ -2644,19 +2659,7 @@ function initTallyTooltips() {
     tt.classList.add('tt-show');
     target.setAttribute('aria-describedby', 'tt-root');
     currentTarget = target;
-
-    const rect = target.getBoundingClientRect();
-    const ttRect = tt.getBoundingClientRect();
-    const margin = 8;
-    let top = rect.bottom + margin;
-    if (top + ttRect.height > window.innerHeight) {
-      top = rect.top - ttRect.height - margin;
-    }
-    top = Math.max(margin, Math.min(top, window.innerHeight - ttRect.height - margin));
-    let left = rect.left + rect.width / 2 - ttRect.width / 2;
-    left = Math.max(margin, Math.min(left, window.innerWidth - ttRect.width - margin));
-    tt.style.top = `${top}px`;
-    tt.style.left = `${left}px`;
+    positionTooltip(target);
   }
 
   function hideTooltip() {
@@ -2671,15 +2674,34 @@ function initTallyTooltips() {
 
   function highlight(el) {
     if (!el) return;
-    el.classList.add('tt-guided-target');
-    el.scrollIntoView({ block: 'center', inline: 'center' });
+    el.classList.add('tt-highlight');
   }
 
   function clearHighlight() {
     if (guidedCurrent) {
-      guidedCurrent.classList.remove('tt-guided-target');
+      guidedCurrent.classList.remove('tt-highlight');
+      guidedCurrent.removeAttribute('aria-describedby');
       guidedCurrent = null;
     }
+  }
+
+  function scrollAndPosition(el) {
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.top < 0 || rect.bottom > window.innerHeight) {
+      el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+    }
+    let lastTop = null;
+    function step() {
+      const r = el.getBoundingClientRect();
+      if (lastTop !== null && Math.abs(r.top - lastTop) < 1) {
+        positionTooltip(el);
+      } else {
+        lastTop = r.top;
+        requestAnimationFrame(step);
+      }
+    }
+    requestAnimationFrame(step);
   }
 
   function showGuidedStep() {
@@ -2689,7 +2711,8 @@ function initTallyTooltips() {
     guidedCurrent = el;
     highlight(el);
     const text = getHelpText(el);
-    tt.innerHTML = `<div>${text}</div><div class="tt-guided-controls"><button type="button" id="tt-next-btn">${guidedIndex === guidedList.length - 1 ? 'Finish' : 'Next'}</button><button type="button" id="tt-skip-btn">Skip</button></div>`;
+    const isLast = guidedIndex === guidedList.length - 1;
+    tt.innerHTML = `<div>${text}</div><label style="display:flex;align-items:center;gap:4px;margin-top:6px;"><input type="checkbox" id="tt-noagain"> Don't show again</label><div class="tt-guided-controls"><button type="button" id="tt-back-btn"${guidedIndex===0?' disabled':''}>Back</button><button type="button" id="tt-next-btn">${isLast ? 'Finish' : 'Next'}</button><button type="button" id="tt-skip-btn">Skip</button></div>`;
     tt.setAttribute('aria-hidden', 'false');
     tt.classList.remove('tt-hidden');
     tt.classList.add('tt-show');
@@ -2697,30 +2720,37 @@ function initTallyTooltips() {
     el.setAttribute('aria-describedby', 'tt-root');
     currentTarget = el;
 
-    const rect = el.getBoundingClientRect();
-    const ttRect = tt.getBoundingClientRect();
-    const margin = 8;
-    let top = rect.bottom + margin;
-    if (top + ttRect.height > window.innerHeight) {
-      top = rect.top - ttRect.height - margin;
-    }
-    top = Math.max(margin, Math.min(top, window.innerHeight - ttRect.height - margin));
-    let left = rect.left + rect.width / 2 - ttRect.width / 2;
-    left = Math.max(margin, Math.min(left, window.innerWidth - ttRect.width - margin));
-    tt.style.top = `${top}px`;
-    tt.style.left = `${left}px`;
+    scrollAndPosition(el);
 
+    document.getElementById('tt-back-btn').addEventListener('click', prevGuided);
     document.getElementById('tt-next-btn').addEventListener('click', nextGuided);
-    document.getElementById('tt-skip-btn').addEventListener('click', endGuided);
+    document.getElementById('tt-skip-btn').addEventListener('click', skipGuided);
+    const noAgain = document.getElementById('tt-noagain');
+    if (noAgain) {
+      noAgain.addEventListener('change', (e) => {
+        if (e.target.checked) localStorage.setItem('tally_guide_done', 'true');
+      });
+    }
   }
-
   function nextGuided() {
     if (guidedIndex >= guidedList.length - 1) {
+      localStorage.setItem('tally_guide_done', 'true');
       endGuided();
     } else {
       guidedIndex++;
       showGuidedStep();
     }
+  }
+
+  function prevGuided() {
+    if (guidedIndex > 0) {
+      guidedIndex--;
+      showGuidedStep();
+    }
+  }
+
+  function skipGuided() {
+    endGuided();
   }
 
   function endGuided() {
@@ -2731,11 +2761,12 @@ function initTallyTooltips() {
   }
 
   function startGuided() {
+    hideHelpMenu();
     if (guidedMode) {
       endGuided();
       return;
     }
-    guidedList = Array.from(document.querySelectorAll('[data-help]'));
+    guidedList = Array.from(document.querySelectorAll('#tallySheetView [data-help]')).filter(el => el.offsetParent !== null && !el.disabled);
     if (!guidedList.length) return;
     guidedMode = true;
     guidedIndex = 0;
@@ -2754,11 +2785,77 @@ function initTallyTooltips() {
     if (!t) return;
     showTooltip(t, getHelpText(t));
   }, true);
-  document.addEventListener('mouseout', () => { hideTooltip(); }, true);
-  document.addEventListener('focusout', () => { hideTooltip(); }, true);
+  document.addEventListener('mouseout', () => { if (!guidedMode) hideTooltip(); }, true);
+  document.addEventListener('focusout', () => { if (!guidedMode) hideTooltip(); }, true);
 
   const helpBtn = document.getElementById('tour-help-btn');
-  if (helpBtn) helpBtn.addEventListener('click', startGuided);
+  const helpMenu = document.getElementById('tt-help-menu');
+  if (helpMenu) {
+    helpMenu.innerHTML = `<button type="button" data-act="start">Start guide</button><label><input type="checkbox" id="tt-enable-tooltips"> Enable tooltips</label><button type="button" data-act="reset">Reset 'Don't show again'</button>`;
+    const enable = helpMenu.querySelector('#tt-enable-tooltips');
+    if (enable) {
+      enable.checked = tooltipsEnabled;
+      enable.addEventListener('change', () => {
+        tooltipsEnabled = enable.checked;
+        localStorage.setItem('tooltips_enabled', tooltipsEnabled ? 'true' : 'false');
+      });
+    }
+    helpMenu.addEventListener('click', e => {
+      const act = e.target.getAttribute('data-act');
+      if (act === 'start') { startGuided(); }
+      if (act === 'reset') { localStorage.removeItem('tally_guide_done'); }
+      if (act) hideHelpMenu();
+    });
+  }
+
+  function showHelpMenu() {
+    if (!helpBtn || !helpMenu) return;
+    const rect = helpBtn.getBoundingClientRect();
+    helpMenu.style.top = `${rect.bottom + 4}px`;
+    helpMenu.style.right = `${window.innerWidth - rect.right}px`;
+    helpMenu.style.display = 'block';
+    helpMenu.setAttribute('aria-hidden', 'false');
+    const enable = helpMenu.querySelector('#tt-enable-tooltips');
+    if (enable) enable.checked = tooltipsEnabled;
+  }
+
+  function hideHelpMenu() {
+    if (helpMenu) {
+      helpMenu.style.display = 'none';
+      helpMenu.setAttribute('aria-hidden', 'true');
+    }
+    menuOpened = false;
+  }
+
+  let pressTimer = null;
+  let menuOpened = false;
+  function startPress() {
+    pressTimer = setTimeout(() => {
+      menuOpened = true;
+      showHelpMenu();
+    }, 600);
+  }
+  function cancelPress() {
+    if (pressTimer) clearTimeout(pressTimer);
+  }
+  if (helpBtn) {
+    helpBtn.addEventListener('mousedown', startPress);
+    helpBtn.addEventListener('touchstart', startPress, { passive: true });
+    ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev => helpBtn.addEventListener(ev, cancelPress));
+    helpBtn.addEventListener('click', (e) => {
+      if (menuOpened) {
+        menuOpened = false;
+        return;
+      }
+      startGuided();
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (helpMenu && helpMenu.style.display === 'block' && !helpMenu.contains(e.target) && e.target !== helpBtn) {
+      hideHelpMenu();
+    }
+  }, true);
 
   let touchTimer = null;
   document.addEventListener('touchstart', (e) => {
@@ -2771,7 +2868,14 @@ function initTallyTooltips() {
   document.addEventListener('touchend', () => { clearTouch(); hideTooltip(); }, { passive: true });
   document.addEventListener('touchcancel', () => { clearTouch(); hideTooltip(); }, { passive: true });
 
-  document.addEventListener('scroll', hideTooltip, true);
+  document.addEventListener('scroll', () => {
+    if (guidedMode && guidedCurrent) {
+      positionTooltip(guidedCurrent);
+    } else {
+      hideTooltip();
+    }
+  }, true);
+  window.addEventListener('resize', () => { if (guidedMode && guidedCurrent) positionTooltip(guidedCurrent); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') hideTooltip(); });
   document.addEventListener('keydown', e => {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) hideTooltip();
@@ -2779,6 +2883,10 @@ function initTallyTooltips() {
 
   window.showTooltip = showTooltip;
   window.hideTooltip = hideTooltip;
+
+  if (localStorage.getItem('tally_guide_done') !== 'true') {
+    requestAnimationFrame(() => startGuided());
+  }
 }
 
 window.initTallyTooltips = initTallyTooltips;
