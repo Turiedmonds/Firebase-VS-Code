@@ -456,17 +456,6 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
 
 <button id="tour-help-btn" aria-label="Help">?</button>
-<div id="tour-overlay" class="tour-hidden" aria-hidden="true">
-  <div id="tour-backdrop"></div>
-  <div id="tour-tooltip" role="dialog" aria-modal="true" aria-live="polite" tabindex="-1">
-    <div id="tour-content"></div>
-    <div id="tour-controls">
-      <button id="tour-prev-btn" type="button">Back</button>
-      <button id="tour-next-btn" type="button">Next</button>
-      <button id="tour-skip-btn" type="button">Skip</button>
-    </div>
-  </div>
-</div>
 
 <div id="tt-root" class="tt-hidden" role="tooltip" aria-hidden="true"></div>
 
@@ -475,14 +464,6 @@ document.addEventListener('DOMContentLoaded', () => {
     position: fixed; top: 12px; right: 12px; z-index: 9999;
     width: 36px; height: 36px; border-radius: 9999px;
   }
-  #tour-overlay { position: fixed; inset: 0; z-index: 999999; }
-  #tour-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
-  #tour-tooltip {
-    position: absolute; max-width: 320px; padding: 12px; border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.35); background: #1f1f1f; color: #fff;
-  }
-  .tour-hidden { display: none; }
-  #tour-controls { margin-top: 8px; display: flex; gap: 8px; }
 </style>
 
 <style>
@@ -501,6 +482,18 @@ document.addEventListener('DOMContentLoaded', () => {
       opacity: 0;
       transform: translateY(4px);
       transition: opacity 120ms ease, transform 120ms ease;
+    }
+    #tt-root.guided {
+      pointer-events: auto;
+    }
+    #tt-root .tt-guided-controls {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+    }
+    .tt-guided-target {
+      outline: 2px solid #fff;
+      outline-offset: 2px;
     }
     .tt-show {
       opacity: 1;
