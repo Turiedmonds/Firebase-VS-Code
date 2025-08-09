@@ -41,7 +41,8 @@
   <div id="page-content" style="display: none;">
     <div class="logo-container">
       <img src="logo.png" alt="SHEΔR iQ logo" />
-      <h2 id="welcomeMessage">Welcome</h2>
+      <h2 id="dashboard-heading">Contractor Dashboard</h2>
+      <p id="dashboard-subheading"></p>
     </div>
     <div id="buttonContainer">
       <button id="btnManageStaff" class="tab-button">Manage Staff</button>
@@ -55,36 +56,6 @@
     </div>
   </div>
 
-  <script type="module">
-    document.addEventListener('DOMContentLoaded', () => {
-      const overlay = document.getElementById('loading-overlay');
-      if (overlay) overlay.style.display = 'flex';
-      firebase.auth().onAuthStateChanged(async user => {
-        if (!user) {
-          window.location.replace('login.html');
-          return;
-        }
-        try {
-          const docRef = firebase.firestore().collection('contractors').doc(user.uid);
-          const snap = await docRef.get();
-          if (!snap.exists) {
-            window.location.replace('login.html');
-            return;
-          }
-          const data = snap.data() || {};
-          const name = data.displayName || data.businessName || user.displayName || 'Contractor';
-          document.getElementById('welcomeMessage').textContent = `Welcome, ${name}!`;
-          const pageContent = document.getElementById('page-content');
-          if (pageContent) pageContent.style.display = 'block';
-        } catch (err) {
-          console.error('Failed to verify role', err);
-          window.location.replace('login.html');
-        } finally {
-          if (overlay) overlay.style.display = 'none';
-        }
-      });
-    });
-  </script>
   <script type="module" src="dashboard.js"></script>
   <div id="loading-overlay">
     <div class="circle-spinner"></div>
