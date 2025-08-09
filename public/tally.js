@@ -2702,6 +2702,32 @@ function initTallyTour() {
 }
 
 function initTallyTooltips() {
+  if (window.__tallyTooltipsInitialized) return;
+  window.__tallyTooltipsInitialized = true;
+
+  let tt = document.getElementById('tt-root');
+  if (!tt) {
+    tt = document.createElement('div');
+    tt.id = 'tt-root';
+    tt.className = 'tt-hidden';
+    tt.setAttribute('role', 'tooltip');
+    tt.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(tt);
+  }
+
+  const stored = localStorage.getItem('tooltips_enabled');
+  const tooltipsEnabled = (stored === null) ? true : (stored === 'true');
+
+  function tourVisible() {
+    const tour = document.getElementById('tour-overlay');
+    return !!(tour && !tour.classList.contains('tour-hidden') && tour.getAttribute('aria-hidden') !== 'true');
+  }
+
+  const SELECTOR = 'button,[role="button"],input,select,textarea,table,[data-help]';
+  function findTipTarget(node) {
+    return node && node.closest && node.closest(SELECTOR);
+  }
+
   const tips = {
     '#add-stand-btn': "Add a new shearer stand (column) to today's tally.",
     '#remove-stand-btn': 'Remove the last shearer stand.',
@@ -2718,11 +2744,7 @@ function initTallyTooltips() {
     '#sheepTypeTotalsTable': 'Totals per sheep type.'
   };
 
-  const tt = document.getElementById('tt-root');
-  if (!tt) return;
   let currentTarget = null;
-  let touchTimer = null;
-  const selector = 'button,[role="button"],input,select,textarea,table,[data-help]';
 
   function findLabelText(el) {
     if (!el) return '';
@@ -2764,15 +2786,13 @@ function initTallyTooltips() {
   }
 
   function showTooltip(target, text) {
-    const tour = document.getElementById('tour-overlay');
-    if (tour && !tour.classList.contains('tour-hidden')) return;
     if (!text) return;
-    currentTarget = target;
     tt.textContent = text;
+    tt.setAttribute('aria-hidden', 'false');
     tt.classList.remove('tt-hidden');
     tt.classList.add('tt-show');
-    tt.setAttribute('aria-hidden', 'false');
     target.setAttribute('aria-describedby', 'tt-root');
+    currentTarget = target;
 
     const rect = target.getBoundingClientRect();
     const ttRect = tt.getBoundingClientRect();
@@ -2798,67 +2818,37 @@ function initTallyTooltips() {
     tt.setAttribute('aria-hidden', 'true');
   }
 
-  function onHover(e) {
-    const target = e.target.closest(selector);
-    if (!target) return;
-    const text = getHelpText(target);
-    if (text) showTooltip(target, text);
-  }
+  document.addEventListener('mouseover', (e) => {
+    if (!tooltipsEnabled || tourVisible()) return;
+    const t = findTipTarget(e.target);
+    if (!t) return;
+    showTooltip(t, getHelpText(t));
+  }, true);
+  document.addEventListener('focusin', (e) => {
+    if (!tooltipsEnabled || tourVisible()) return;
+    const t = findTipTarget(e.target);
+    if (!t) return;
+    showTooltip(t, getHelpText(t));
+  }, true);
+  document.addEventListener('mouseout', () => { hideTooltip(); }, true);
+  document.addEventListener('focusout', () => { hideTooltip(); }, true);
 
-  function onFocus(e) {
-    const target = e.target.closest(selector);
-    if (!target) return;
-    const text = getHelpText(target);
-    if (text) showTooltip(target, text);
-  }
+  let touchTimer = null;
+  document.addEventListener('touchstart', (e) => {
+    if (!tooltipsEnabled || tourVisible()) return;
+    const t = findTipTarget(e.target);
+    if (!t) { hideTooltip(); return; }
+    touchTimer = setTimeout(() => { showTooltip(t, getHelpText(t)); }, 500);
+  }, { passive: true });
+  function clearTouch() { if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; } }
+  document.addEventListener('touchend', () => { clearTouch(); hideTooltip(); }, { passive: true });
+  document.addEventListener('touchcancel', () => { clearTouch(); hideTooltip(); }, { passive: true });
 
-  function onOut(e) {
-    if (currentTarget && (!e.relatedTarget || !currentTarget.contains(e.relatedTarget))) hideTooltip();
-  }
-
-  function onBlur(e) {
-    if (currentTarget === e.target) hideTooltip();
-  }
-
-  function onTouchStart(e) {
-    const target = e.target.closest(selector);
-    if (!target) {
-      hideTooltip();
-      return;
-    }
-    touchTimer = setTimeout(() => {
-      const text = getHelpText(target);
-      if (text) showTooltip(target, text);
-    }, 500);
-  }
-
-  function clearTouch() {
-    if (touchTimer) {
-      clearTimeout(touchTimer);
-      touchTimer = null;
-    }
-  }
-
-  function onTouchEnd() {
-    clearTouch();
-    hideTooltip();
-  }
-
-  function onScroll() {
-    clearTouch();
-    hideTooltip();
-  }
-
-  document.addEventListener('mouseover', onHover, true);
-  document.addEventListener('focusin', onFocus, true);
-  document.addEventListener('mouseout', onOut, true);
-  document.addEventListener('focusout', onBlur, true);
-  document.addEventListener('mousedown', e => { if (currentTarget && !currentTarget.contains(e.target)) hideTooltip(); }, true);
-  document.addEventListener('touchstart', onTouchStart, { passive: true });
-  document.addEventListener('touchend', onTouchEnd, { passive: true });
-  document.addEventListener('touchcancel', onTouchEnd, { passive: true });
-  document.addEventListener('scroll', onScroll, true);
+  document.addEventListener('scroll', hideTooltip, true);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') hideTooltip(); });
+  document.addEventListener('keydown', e => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) hideTooltip();
+  }, true);
 
   window.showTooltip = showTooltip;
   window.hideTooltip = hideTooltip;
@@ -2886,13 +2876,20 @@ async function setup() {
 }
 
 firebase.auth().onAuthStateChanged(user => {
-  if (user) {
-    setup().finally(() => {
+  const runAll = () => {
+    if (user) {
+      setup().finally(() => {
+        initTallyTour();
+        requestAnimationFrame(() => initTallyTooltips());
+      });
+    } else {
       initTallyTour();
-      initTallyTooltips();
-    });
+      requestAnimationFrame(() => initTallyTooltips());
+    }
+  };
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    runAll();
   } else {
-    initTallyTour();
-    initTallyTooltips();
+    window.addEventListener('load', runAll, { once: true });
   }
 });
