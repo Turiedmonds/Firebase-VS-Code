@@ -2701,6 +2701,171 @@ function initTallyTour() {
   });
 }
 
+function initTallyTooltips() {
+  const tips = {
+    '#add-stand-btn': "Add a new shearer stand (column) to today's tally.",
+    '#remove-stand-btn': 'Remove the last shearer stand.',
+    '#add-count-btn': 'Add a new tally run row.',
+    '#remove-count-btn': 'Remove the last tally run.',
+    '#add-shedstaff-btn': 'Add a new shed staff member row.',
+    '#remove-shedstaff-btn': 'Remove the last shed staff row.',
+    '#saveButton': 'Save your current progress. With cloud sync, saves to Firestore.',
+    '#loadSessionBtn': 'Load a previous session by station and date.',
+    '#newDayResetBtn': "Start a fresh day. Clears today's entries but keeps your setup.",
+    '#back-to-dashboard-btn': 'Return to the Contractor Dashboard.',
+    '#pin-lock-indicator': 'Past sessions open locked. Contractors can unlock with a PIN.',
+    '#tallyTable': 'Main tally table. Enter counts and choose sheep types for each run.',
+    '#sheepTypeTotalsTable': 'Totals per sheep type.'
+  };
+
+  const tt = document.getElementById('tt-root');
+  if (!tt) return;
+  let currentTarget = null;
+  let touchTimer = null;
+  const selector = 'button,[role="button"],input,select,textarea,table,[data-help]';
+
+  function findLabelText(el) {
+    if (!el) return '';
+    if (el.id) {
+      const lbl = document.querySelector(`label[for="${el.id}"]`);
+      if (lbl) return lbl.textContent.trim();
+    }
+    const wrap = el.closest('label');
+    if (wrap) return wrap.textContent.trim();
+    const cell = el.closest('td,th');
+    if (cell) {
+      const l = cell.querySelector('label');
+      if (l) return l.textContent.trim();
+    }
+    return '';
+  }
+
+  function getHelpText(el) {
+    if (!el) return '';
+    if (el.dataset && el.dataset.help) return el.dataset.help;
+    if (el.id && tips['#' + el.id]) return tips['#' + el.id];
+    if (el.tagName === 'TABLE') {
+      return tips['#' + el.id] || 'Scrollable table. Swipe left/right to see more columns.';
+    }
+    if (el.tagName === 'INPUT') {
+      const lbl = findLabelText(el);
+      if (lbl) return `Enter ${lbl.replace(/:$/, '').toLowerCase()}`;
+      return el.placeholder || 'Enter a value';
+    }
+    if (el.tagName === 'SELECT') {
+      const lbl = findLabelText(el);
+      if (lbl) return `Choose ${lbl.replace(/:$/, '').toLowerCase()}`;
+      return 'Choose an option';
+    }
+    if (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button') {
+      return el.getAttribute('aria-label') || el.textContent.trim();
+    }
+    return '';
+  }
+
+  function showTooltip(target, text) {
+    const tour = document.getElementById('tour-overlay');
+    if (tour && !tour.classList.contains('tour-hidden')) return;
+    if (!text) return;
+    currentTarget = target;
+    tt.textContent = text;
+    tt.classList.remove('tt-hidden');
+    tt.classList.add('tt-show');
+    tt.setAttribute('aria-hidden', 'false');
+    target.setAttribute('aria-describedby', 'tt-root');
+
+    const rect = target.getBoundingClientRect();
+    const ttRect = tt.getBoundingClientRect();
+    const margin = 8;
+    let top = rect.bottom + margin;
+    if (top + ttRect.height > window.innerHeight) {
+      top = rect.top - ttRect.height - margin;
+    }
+    top = Math.max(margin, Math.min(top, window.innerHeight - ttRect.height - margin));
+    let left = rect.left + rect.width / 2 - ttRect.width / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - ttRect.width - margin));
+    tt.style.top = `${top}px`;
+    tt.style.left = `${left}px`;
+  }
+
+  function hideTooltip() {
+    if (currentTarget) {
+      currentTarget.removeAttribute('aria-describedby');
+      currentTarget = null;
+    }
+    tt.classList.remove('tt-show');
+    tt.classList.add('tt-hidden');
+    tt.setAttribute('aria-hidden', 'true');
+  }
+
+  function onHover(e) {
+    const target = e.target.closest(selector);
+    if (!target) return;
+    const text = getHelpText(target);
+    if (text) showTooltip(target, text);
+  }
+
+  function onFocus(e) {
+    const target = e.target.closest(selector);
+    if (!target) return;
+    const text = getHelpText(target);
+    if (text) showTooltip(target, text);
+  }
+
+  function onOut(e) {
+    if (currentTarget && (!e.relatedTarget || !currentTarget.contains(e.relatedTarget))) hideTooltip();
+  }
+
+  function onBlur(e) {
+    if (currentTarget === e.target) hideTooltip();
+  }
+
+  function onTouchStart(e) {
+    const target = e.target.closest(selector);
+    if (!target) {
+      hideTooltip();
+      return;
+    }
+    touchTimer = setTimeout(() => {
+      const text = getHelpText(target);
+      if (text) showTooltip(target, text);
+    }, 500);
+  }
+
+  function clearTouch() {
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+      touchTimer = null;
+    }
+  }
+
+  function onTouchEnd() {
+    clearTouch();
+    hideTooltip();
+  }
+
+  function onScroll() {
+    clearTouch();
+    hideTooltip();
+  }
+
+  document.addEventListener('mouseover', onHover, true);
+  document.addEventListener('focusin', onFocus, true);
+  document.addEventListener('mouseout', onOut, true);
+  document.addEventListener('focusout', onBlur, true);
+  document.addEventListener('mousedown', e => { if (currentTarget && !currentTarget.contains(e.target)) hideTooltip(); }, true);
+  document.addEventListener('touchstart', onTouchStart, { passive: true });
+  document.addEventListener('touchend', onTouchEnd, { passive: true });
+  document.addEventListener('touchcancel', onTouchEnd, { passive: true });
+  document.addEventListener('scroll', onScroll, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') hideTooltip(); });
+
+  window.showTooltip = showTooltip;
+  window.hideTooltip = hideTooltip;
+}
+
+window.initTallyTooltips = initTallyTooltips;
+
 async function setup() {
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
@@ -2722,8 +2887,12 @@ async function setup() {
 
 firebase.auth().onAuthStateChanged(user => {
   if (user) {
-    setup().finally(() => initTallyTour());
+    setup().finally(() => {
+      initTallyTour();
+      initTallyTooltips();
+    });
   } else {
     initTallyTour();
+    initTallyTooltips();
   }
 });
