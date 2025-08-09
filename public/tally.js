@@ -2550,6 +2550,29 @@ window.rebuildRowsFromSession = rebuildRowsFromSession;
 window.resetTallySheet = resetTallySheet;
 window.resetForNewDay = resetForNewDay;
 
+// Ensure tooltip elements exist once DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  if (!document.getElementById('tt-root')) {
+    const tt = document.createElement('div');
+    tt.id = 'tt-root';
+    tt.className = 'tt-hidden';
+    tt.setAttribute('role', 'tooltip');
+    tt.setAttribute('aria-hidden', 'true');
+    tt.setAttribute('aria-live', 'polite');
+    document.body.appendChild(tt);
+  } else {
+    const tt = document.getElementById('tt-root');
+    tt.setAttribute('aria-live', 'polite');
+  }
+  if (!document.getElementById('tt-help-menu')) {
+    const menu = document.createElement('div');
+    menu.id = 'tt-help-menu';
+    menu.className = 'tt-hidden';
+    menu.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(menu);
+  }
+});
+
 // Legacy guided tour removed in favor of tooltip-based guided mode
 
 function initTallyTooltips() {
@@ -2563,11 +2586,16 @@ function initTallyTooltips() {
     tt.className = 'tt-hidden';
     tt.setAttribute('role', 'tooltip');
     tt.setAttribute('aria-hidden', 'true');
+    tt.setAttribute('aria-live', 'polite');
     document.body.appendChild(tt);
   }
 
-  const stored = localStorage.getItem('tooltips_enabled');
-  let tooltipsEnabled = (stored === null) ? true : (stored === 'true');
+  let stored = localStorage.getItem('tooltips_enabled');
+  if (stored === null) {
+    localStorage.setItem('tooltips_enabled', 'true');
+    stored = 'true';
+  }
+  let tooltipsEnabled = stored === 'true';
 
   let guidedMode = false;
   let guidedList = [];
@@ -2712,7 +2740,7 @@ function initTallyTooltips() {
     highlight(el);
     const text = getHelpText(el);
     const isLast = guidedIndex === guidedList.length - 1;
-    tt.innerHTML = `<div>${text}</div><label style="display:flex;align-items:center;gap:4px;margin-top:6px;"><input type="checkbox" id="tt-noagain"> Don't show again</label><div class="tt-guided-controls"><button type="button" id="tt-back-btn"${guidedIndex===0?' disabled':''}>Back</button><button type="button" id="tt-next-btn">${isLast ? 'Finish' : 'Next'}</button><button type="button" id="tt-skip-btn">Skip</button></div>`;
+    tt.innerHTML = `<div>${text}</div><div class="tt-guided-controls"><button type="button" id="tt-back-btn"${guidedIndex===0?' disabled':''}>Back</button><button type="button" id="tt-next-btn">${isLast ? 'Finish' : 'Next'}</button><button type="button" id="tt-skip-btn">Skip</button></div><div style="margin-top:4px;font-size:12px;"><a href="#" id="tt-noagain">Don't show again</a></div>`;
     tt.setAttribute('aria-hidden', 'false');
     tt.classList.remove('tt-hidden');
     tt.classList.add('tt-show');
@@ -2727,8 +2755,9 @@ function initTallyTooltips() {
     document.getElementById('tt-skip-btn').addEventListener('click', skipGuided);
     const noAgain = document.getElementById('tt-noagain');
     if (noAgain) {
-      noAgain.addEventListener('change', (e) => {
-        if (e.target.checked) localStorage.setItem('tally_guide_done', 'true');
+      noAgain.addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.setItem('tally_guide_done', 'true');
       });
     }
   }
@@ -2760,7 +2789,7 @@ function initTallyTooltips() {
     clearHighlight();
   }
 
-  function startGuided() {
+  function startGuidedMode() {
     hideHelpMenu();
     if (guidedMode) {
       endGuided();
@@ -2802,7 +2831,7 @@ function initTallyTooltips() {
     }
     helpMenu.addEventListener('click', e => {
       const act = e.target.getAttribute('data-act');
-      if (act === 'start') { startGuided(); }
+      if (act === 'start') { startGuidedMode(); }
       if (act === 'reset') { localStorage.removeItem('tally_guide_done'); }
       if (act) hideHelpMenu();
     });
@@ -2847,7 +2876,7 @@ function initTallyTooltips() {
         menuOpened = false;
         return;
       }
-      startGuided();
+      startGuidedMode();
     });
   }
 
@@ -2883,9 +2912,10 @@ function initTallyTooltips() {
 
   window.showTooltip = showTooltip;
   window.hideTooltip = hideTooltip;
+  window.startGuide = () => startGuidedMode();
 
   if (localStorage.getItem('tally_guide_done') !== 'true') {
-    requestAnimationFrame(() => startGuided());
+    requestAnimationFrame(() => startGuidedMode());
   }
 }
 
