@@ -58,6 +58,26 @@
       transform: translateY(0) !important;
     }
   </style>
+<style id="tour-welcome-styles">
+  #tour-welcome-overlay {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.5); z-index: 2147483646;
+  }
+  #tour-welcome-overlay.show { display: flex; }
+  #tour-welcome-dialog {
+    background: #111; color: #fff; width: min(520px, 92vw); border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6); padding: 20px;
+  }
+  #tour-welcome-dialog h2 { margin: 0 0 8px; font-size: 1.3rem; }
+  #tour-welcome-dialog p { margin: 0 0 16px; line-height: 1.5; color: #ddd; }
+  #tour-welcome-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+  .tw-btn {
+    border: 0; padding: 10px 14px; border-radius: 10px; cursor: pointer;
+  }
+  .tw-btn-primary { background: #2f81f7; color: #fff; }
+  .tw-btn-ghost { background: #222; color: #eee; }
+  .tw-btn:focus { outline: 2px solid #5aa0ff; outline-offset: 2px; }
+</style>
 </head>
 <body>
 
@@ -571,5 +591,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   </style>
 
+<!-- Tour Welcome Modal -->
+<div id="tour-welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-welcome-title" aria-hidden="true">
+  <div id="tour-welcome-dialog">
+    <h2 id="tour-welcome-title">Welcome to the SHEΔR iQ Tally Tour</h2>
+    <p>This quick tour will show you the key parts of the tally page and how to use them. You can skip it anytime — you’ll still be able to hover or long‑press fields for tips later.</p>
+    <div id="tour-welcome-actions">
+      <button id="tour-skip-btn" class="tw-btn tw-btn-ghost" type="button">Skip</button>
+      <button id="tour-start-btn" class="tw-btn tw-btn-primary" type="button">Start Tour</button>
+    </div>
+  </div>
+  <span aria-hidden="true"></span>
+</div>
 </body>
 </html>
