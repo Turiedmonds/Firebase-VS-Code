@@ -39,6 +39,25 @@
       transform: translateY(0);
     }
   </style>
+  <style id="tt-tooltip-override">
+    #tt-root {
+      position: fixed;
+      max-width: 280px;
+      pointer-events: none;
+      z-index: 2147483647;
+    }
+    #tt-root.tt-hidden,
+    #tt-root[aria-hidden="true"] {
+      display: none !important;
+      opacity: 0 !important;
+    }
+    #tt-root.tt-show,
+    #tt-root[aria-hidden="false"] {
+      display: block !important;
+      opacity: 1 !important;
+      transform: translateY(0) !important;
+    }
+  </style>
 </head>
 <body>
 
