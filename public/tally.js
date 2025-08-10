@@ -2575,6 +2575,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Legacy guided tour removed in favor of tooltip-based guided mode
 
+// --- Tour Welcome Modal helpers ---
+function openTourWelcomeModal() {
+  const ov = document.getElementById('tour-welcome-overlay');
+  if (!ov) return window.startGuide ? window.startGuide() : undefined; // fallback if HTML missing
+  ov.classList.add('show');
+  ov.setAttribute('aria-hidden', 'false');
+  const startBtn = document.getElementById('tour-start-btn');
+  if (startBtn) startBtn.focus();
+}
+
+function closeTourWelcomeModal() {
+  const ov = document.getElementById('tour-welcome-overlay');
+  if (!ov) return;
+  ov.classList.remove('show');
+  ov.setAttribute('aria-hidden', 'true');
+}
+
 function initTallyTooltips() {
   if (window.__tallyTooltipsInitialized) return;
   window.__tallyTooltipsInitialized = true;
@@ -2918,7 +2935,24 @@ function initTallyTooltips() {
         menuOpened = false;
         return;
       }
+      openTourWelcomeModal();
+    });
+  }
+
+  // Modal actions
+  const tourStartBtn = document.getElementById('tour-start-btn');
+  const tourSkipBtn  = document.getElementById('tour-skip-btn');
+  if (tourStartBtn) {
+    tourStartBtn.addEventListener('click', () => {
+      try { localStorage.setItem('tally_guide_done', 'true'); } catch {}
+      closeTourWelcomeModal();
       startGuidedMode();
+    });
+  }
+  if (tourSkipBtn) {
+    tourSkipBtn.addEventListener('click', () => {
+      try { localStorage.setItem('tally_guide_done', 'true'); } catch {}
+      closeTourWelcomeModal();
     });
   }
 
@@ -2964,9 +2998,13 @@ function initTallyTooltips() {
   window.hideTooltip = hideTooltip;
   window.startGuide = () => startGuidedMode();
 
-  if (localStorage.getItem('tally_guide_done') !== 'true') {
-    requestAnimationFrame(() => startGuidedMode());
-  }
+  try {
+    const done = localStorage.getItem('tally_guide_done') === 'true';
+    if (!done) {
+      // Show welcome first, don't start steps immediately
+      openTourWelcomeModal();
+    }
+  } catch {}
 }
 
 window.initTallyTooltips = initTallyTooltips;
