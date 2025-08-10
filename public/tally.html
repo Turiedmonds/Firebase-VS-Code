@@ -20,7 +20,25 @@
     <link rel="apple-touch-icon" href="icon-192.png" />
 
     <!-- Theme Color -->
-    <meta name="theme-color" content="#000000" /> 
+    <meta name="theme-color" content="#000000" />
+  <!-- Tooltip visibility fix -->
+  <style id="tt-tooltip-fix">
+    #tt-root {
+      position: fixed;
+      max-width: 280px;
+      pointer-events: none;
+      z-index: 2147483647; /* on top of everything */
+    }
+    .tt-hidden {
+      display: none;
+      opacity: 0;
+    }
+    .tt-show {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
 </head>
 <body>
 
@@ -476,7 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
       color: #fff;
       border-radius: 10px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      z-index: 900;
+      z-index: 2147483647;
       font-size: 14px;
       line-height: 1.35;
       pointer-events: none;
@@ -498,10 +516,14 @@ document.addEventListener('DOMContentLoaded', () => {
       border-radius: 8px;
     }
     .tt-show {
+      display: block;
       opacity: 1;
       transform: translateY(0);
     }
-    .tt-hidden { display: none; }
+    .tt-hidden {
+      display: none;
+      opacity: 0;
+    }
     @media (prefers-reduced-motion: reduce) {
       #tt-root { transition: none; }
     }

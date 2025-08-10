@@ -2590,6 +2590,14 @@ function initTallyTooltips() {
     document.body.appendChild(tt);
   }
 
+  // Ensure tooltip is a direct child of <body> so it can't be clipped
+  (function ensureTooltipParent() {
+    const ttRoot = document.getElementById('tt-root');
+    if (ttRoot && ttRoot.parentElement !== document.body) {
+      document.body.appendChild(ttRoot);
+    }
+  })();
+
   let stored = localStorage.getItem('tooltips_enabled');
   if (stored === null) {
     localStorage.setItem('tooltips_enabled', 'true');
@@ -2680,7 +2688,11 @@ function initTallyTooltips() {
   }
 
   function showTooltip(target, text) {
-    if (!text) return;
+    // Do not show empty tooltips
+    if (!text || !String(text).trim()) {
+      hideTooltip();
+      return;
+    }
     tt.textContent = text;
     tt.setAttribute('aria-hidden', 'false');
     tt.classList.remove('tt-hidden');
@@ -2920,6 +2932,13 @@ function initTallyTooltips() {
 }
 
 window.initTallyTooltips = initTallyTooltips;
+
+// Fallback initialisation in case Firebase auth never resolves (offline)
+window.addEventListener('DOMContentLoaded', () => {
+  if (!window.__tallyTooltipsInitialized && typeof initTallyTooltips === 'function') {
+    try { initTallyTooltips(); } catch (e) { console.warn('Tooltip init fallback:', e); }
+  }
+}, { once: true });
 
 async function setup() {
   const overlay = document.getElementById('loading-overlay');
