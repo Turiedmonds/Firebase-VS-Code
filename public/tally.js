@@ -2632,6 +2632,9 @@ function initTallyTooltips() {
   };
 
   let currentTarget = null;
+  // Stable hover state to avoid flicker
+  let currentTipTarget = null;
+  let currentLeaveHandler = null;
 
   function positionTooltip(target) {
     const rect = target.getBoundingClientRect();
@@ -2814,20 +2817,49 @@ function initTallyTooltips() {
     showGuidedStep();
   }
 
+  // Show on first entry into a qualifying element
   document.addEventListener('mouseover', (e) => {
     if (!tooltipsEnabled || guidedMode) return;
     const t = findTipTarget(e.target);
-    if (!t) return;
+    if (!t || t === currentTipTarget) return;
+
+    // New target: show tip and set up a one-off stable leave handler on the element itself
+    currentTipTarget = t;
     showTooltip(t, getHelpText(t));
+
+    // Clean up any prior leave handler
+    if (currentLeaveHandler) {
+      try { currentTipTarget.removeEventListener('mouseleave', currentLeaveHandler, true); } catch {}
+    }
+    currentLeaveHandler = () => {
+      hideTooltip();
+      currentTipTarget.removeEventListener('mouseleave', currentLeaveHandler, true);
+      currentTipTarget = null;
+      currentLeaveHandler = null;
+    };
+    t.addEventListener('mouseleave', currentLeaveHandler, true);
   }, true);
+
+  // We no longer use document-level mouseout for hiding (prevents flicker)
+
+  // Keyboard: show on focus, hide on blur
   document.addEventListener('focusin', (e) => {
     if (!tooltipsEnabled || guidedMode) return;
     const t = findTipTarget(e.target);
     if (!t) return;
+    currentTipTarget = t;
     showTooltip(t, getHelpText(t));
   }, true);
-  document.addEventListener('mouseout', () => { if (!guidedMode) hideTooltip(); }, true);
-  document.addEventListener('focusout', () => { if (!guidedMode) hideTooltip(); }, true);
+
+  document.addEventListener('focusout', (e) => {
+    // Only hide if we actually leave the focused control
+    if (guidedMode) return;
+    if (currentTipTarget && !currentTipTarget.contains(e.relatedTarget)) {
+      hideTooltip();
+      currentTipTarget = null;
+      currentLeaveHandler = null;
+    }
+  }, true);
 
   const helpBtn = document.getElementById('tour-help-btn');
   const helpMenu = document.getElementById('tt-help-menu');
@@ -2906,7 +2938,15 @@ function initTallyTooltips() {
     touchTimer = setTimeout(() => { showTooltip(t, getHelpText(t)); }, 500);
   }, { passive: true });
   function clearTouch() { if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; } }
-  document.addEventListener('touchend', () => { clearTouch(); hideTooltip(); }, { passive: true });
+  document.addEventListener('touchend', () => {
+    clearTouch();
+    // Let users read the tip briefly after lifting their finger
+    setTimeout(() => {
+      hideTooltip();
+      currentTipTarget = null;
+      currentLeaveHandler = null;
+    }, 1000);
+  }, { passive: true });
   document.addEventListener('touchcancel', () => { clearTouch(); hideTooltip(); }, { passive: true });
 
   document.addEventListener('scroll', () => {
