@@ -2691,28 +2691,26 @@ function initTallyTooltips() {
   }
 
   function showTooltip(target, text) {
-    // Do not show empty tooltips
-    if (!text || !String(text).trim()) {
-      hideTooltip();
-      return;
-    }
-    tt.textContent = text;
+    if (!text || !String(text).trim()) { hideTooltip(); return; }
+    const tt = document.getElementById('tt-root');
     tt.setAttribute('aria-hidden', 'false');
     tt.classList.remove('tt-hidden');
     tt.classList.add('tt-show');
+    tt.textContent = text;
     target.setAttribute('aria-describedby', 'tt-root');
     currentTarget = target;
     positionTooltip(target);
   }
 
   function hideTooltip() {
+    const tt = document.getElementById('tt-root');
+    tt.setAttribute('aria-hidden', 'true');
+    tt.classList.remove('tt-show');
+    tt.classList.add('tt-hidden');
     if (currentTarget) {
       currentTarget.removeAttribute('aria-describedby');
       currentTarget = null;
     }
-    tt.classList.remove('tt-show');
-    tt.classList.add('tt-hidden');
-    tt.setAttribute('aria-hidden', 'true');
   }
 
   function highlight(el) {
