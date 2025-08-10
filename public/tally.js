@@ -1,4 +1,10 @@
- // Firebase is initialized in firebase-init.js
+import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const app = getApp();
+const firestore = getFirestore(app);
+
+// Firebase is initialized in firebase-init.js
 
 export function formatHoursWorked(decimal) {
   if (isNaN(decimal)) return "";
@@ -2592,6 +2598,40 @@ function closeTourWelcomeModal() {
   ov.setAttribute('aria-hidden', 'true');
 }
 
+async function markTourSeen() {
+  try { localStorage.setItem('tally_guide_done', 'true'); } catch {}
+  const uid = firebase.auth && firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
+  if (!uid) return;
+  try {
+    const ref = doc(firestore, 'users', uid);
+    await setDoc(ref, { hasSeenTour: true }, { merge: true });
+  } catch (e) {
+    console.warn('Failed to persist tour flag', e);
+  }
+}
+
+async function checkTourWelcomeStatus() {
+  const uid = firebase.auth && firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
+  if (uid) {
+    try {
+      const ref = doc(firestore, 'users', uid);
+      const snap = await getDoc(ref);
+      if (snap.exists() && snap.data().hasSeenTour) {
+        try { localStorage.setItem('tally_guide_done', 'true'); } catch {}
+        return;
+      }
+    } catch (e) {
+      console.warn('Tour flag check failed', e);
+    }
+  }
+  try {
+    const done = localStorage.getItem('tally_guide_done') === 'true';
+    if (!done) openTourWelcomeModal();
+  } catch {
+    openTourWelcomeModal();
+  }
+}
+
 function initTallyTooltips() {
   if (window.__tallyTooltipsInitialized) return;
   window.__tallyTooltipsInitialized = true;
@@ -2944,14 +2984,14 @@ function initTallyTooltips() {
   const tourSkipBtn  = document.getElementById('tour-skip-btn');
   if (tourStartBtn) {
     tourStartBtn.addEventListener('click', () => {
-      try { localStorage.setItem('tally_guide_done', 'true'); } catch {}
+      markTourSeen();
       closeTourWelcomeModal();
       startGuidedMode();
     });
   }
   if (tourSkipBtn) {
     tourSkipBtn.addEventListener('click', () => {
-      try { localStorage.setItem('tally_guide_done', 'true'); } catch {}
+      markTourSeen();
       closeTourWelcomeModal();
     });
   }
@@ -2997,14 +3037,7 @@ function initTallyTooltips() {
   window.showTooltip = showTooltip;
   window.hideTooltip = hideTooltip;
   window.startGuide = () => startGuidedMode();
-
-  try {
-    const done = localStorage.getItem('tally_guide_done') === 'true';
-    if (!done) {
-      // Show welcome first, don't start steps immediately
-      openTourWelcomeModal();
-    }
-  } catch {}
+  checkTourWelcomeStatus();
 }
 
 window.initTallyTooltips = initTallyTooltips;
