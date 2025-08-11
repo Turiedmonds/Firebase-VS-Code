@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- Long-press to open Help menu (mobile/tablet/trackpad) ---
+// Insert directly BELOW the existing Help button click wiring.
 (function addLongPressToHelp(){
   const helpBtn =
     document.getElementById('help-btn') ||
@@ -136,37 +137,48 @@ document.addEventListener('DOMContentLoaded', () => {
   if (helpBtn.dataset.lpWired === '1') return;
   helpBtn.dataset.lpWired = '1';
 
-  const LONG_PRESS_MS = 600;
-  let pressTimer = null;
+  const LONG_MS = 600;
+  let timer = null;
   let longFired = false;
 
   const start = () => {
-    clearTimeout(pressTimer);
-    pressTimer = setTimeout(() => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
       longFired = true;
       if (typeof window.openHelpMenu === 'function') window.openHelpMenu();
-      // short window where we suppress the subsequent click
+      // Swallow the next click for a short window so the tour doesn't also run
       setTimeout(() => { longFired = false; }, 400);
-    }, LONG_PRESS_MS);
+    }, LONG_MS);
   };
 
   const cancel = () => {
-    if (pressTimer) clearTimeout(pressTimer);
-    pressTimer = null;
+    clearTimeout(timer);
+    timer = null;
   };
 
-  // Mouse / trackpad
-  helpBtn.addEventListener('mousedown', start, { passive: true });
-  helpBtn.addEventListener('mouseup', cancel, { passive: true });
-  helpBtn.addEventListener('mouseleave', cancel, { passive: true });
+  // Prefer Pointer Events (covers touch/mouse/pen)
+  if (window.PointerEvent) {
+    helpBtn.addEventListener('pointerdown', start,   { passive: true });
+    helpBtn.addEventListener('pointerup', cancel,    { passive: true });
+    helpBtn.addEventListener('pointercancel', cancel,{ passive: true });
+    helpBtn.addEventListener('pointerleave', cancel, { passive: true });
+  } else {
+    // Mouse / trackpad
+    helpBtn.addEventListener('mousedown', start,   { passive: true });
+    helpBtn.addEventListener('mouseup', cancel,    { passive: true });
+    helpBtn.addEventListener('mouseleave', cancel, { passive: true });
+    // Touch (iPad/phone)
+    helpBtn.addEventListener('touchstart', start,   { passive: true });
+    helpBtn.addEventListener('touchend', cancel,    { passive: true });
+    helpBtn.addEventListener('touchcancel', cancel, { passive: true });
+    helpBtn.addEventListener('touchmove', cancel,   { passive: true }); // cancel if finger moves/scrolls
+  }
 
-  // Touch (iPad/phone)
-  helpBtn.addEventListener('touchstart', start, { passive: true });
-  helpBtn.addEventListener('touchend', cancel, { passive: true });
-  helpBtn.addEventListener('touchcancel', cancel, { passive: true });
-
-  // Stop iOS context menu on long-press
-  helpBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+  // iOS Safari long-press shows context menu; use it to open Help and block native sheet
+  helpBtn.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (typeof window.openHelpMenu === 'function') window.openHelpMenu();
+  });
 
   // Guard: if a long-press just fired, swallow the next click so the tour doesn’t also run
   helpBtn.addEventListener('click', (e) => {
