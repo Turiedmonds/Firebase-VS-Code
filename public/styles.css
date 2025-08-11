@@ -824,3 +824,39 @@ button {
   color: #e1e7f5 !important;
   font-weight: 700;
 }
+
+/* === Top 5 Shearers: forced readability === */
+#top5-shearers .leaderboard .lb-row .lb-bar {
+  position: relative;
+  overflow: visible;                    /* let the pill sit above the bar */
+}
+
+#top5-shearers .leaderboard .lb-row .lb-name {
+  position: absolute;
+  top: 50%;
+  left: 6px;
+  transform: translateY(-50%);
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 0.86rem;                   /* bump for legibility */
+  letter-spacing: 0.1px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.6) !important;  /* dark pill */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+  text-decoration: none !important;     /* kill any underline */
+  z-index: 2;
+}
+
+#top5-shearers .leaderboard .lb-row .lb-value {
+  color: #ffffff !important;            /* brighter totals */
+  font-weight: 800;
+  font-size: 1.02rem;                   /* small bump */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+  min-width: 3.8ch;                     /* keeps alignment tidy */
+}
+
+#top5-shearers .leaderboard .lb-row .lb-rank {
+  color: #e6ecff !important;
+  font-weight: 700;
+}
