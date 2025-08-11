@@ -82,17 +82,32 @@ function initTop5ShearersWidget() {
       return isNaN(dt.getTime()) ? null : dt;
     }
 
-    // Build stand index → name map from session.stands[]
+    // Map stand index → name from session.stands[], normalizing 1-based indices
     function buildStandIndexNameMap(sessionData) {
       const map = {};
       const arr = Array.isArray(sessionData.stands) ? sessionData.stands : [];
-      arr.forEach((st, idx) => {
-        const i = (st && typeof st.index === 'number') ? st.index : idx;
-        const name = (st && (st.name || st.shearerName || st.id))
-          ? (st.name || st.shearerName || st.id)
-          : `Stand ${i + 1}`;
-        map[i] = name;
+
+      // Detect if indices look 1-based (no 0 but there is a 1)
+      const rawIdx = arr.map((st, i) => (st && st.index != null ? Number(st.index) : i));
+      const has0 = rawIdx.includes(0);
+      const has1 = rawIdx.includes(1);
+      const looksOneBased = !has0 && has1; // e.g., [1,2,3...]
+
+      arr.forEach((st, pos) => {
+        // numeric index or fallback to position
+        let i = (st && st.index != null) ? Number(st.index) : pos;
+        if (!Number.isFinite(i)) i = pos;
+        if (looksOneBased) i = i - 1;   // normalize 1-based → 0-based
+        if (i < 0) i = 0;
+
+        // resolve name; treat placeholders as missing
+        let name = '';
+        if (st) name = String(st.name || st.shearerName || st.id || '').trim();
+        if (!name || /^stand\s+\d+$/i.test(name)) name = null;
+
+        map[i] = name; // may be null; iterator will handle as unassigned if needed
       });
+
       return map;
     }
 
