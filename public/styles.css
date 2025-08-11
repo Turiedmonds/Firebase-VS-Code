@@ -789,3 +789,38 @@ button {
 
 /* If you ever find the name too tight on very short bars, this gives a hair more space */
 #top5-shearers .lb-bar { padding-left: 2px; }
+
+/* === FORCE READABILITY (higher specificity) === */
+#top5-shearers .leaderboard .lb-row .lb-bar { 
+  position: relative; 
+  overflow: visible;           /* allow name pill to sit above the bar */
+}
+
+#top5-shearers .leaderboard .lb-row .lb-name {
+  position: absolute;
+  top: 50%;
+  left: 6px;
+  transform: translateY(-50%);
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.1px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55) !important;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.6);
+  z-index: 2;
+}
+
+#top5-shearers .leaderboard .lb-row .lb-value {
+  color: #f7f9ff !important;
+  font-weight: 800;
+  font-size: 0.98rem;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+  min-width: 3.5ch;
+}
+
+#top5-shearers .leaderboard .lb-row .lb-rank {
+  color: #e1e7f5 !important;
+  font-weight: 700;
+}
