@@ -82,10 +82,56 @@ function initTop5ShearersWidget() {
       return isNaN(dt.getTime()) ? null : dt;
     }
 
+    // Build stand index → name map from session.stands[]
+    function buildStandIndexNameMap(sessionData) {
+      const map = {};
+      const arr = Array.isArray(sessionData.stands) ? sessionData.stands : [];
+      arr.forEach((st, idx) => {
+        const i = (st && typeof st.index === 'number') ? st.index : idx;
+        const name = (st && (st.name || st.shearerName || st.id))
+          ? (st.name || st.shearerName || st.id)
+          : `Stand ${i + 1}`;
+        map[i] = name;
+      });
+      return map;
+    }
+
+    // Extract tallies (shearerName, count, sheepType, date) from a session doc
     function* iterateTalliesFromSession(sessionDoc) {
-      const s = sessionDoc.data ? sessionDoc.data() : sessionDoc;
+      const s = sessionDoc.data ? sessionDoc.data() : sessionDoc; // QueryDocumentSnapshot or plain object
       const sessionDate = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
 
+      // Preferred path: shearerCounts[].stands[] + session.stands name map
+      if (Array.isArray(s.shearerCounts)) {
+        const nameByIndex = buildStandIndexNameMap(s);
+
+        for (const row of s.shearerCounts) {
+          const sheepType = row?.sheepType || '';
+          const perStand = Array.isArray(row?.stands) ? row.stands : [];
+          for (let i = 0; i < perStand.length; i++) {
+            const raw = perStand[i];
+            // raw may be string like "89" or number
+            const num = Number(raw);
+            if (!isFinite(num) || num <= 0) continue;
+
+            const shearerName = nameByIndex[i] || `Stand ${i + 1}`;
+            yield {
+              shearerName,
+              count: num,
+              sheepType,
+              date: sessionDate
+            };
+          }
+
+          // Optional fallback: if there were no per-stand entries but row.total exists,
+          // we could attribute it to an "Unknown" shearer. For now, skip to preserve per-shearer accuracy.
+          // const totalNum = Number(row?.total);
+          // if ((!perStand.length || perStand.every(v => !Number(v))) && isFinite(totalNum) && totalNum > 0) { ... }
+        }
+        return;
+      }
+
+      // Existing generic fallbacks (keep in case of future shapes)
       if (Array.isArray(s.tallies)) {
         for (const t of s.tallies) {
           yield {
@@ -144,9 +190,11 @@ function initTop5ShearersWidget() {
       for (const doc of sessions) {
         for (const t of iterateTalliesFromSession(doc)) {
           if (!t || !t.shearerName) continue;
-          if (!t.date) continue;
-          if (start && t.date < start) continue;
-          if (end && t.date > end) continue;
+          if (mode !== 'all') {
+            if (!t.date) continue;
+            if (start && t.date < start) continue;
+            if (end && t.date > end) continue;
+          }
           const isCrutch = isCrutchedType(t.sheepType);
           if (wantCrutched && !isCrutch) continue;
           if (!wantCrutched && isCrutch) continue;
