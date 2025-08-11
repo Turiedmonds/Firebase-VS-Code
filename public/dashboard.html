@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard - SHEAR iQ</title>
-  <link rel="stylesheet" href="styles.css?v=staff-fs1">
+  <link rel="stylesheet" href="styles.css?v=staff-like-shearers1">
   <style>
     body {
       display: flex;
@@ -72,11 +72,16 @@
           <!-- JS renders 5 rows with bars -->
         </div>
       </section>
-      <!-- BEGIN: Top 5 Shed Staff Widget -->
+      <!-- BEGIN: Top 5 Shed Staff (matches Shearers) -->
       <section id="top5-staff" class="dash-card">
         <header class="dash-card__header">
           <h2 class="dash-card__title">Top 5 Shed Staff</h2>
           <div class="dash-card__controls">
+            <!-- (No Shorn/Crutched tabs for staff; spacer keeps header balanced) -->
+            <div class="siq-segmented" style="visibility:hidden;">
+              <button type="button" class="siq-segmented__btn is-active" tabindex="-1">—</button>
+            </div>
+            <!-- View selector -->
             <div class="view-select">
               <label for="staff-view">View</label>
               <select id="staff-view">
@@ -89,10 +94,13 @@
             <button type="button" id="staff-viewall" class="siq-link-button">View Full List</button>
           </div>
         </header>
-        <div id="top5-staff-list" class="siq-leaderboard"><!-- JS renders rows --></div>
+
+        <div id="top5-staff-list" class="siq-leaderboard">
+          <!-- JS renders 5 rows with bars -->
+        </div>
       </section>
 
-      <!-- Full list modal -->
+      <!-- Full list modal (leaderboard rows, no table) -->
       <div id="staff-modal" class="siq-modal" aria-hidden="true">
         <div class="siq-modal__backdrop" data-close-modal></div>
         <div class="siq-modal__panel">
@@ -101,23 +109,13 @@
             <button class="siq-modal__close" data-close-modal aria-label="Close">&times;</button>
           </header>
           <div class="siq-modal__body">
-            <div class="siq-table-scroll">
-              <table class="siq-rank-table" id="staff-full-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Staff</th>
-                    <th>Hours Worked</th>
-                    <th>Days Worked</th>
-                  </tr>
-                </thead>
-                <tbody><!-- JS fills --></tbody>
-              </table>
+            <div id="staff-full-list" class="siq-leaderboard" style="max-height:60vh; overflow:auto;">
+              <!-- JS renders all rows -->
             </div>
           </div>
         </div>
       </div>
-      <!-- END: Top 5 Shed Staff Widget -->
+      <!-- END: Top 5 Shed Staff -->
       <!-- When we add the other 3 widgets, they’ll sit beside this one on wide screens -->
     </div>
 

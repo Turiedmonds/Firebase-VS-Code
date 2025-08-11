@@ -451,7 +451,7 @@ function initTop5StaffWidget() {
     const rootEl = document.getElementById('top5-staff');
     if (!rootEl) return;
 
-    // Resolve contractorId (same pattern as shearers)
+    // Resolve contractor scope same as Shearers
     let contractorId = localStorage.getItem('contractor_id');
     if (!contractorId && firebase?.auth?.currentUser?.uid) {
       contractorId = firebase.auth().currentUser.uid;
@@ -464,10 +464,10 @@ function initTop5StaffWidget() {
     const yearSel = rootEl.querySelector('#staff-year');
     const viewAllBtn = rootEl.querySelector('#staff-viewall');
     const modal = document.getElementById('staff-modal');
-    const modalBodyTbody = document.querySelector('#staff-full-table tbody');
-    if (!listEl || !viewSel || !yearSel || !viewAllBtn || !modal || !modalBodyTbody) return;
+    const fullListEl = document.getElementById('staff-full-list');
+    if (!listEl || !viewSel || !yearSel || !viewAllBtn || !modal || !fullListEl) return;
 
-    // Helpers reused from shearers style
+    // Helpers (same pattern as Shearers)
     function sessionDateToJS(d) {
       if (!d) return null;
       if (typeof d === 'object' && d.toDate) return d.toDate();
@@ -477,9 +477,7 @@ function initTop5StaffWidget() {
     function getDateRange(mode, year) {
       const today = new Date();
       if (mode === '12m') {
-        const end = today;
-        const start = new Date();
-        start.setDate(start.getDate() - 365);
+        const end = today, start = new Date(); start.setDate(start.getDate() - 365);
         return { start, end };
       }
       if (mode === 'year' && year) {
@@ -490,31 +488,24 @@ function initTop5StaffWidget() {
       return { start: null, end: null };
     }
 
-    // Pull staff hour entries from a session (supports multiple shapes)
+    // Iterate staff hours across supported shapes
     function* iterateStaffHoursFromSession(sessionDoc) {
       const s = sessionDoc.data ? sessionDoc.data() : sessionDoc;
       const dt = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
 
-      // Common shapes:
-      // 1) s.shedStaff: [{ name, hours, daysWorked? }, ...]
       if (Array.isArray(s.shedStaff)) {
         for (const st of s.shedStaff) {
           const name = (st?.name || st?.staffName || st?.displayName || '').trim();
           const hours = Number(st?.hours ?? st?.totalHours ?? st?.hoursWorked ?? 0);
-          const days = Number(st?.daysWorked ?? st?.days ?? 0);
-          if (name && hours > 0) {
-            yield { name, hours, date: dt, daysHint: days > 0 ? days : 1 };
-          }
+          if (name && hours > 0) yield { name, hours, date: dt };
         }
         return;
       }
-
-      // 2) s.staffCounts or s.staffHours: { name: hours } or [{name, hours}]
       if (Array.isArray(s.staffCounts)) {
         for (const row of s.staffCounts) {
           const name = (row?.name || row?.staffName || '').trim();
           const hours = Number(row?.hours ?? row?.totalHours ?? 0);
-          if (name && hours > 0) yield { name, hours, date: dt, daysHint: 1 };
+          if (name && hours > 0) yield { name, hours, date: dt };
         }
         return;
       }
@@ -522,17 +513,15 @@ function initTop5StaffWidget() {
         for (const [nameRaw, val] of Object.entries(s.staffHours)) {
           const name = String(nameRaw).trim();
           const hours = Number(val);
-          if (name && hours > 0) yield { name, hours, date: dt, daysHint: 1 };
+          if (name && hours > 0) yield { name, hours, date: dt };
         }
         return;
       }
-
-      // 3) Fallback: s.staff array with {name, hoursWorked}
       if (Array.isArray(s.staff)) {
         for (const st of s.staff) {
           const name = (st?.name || st?.staffName || '').trim();
           const hours = Number(st?.hoursWorked ?? st?.hours ?? 0);
-          if (name && hours > 0) yield { name, hours, date: dt, daysHint: 1 };
+          if (name && hours > 0) yield { name, hours, date: dt };
         }
       }
     }
@@ -552,13 +541,8 @@ function initTop5StaffWidget() {
 
     function aggregateStaff(sessions, mode, year) {
       const { start, end } = getDateRange(mode, year);
-      const totals = new Map();          // name -> total hours
-      const daySets = new Map();         // name -> Set of yyyy-mm-dd visited
+      const totals = new Map(); // name -> total hours
       for (const doc of sessions) {
-        const s = doc.data ? doc.data() : doc;
-        const d = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
-        const dayKey = d ? `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}` : null;
-
         for (const e of iterateStaffHoursFromSession(doc)) {
           if (!e || !e.name) continue;
           if (mode !== 'all') {
@@ -566,28 +550,18 @@ function initTop5StaffWidget() {
             if (start && e.date < start) continue;
             if (end && e.date > end) continue;
           }
-          const prev = totals.get(e.name) || 0;
-          totals.set(e.name, prev + (e.hours || 0));
-          if (dayKey) {
-            if (!daySets.has(e.name)) daySets.set(e.name, new Set());
-            daySets.get(e.name).add(dayKey);
-          }
+          totals.set(e.name, (totals.get(e.name) || 0) + (e.hours || 0));
         }
       }
-      const rows = Array.from(totals.entries())
-        .map(([name, hours]) => ({
-          name,
-          hours,
-          days: (daySets.get(name)?.size || 0)
-        }))
+      return Array.from(totals.entries())
+        .map(([name, hours]) => ({ name, hours }))
         .sort((a, b) => b.hours - a.hours);
-      return rows;
     }
 
-    function renderTop5Staff(rows, container) {
-      const top5 = rows.slice(0, 5);
-      const max = Math.max(1, ...top5.map(r => r.hours));
-      container.innerHTML = top5.map((r, idx) => {
+    function renderRows(rows, container, limit = null) {
+      const slice = limit ? rows.slice(0, limit) : rows;
+      const max = Math.max(1, ...slice.map(r => r.hours));
+      container.innerHTML = slice.map((r, idx) => {
         const pct = Math.round((r.hours / max) * 100);
         return `
           <div class="siq-lb-row">
@@ -602,25 +576,14 @@ function initTop5StaffWidget() {
       }).join('');
     }
 
-    function renderFullStaff(rows, tableBody) {
-      tableBody.innerHTML = rows.map((r, idx) => `
-        <tr>
-          <td>${idx + 1}</td>
-          <td>${r.name}</td>
-          <td>${r.hours.toLocaleString()}</td>
-          <td>${r.days}</td>
-        </tr>
-      `).join('');
-    }
-
-    // UI events
+    // UI events (no Staff tabs)
     viewSel.addEventListener('change', () => {
       yearSel.hidden = viewSel.value !== 'year';
       scheduleRender();
     });
     yearSel.addEventListener('change', scheduleRender);
 
-    // Modal
+    // Modal open/close
     function openModal() { modal.setAttribute('aria-hidden', 'false'); }
     function closeModal() { modal.setAttribute('aria-hidden', 'true'); }
     viewAllBtn.addEventListener('click', openModal);
@@ -629,9 +592,7 @@ function initTop5StaffWidget() {
     });
 
     // Live data
-    let unsub = null, colRef = null;
-    let cachedSessions = [];
-    let renderPending = false;
+    let unsub = null, colRef = null, cachedSessions = [], renderPending = false, lastRows = [];
 
     function scheduleRender() {
       if (renderPending) return;
@@ -640,9 +601,9 @@ function initTop5StaffWidget() {
         renderPending = false;
         const mode = viewSel.value || '12m';
         const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
-        const rows = aggregateStaff(cachedSessions, mode, year);
-        renderTop5Staff(rows, listEl);
-        renderFullStaff(rows, modalBodyTbody);
+        lastRows = aggregateStaff(cachedSessions, mode, year);
+        renderRows(lastRows, listEl, 5);
+        renderRows(lastRows, fullListEl, null);
       });
     }
 
@@ -650,10 +611,9 @@ function initTop5StaffWidget() {
       const sessions = [];
       snap.forEach(doc => sessions.push(doc));
       cachedSessions = sessions;
-      // populate year dropdown
       const years = deriveYearsFromSessions(sessions);
       yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-      if (viewSel.value !== 'year') yearSel.hidden = true;
+      yearSel.hidden = viewSel.value !== 'year';
       scheduleRender();
     };
     const onError = err => {
