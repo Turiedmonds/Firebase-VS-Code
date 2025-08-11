@@ -752,3 +752,40 @@ button {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); /* was ~280px */
   gap: 10px;
 }
+
+/* === Top 5 Shearers: readability boost === */
+#top5-shearers .lb-name {
+  /* make the name pop regardless of bar color behind it */
+  color: #ffffff;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);           /* dark pill */
+  backdrop-filter: saturate(120%) blur(2px);  /* subtle glass, supported on modern browsers */
+  text-shadow: 0 1px 1px rgba(0,0,0,0.6);     /* extra legibility */
+  z-index: 2;
+}
+
+#top5-shearers .lb-fill {
+  /* keep the gold bright but not blinding */
+  filter: saturate(110%);
+}
+
+/* Right-side totals: brighter and bolder */
+#top5-shearers .lb-value {
+  color: #f5f7ff;          /* near-white */
+  font-weight: 700;
+  font-size: 0.92rem;      /* small bump */
+  text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+  min-width: 3.5ch;        /* keeps alignment tidy for 3–4 digit numbers */
+}
+
+/* Rank number also a touch brighter for balance */
+#top5-shearers .lb-rank {
+  color: #dbe2f0;
+  font-weight: 600;
+}
+
+/* If you ever find the name too tight on very short bars, this gives a hair more space */
+#top5-shearers .lb-bar { padding-left: 2px; }
