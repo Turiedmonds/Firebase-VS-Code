@@ -125,62 +125,86 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { capture:true });
 });
 
-// --- Long-press to open Help menu (mobile/tablet/trackpad) ---
-// Insert directly BELOW the existing Help button click wiring.
+// --- Long-press to open Help menu (iOS-friendly with jitter tolerance) ---
 (function addLongPressToHelp(){
   const helpBtn =
     document.getElementById('help-btn') ||
     document.getElementById('tour-help-btn');
   if (!helpBtn) return;
 
-  // Avoid double-wiring
+  // avoid double-wiring
   if (helpBtn.dataset.lpWired === '1') return;
   helpBtn.dataset.lpWired = '1';
 
   const LONG_MS = 600;
+  const JITTER_PX = 10; // allow small finger movement
   let timer = null;
   let longFired = false;
+  let startX = 0, startY = 0;
 
-  const start = () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      longFired = true;
-      if (typeof window.openHelpMenu === 'function') window.openHelpMenu();
-      // Swallow the next click for a short window so the tour doesn't also run
-      setTimeout(() => { longFired = false; }, 400);
-    }, LONG_MS);
+  const fire = () => {
+    longFired = true;
+    if (typeof window.openHelpMenu === 'function') window.openHelpMenu();
+    // swallow next click shortly after long-press
+    setTimeout(() => { longFired = false; }, 400);
   };
 
-  const cancel = () => {
+  const start = (x, y) => {
+    startX = x; startY = y;
     clearTimeout(timer);
-    timer = null;
+    timer = setTimeout(fire, LONG_MS);
   };
+
+  const movedTooFar = (x, y) =>
+    Math.abs(x - startX) > JITTER_PX || Math.abs(y - startY) > JITTER_PX;
+
+  const cancel = () => { clearTimeout(timer); timer = null; };
 
   // Prefer Pointer Events (covers touch/mouse/pen)
   if (window.PointerEvent) {
-    helpBtn.addEventListener('pointerdown', start,   { passive: true });
-    helpBtn.addEventListener('pointerup', cancel,    { passive: true });
-    helpBtn.addEventListener('pointercancel', cancel,{ passive: true });
+    helpBtn.addEventListener('pointerdown', (e) => {
+      // for touch, try to stop iOS long-press menu early
+      if (e.pointerType === 'touch' && e.cancelable) e.preventDefault();
+      start(e.clientX, e.clientY);
+    }, { passive: false });
+
+    helpBtn.addEventListener('pointermove', (e) => {
+      if (timer && movedTooFar(e.clientX, e.clientY)) cancel();
+    }, { passive: true });
+
+    helpBtn.addEventListener('pointerup', cancel, { passive: true });
+    helpBtn.addEventListener('pointercancel', cancel, { passive: true });
     helpBtn.addEventListener('pointerleave', cancel, { passive: true });
   } else {
-    // Mouse / trackpad
-    helpBtn.addEventListener('mousedown', start,   { passive: true });
-    helpBtn.addEventListener('mouseup', cancel,    { passive: true });
+    // Mouse
+    helpBtn.addEventListener('mousedown', (e) => start(e.clientX, e.clientY), { passive: true });
+    helpBtn.addEventListener('mousemove', (e) => { if (timer && movedTooFar(e.clientX, e.clientY)) cancel(); }, { passive: true });
+    helpBtn.addEventListener('mouseup', cancel, { passive: true });
     helpBtn.addEventListener('mouseleave', cancel, { passive: true });
-    // Touch (iPad/phone)
-    helpBtn.addEventListener('touchstart', start,   { passive: true });
-    helpBtn.addEventListener('touchend', cancel,    { passive: true });
+
+    // Touch (iOS Safari)
+    helpBtn.addEventListener('touchstart', (e) => {
+      const t = e.touches && e.touches[0];
+      if (e.cancelable) e.preventDefault(); // block native callout
+      if (t) start(t.clientX, t.clientY);
+    }, { passive: false });
+
+    helpBtn.addEventListener('touchmove', (e) => {
+      const t = e.touches && e.touches[0];
+      if (timer && t && movedTooFar(t.clientX, t.clientY)) cancel();
+    }, { passive: true });
+
+    helpBtn.addEventListener('touchend', cancel, { passive: true });
     helpBtn.addEventListener('touchcancel', cancel, { passive: true });
-    helpBtn.addEventListener('touchmove', cancel,   { passive: true }); // cancel if finger moves/scrolls
   }
 
-  // iOS Safari long-press shows context menu; use it to open Help and block native sheet
+  // iOS still fires contextmenu on long-press; use it as a fallback and block native sheet
   helpBtn.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    if (typeof window.openHelpMenu === 'function') window.openHelpMenu();
+    if (!longFired && typeof window.openHelpMenu === 'function') window.openHelpMenu();
   });
 
-  // Guard: if a long-press just fired, swallow the next click so the tour doesn’t also run
+  // Swallow the click that follows a long-press so the tour doesn’t also run
   helpBtn.addEventListener('click', (e) => {
     if (longFired) {
       e.stopImmediatePropagation();
