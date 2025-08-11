@@ -44,33 +44,36 @@
       <h2 id="dashboard-heading">Contractor Dashboard</h2>
       <p id="dashboard-subheading"></p>
     </div>
-    <!-- BEGIN: Top 5 Shearers Widget -->
-    <section id="top5-shearers" class="dash-card">
-      <header class="dash-card__header">
-        <h2 class="dash-card__title">Top 5 Shearers</h2>
-        <div class="dash-card__controls">
-          <!-- Work type tabs -->
-          <div class="siq-segmented" id="worktype-tabs">
-            <button type="button" data-worktype="shorn" class="siq-segmented__btn is-active">Shorn</button>
-            <button type="button" data-worktype="crutched" class="siq-segmented__btn">Crutched</button>
+    <div class="dash-grid">
+      <!-- BEGIN: Top 5 Shearers Widget -->
+      <section id="top5-shearers" class="dash-card">
+        <header class="dash-card__header">
+          <h2 class="dash-card__title">Top 5 Shearers</h2>
+          <div class="dash-card__controls">
+            <!-- Work type tabs -->
+            <div class="siq-segmented" id="worktype-tabs">
+              <button type="button" data-worktype="shorn" class="siq-segmented__btn is-active">Shorn</button>
+              <button type="button" data-worktype="crutched" class="siq-segmented__btn">Crutched</button>
+            </div>
+            <!-- View selector -->
+            <div class="view-select">
+              <label for="shearers-view">View</label>
+              <select id="shearers-view">
+                <option value="12m" selected>12M Rolling</option>
+                <option value="all">All‑Time</option>
+              </select>
+              <select id="shearers-year" class="year-select" aria-label="Specific year" hidden></select>
+            </div>
+            <button type="button" id="shearers-viewall" class="siq-link-button">View Full List</button>
           </div>
-          <!-- View selector -->
-          <div class="view-select">
-            <label for="shearers-view">View</label>
-            <select id="shearers-view">
-              <option value="12m" selected>12M Rolling</option>
-              <option value="all">All‑Time</option>
-            </select>
-            <select id="shearers-year" class="year-select" aria-label="Specific year" hidden></select>
-          </div>
-          <button type="button" id="shearers-viewall" class="siq-link-button">View Full List</button>
-        </div>
-      </header>
+        </header>
 
-      <div id="top5-shearers-list" class="siq-leaderboard">
-        <!-- JS renders 5 rows with bars -->
-      </div>
-    </section>
+        <div id="top5-shearers-list" class="siq-leaderboard">
+          <!-- JS renders 5 rows with bars -->
+        </div>
+      </section>
+      <!-- When we add the other 3 widgets, they’ll sit beside this one on wide screens -->
+    </div>
 
     <!-- Full list modal -->
     <div id="shearers-modal" class="siq-modal" aria-hidden="true">
