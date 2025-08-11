@@ -2745,6 +2745,10 @@ function initTallyTooltips() {
   function showTooltip(target, text) {
     if (!text || !String(text).trim()) { hideTooltip(); return; }
     const tt = document.getElementById('tt-root');
+    if (guidedMode) {
+      // tour uses programmatic show; ignore any hover-only constraints here
+      // (no change needed if you already call tt.classList.add('tt-show') & aria-hidden="false")
+    }
     tt.setAttribute('aria-hidden', 'false');
     tt.classList.remove('tt-hidden');
     tt.classList.add('tt-show');
@@ -2882,8 +2886,9 @@ function initTallyTooltips() {
       try { currentTipTarget.removeEventListener('mouseleave', currentLeaveHandler, true); } catch {}
     }
     currentLeaveHandler = () => {
+      if (guidedMode) return; // don't hide during the guided tour
       hideTooltip();
-      currentTipTarget.removeEventListener('mouseleave', currentLeaveHandler, true);
+      currentTipTarget?.removeEventListener('mouseleave', currentLeaveHandler, true);
       currentTipTarget = null;
       currentLeaveHandler = null;
     };
@@ -2902,12 +2907,9 @@ function initTallyTooltips() {
   }, true);
 
   document.addEventListener('focusout', (e) => {
-    // Only hide if we actually leave the focused control
-    if (guidedMode) return;
+    if (guidedMode) return; // do not hide tooltips during tour
     if (currentTipTarget && !currentTipTarget.contains(e.relatedTarget)) {
-      hideTooltip();
-      currentTipTarget = null;
-      currentLeaveHandler = null;
+      hideTooltip(); currentTipTarget = null; currentLeaveHandler = null;
     }
   }, true);
 
@@ -2982,7 +2984,16 @@ function initTallyTooltips() {
       const uid = (firebase.auth && firebase.auth().currentUser) ? firebase.auth().currentUser.uid : null;
       await markTourSeen(uid);
       closeTourWelcomeModal();
-      startGuidedMode();
+      // clear any previous hover state so it can't hide the first step
+      try {
+        if (currentTipTarget && currentLeaveHandler) {
+          currentTipTarget.removeEventListener('mouseleave', currentLeaveHandler, true);
+        }
+        currentTipTarget = null;
+        currentLeaveHandler = null;
+      } catch {}
+      // delay so the click that closed the modal can't immediately hide the first tip
+      setTimeout(() => { startGuidedMode(); }, 150);
     });
   }
   if (tourSkipBtn) {
@@ -3009,7 +3020,7 @@ function initTallyTooltips() {
   function clearTouch() { if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; } }
   document.addEventListener('touchend', () => {
     clearTouch();
-    // Let users read the tip briefly after lifting their finger
+    if (guidedMode) return; // keep tour step visible on iPad/Safari
     setTimeout(() => {
       hideTooltip();
       currentTipTarget = null;
