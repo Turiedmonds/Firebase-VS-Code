@@ -40,112 +40,90 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-if (localStorage.getItem('tooltips_enabled') === null) {
-  localStorage.setItem('tooltips_enabled', 'true');
-}
-if (localStorage.getItem('tally_guide_enabled') === null) {
-  localStorage.setItem('tally_guide_enabled', 'true');
-}
+// === HELP MENU GLOBALS ===
+if (localStorage.getItem('tooltips_enabled') == null) localStorage.setItem('tooltips_enabled','true');
+if (localStorage.getItem('tally_guide_enabled') == null) localStorage.setItem('tally_guide_enabled','true');
 
-window.renderHelpMenu = function renderHelpMenu() {
-  let menu = document.getElementById('tt-help-menu');
-  if (!menu) {
-    menu = document.createElement('div');
-    menu.id = 'tt-help-menu';
-  }
-  menu.innerHTML = `
-    <button type="button" id="tt-help-close" aria-label="Close">✕</button>
-    <label><input type="checkbox" id="tt-enable-tooltips"> Enable tooltips</label><br/>
-    <label><input type="checkbox" id="tt-enable-guide"> Enable guided tour</label><br/>
-    <button type="button" id="tt-start-guide">Start guide now</button>
+window.renderHelpMenu = function () {
+  let m = document.getElementById('tt-help-menu');
+  if (!m) { m = document.createElement('div'); m.id = 'tt-help-menu'; document.body.appendChild(m); }
+  m.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;">
+      <strong>Help</strong><button id="ttx" style="padding:6px 10px;">✕</button>
+    </div>
+    <label style="display:block;margin:8px 0;">
+      <input id="tips" type="checkbox"> Enable tooltips
+    </label>
+    <label style="display:block;margin:8px 0;">
+      <input id="tour" type="checkbox"> Enable guided tour
+    </label>
+    <button id="start" style="margin-top:8px;">Start guide now</button>
   `;
-  const tipsBox = menu.querySelector('#tt-enable-tooltips');
-  const guideBox = menu.querySelector('#tt-enable-guide');
-  const startBtn = menu.querySelector('#tt-start-guide');
-  const closeBtn = menu.querySelector('#tt-help-close');
-
-  tipsBox.checked = localStorage.getItem('tooltips_enabled') === 'true';
-  guideBox.checked = localStorage.getItem('tally_guide_enabled') === 'true';
-  tipsBox.addEventListener('change', () => {
-    const val = tipsBox.checked ? 'true' : 'false';
-    localStorage.setItem('tooltips_enabled', val);
-    if (typeof window.setTipsEnabled === 'function') window.setTipsEnabled(tipsBox.checked);
-  });
-  guideBox.addEventListener('change', () => {
-    const val = guideBox.checked ? 'true' : 'false';
-    localStorage.setItem('tally_guide_enabled', val);
-    if (typeof window.setGuideEnabled === 'function') window.setGuideEnabled(guideBox.checked);
-    if (startBtn) startBtn.disabled = !guideBox.checked || typeof window.startGuide !== 'function';
-  });
-  if (startBtn) {
-    startBtn.disabled = localStorage.getItem('tally_guide_enabled') !== 'true' || typeof window.startGuide !== 'function';
-    startBtn.addEventListener('click', () => {
-      if (localStorage.getItem('tally_guide_enabled') === 'true' && typeof window.startGuide === 'function') {
-        window.startGuide();
-      }
-    });
-  }
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => window.closeHelpMenu());
-  }
-  return menu;
+  const gb = k => (localStorage.getItem(k) ?? 'true') === 'true';
+  const sb = (k,v) => localStorage.setItem(k, v ? 'true' : 'false');
+  const tips = m.querySelector('#tips');
+  const tour = m.querySelector('#tour');
+  const start = m.querySelector('#start');
+  const ttx = m.querySelector('#ttx');
+  tips.checked = gb('tooltips_enabled');
+  tour.checked  = gb('tally_guide_enabled');
+  tips.onchange = () => sb('tooltips_enabled', tips.checked);
+  tour.onchange = () => sb('tally_guide_enabled', tour.checked);
+  start.onclick  = () => { if (tour.checked && typeof window.startGuide === 'function') window.startGuide(); };
+  ttx.onclick    = () => window.closeHelpMenu();
 };
 
-window.openHelpMenu = function openHelpMenu() {
-  const menu = window.renderHelpMenu();
-  document.body.appendChild(menu);
-  menu.style.display = 'block';
-  menu.style.position = 'fixed';
-  menu.style.top = '50%';
-  menu.style.left = '50%';
-  menu.style.transform = 'translate(-50%, -50%)';
-  menu.style.zIndex = '2147483647';
-  menu.style.background = '#222';
-  menu.style.color = '#fff';
-  menu.style.padding = '20px';
-  menu.style.borderRadius = '10px';
-  menu.style.boxShadow = '0 10px 30px rgba(0,0,0,0.6)';
-  menu.setAttribute('role', 'dialog');
-  menu.setAttribute('aria-modal', 'true');
-  menu.setAttribute('aria-hidden', 'false');
+window.openHelpMenu = function () {
+  window.renderHelpMenu();
+  const m = document.getElementById('tt-help-menu');
+  // remove any hiding attrs/classes
+  m.removeAttribute('hidden'); m.removeAttribute('aria-hidden');
+  m.classList.remove('hidden','is-hidden');
+  // force visible on top
+  const s = m.style;
+  s.setProperty('position','fixed','important');
+  s.setProperty('left','50%','important');
+  s.setProperty('top','50%','important');
+  s.setProperty('transform','translate(-50%,-50%)','important');
+  s.setProperty('z-index','2147483647','important');
+  s.setProperty('background','#111','important');
+  s.setProperty('color','#fff','important');
+  s.setProperty('padding','16px','important');
+  s.setProperty('border-radius','12px','important');
+  s.setProperty('max-width','90vw','important');
+  s.setProperty('max-height','80vh','important');
+  s.setProperty('overflow','auto','important');
+  s.setProperty('display','block','important');
+  s.setProperty('visibility','visible','important');
+  s.setProperty('opacity','1','important');
+  s.setProperty('pointer-events','auto','important');
+  if (m.parentElement !== document.body) document.body.appendChild(m);
+  m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true');
 };
 
-window.closeHelpMenu = function closeHelpMenu() {
-  const menu = document.getElementById('tt-help-menu');
-  if (!menu) return;
-  menu.style.display = 'none';
-  menu.setAttribute('aria-hidden', 'true');
-  menu.removeAttribute('aria-modal');
+window.closeHelpMenu = function () {
+  const m = document.getElementById('tt-help-menu'); if (m) m.style.display = 'none';
 };
 
+// === HELP BUTTON WIRING ===
 document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('help-btn') || document.getElementById('tour-help-btn');
-  if (btn && !btn.__helpBound) {
-    btn.addEventListener('click', (e) => {
-      if (e.shiftKey) {
-        window.openHelpMenu();
-      } else if (localStorage.getItem('tally_guide_enabled') === 'true' && typeof window.startGuide === 'function') {
-        window.startGuide();
-      } else {
-        window.openHelpMenu();
-      }
-    }, true);
-    btn.__helpBound = true;
-  }
-  if (!window.__helpShortcutBound) {
-    document.addEventListener('keydown', (e) => {
-      if (e.altKey && e.key.toLowerCase() === 'h') {
-        const t = e.target;
-        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-        e.preventDefault();
-        window.openHelpMenu();
-      }
-    });
-    window.__helpShortcutBound = true;
-  }
+  const helpBtn = document.getElementById('help-btn') || document.getElementById('tour-help-btn');
+  if (!helpBtn) return;
+  helpBtn.addEventListener('click', (e) => {
+    const tourEnabled = (localStorage.getItem('tally_guide_enabled') ?? 'true') === 'true';
+    if (e.shiftKey) { window.openHelpMenu(); return; }
+    if (tourEnabled && typeof window.startGuide === 'function') window.startGuide();
+    else window.openHelpMenu();
+  }, true); // capture=true to beat other handlers
+
+  // Alt+H opens Help (not while typing)
+  window.addEventListener('keydown', (e) => {
+    if (!(e.altKey && (e.key.toLowerCase() === 'h'))) return;
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    e.preventDefault(); window.openHelpMenu();
+  }, { capture:true });
 });
-
-
 
 // Helper to calculate hour difference between two HH:MM strings
 function getTimeDiffInHours(startStr, endStr) {
