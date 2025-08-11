@@ -16,11 +16,18 @@ function initTop5ShearersWidget() {
       if (rootEl) rootEl.remove();
       return;
     }
-
-    const contractorId = localStorage.getItem('contractor_id');
+    // Prefer stored scope; fall back to current auth user
+    let contractorId = localStorage.getItem('contractor_id');
+    if (!contractorId && firebase?.auth?.currentUser?.uid) {
+      contractorId = firebase.auth().currentUser.uid;
+      try { localStorage.setItem('contractor_id', contractorId); } catch {}
+      console.debug('[Top5Shearers] contractor_id recovered from auth');
+    }
     if (!contractorId) {
       console.warn('[Top5Shearers] Missing contractor_id');
-      rootEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
+      // Render a tiny empty state but do NOT throw.
+      const listEl = document.getElementById('top5-shearers-list');
+      if (listEl) listEl.innerHTML = `<div class="lb-row"><div class="lb-rank"></div><div class="lb-bar"><div class="lb-name">Data unavailable</div></div><div class="lb-value"></div></div>`;
       return;
     }
 
@@ -383,6 +390,13 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.replace('login.html');
         return;
       }
+      // Persist contractor scope for dashboard widgets
+      try {
+        localStorage.setItem('contractor_id', user.uid);
+        console.debug('[Dashboard] contractor_id set to', user.uid);
+      } catch (e) {
+        console.warn('[Dashboard] Could not set contractor_id:', e);
+      }
 
       const data = snap.data() || {};
       const name = data.name;
@@ -448,8 +462,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
-      if (localStorage.getItem('dash_top5_shearers_enabled') !== 'false') {
-        try { initTop5ShearersWidget(); } catch (e) { console.error('[Top5Shearers] init error', e); }
+      // After setting contractor_id and after showing the page content:
+      if (typeof initTop5ShearersWidget === 'function') {
+        try { initTop5ShearersWidget(); } catch (e) { console.error('[Dashboard] initTop5ShearersWidget failed:', e); }
       }
     } catch (err) {
       console.error('Failed to fetch contractor profile', err);
