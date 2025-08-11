@@ -125,6 +125,59 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { capture:true });
 });
 
+// --- Long-press to open Help menu (mobile/tablet/trackpad) ---
+(function addLongPressToHelp(){
+  const helpBtn =
+    document.getElementById('help-btn') ||
+    document.getElementById('tour-help-btn');
+  if (!helpBtn) return;
+
+  // Avoid double-wiring
+  if (helpBtn.dataset.lpWired === '1') return;
+  helpBtn.dataset.lpWired = '1';
+
+  const LONG_PRESS_MS = 600;
+  let pressTimer = null;
+  let longFired = false;
+
+  const start = () => {
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(() => {
+      longFired = true;
+      if (typeof window.openHelpMenu === 'function') window.openHelpMenu();
+      // short window where we suppress the subsequent click
+      setTimeout(() => { longFired = false; }, 400);
+    }, LONG_PRESS_MS);
+  };
+
+  const cancel = () => {
+    if (pressTimer) clearTimeout(pressTimer);
+    pressTimer = null;
+  };
+
+  // Mouse / trackpad
+  helpBtn.addEventListener('mousedown', start, { passive: true });
+  helpBtn.addEventListener('mouseup', cancel, { passive: true });
+  helpBtn.addEventListener('mouseleave', cancel, { passive: true });
+
+  // Touch (iPad/phone)
+  helpBtn.addEventListener('touchstart', start, { passive: true });
+  helpBtn.addEventListener('touchend', cancel, { passive: true });
+  helpBtn.addEventListener('touchcancel', cancel, { passive: true });
+
+  // Stop iOS context menu on long-press
+  helpBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // Guard: if a long-press just fired, swallow the next click so the tour doesn’t also run
+  helpBtn.addEventListener('click', (e) => {
+    if (longFired) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      longFired = false;
+    }
+  }, true); // capture to beat existing handlers
+})();
+
 // Helper to calculate hour difference between two HH:MM strings
 function getTimeDiffInHours(startStr, endStr) {
   const start = new Date(`1970-01-01T${startStr}`);
