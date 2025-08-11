@@ -236,7 +236,7 @@
 
 <script src="xlsx.full.min.js"></script>
 <script type="module" src="auth.js"></script>
-<script src="tally.js"></script>
+<script src="/tally.js?v=help-menu-1"></script>
 <script src="export.js"></script>
 <script src="serviceworker.js"></script>
 
@@ -517,13 +517,13 @@ document.addEventListener('DOMContentLoaded', () => {
   <div>Authenticating… Please wait</div>
 </div>
 
-<button id="tour-help-btn" aria-label="Help">?</button>
+<button id="help-btn" class="icon-btn" aria-label="Help">?</button>
 <div id="tt-help-menu" class="tt-hidden" aria-hidden="true"></div>
 
 <div id="tt-root" class="tt-hidden" role="tooltip" aria-hidden="true" aria-live="polite"></div>
 
 <style>
-  #tour-help-btn {
+  #help-btn {
     position: fixed; top: 12px; right: 12px; z-index: 9999;
     width: 36px; height: 36px; border-radius: 9999px;
   }

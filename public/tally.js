@@ -38,12 +38,110 @@ document.addEventListener('DOMContentLoaded', () => {
     tt.setAttribute('aria-live','polite');
     document.body.appendChild(tt);
   }
-  if (!document.getElementById('tt-help-menu')) {
-    const menu = document.createElement('div');
+});
+
+if (localStorage.getItem('tooltips_enabled') === null) {
+  localStorage.setItem('tooltips_enabled', 'true');
+}
+if (localStorage.getItem('tally_guide_enabled') === null) {
+  localStorage.setItem('tally_guide_enabled', 'true');
+}
+
+window.renderHelpMenu = function renderHelpMenu() {
+  let menu = document.getElementById('tt-help-menu');
+  if (!menu) {
+    menu = document.createElement('div');
     menu.id = 'tt-help-menu';
-    menu.className = 'tt-hidden';
-    menu.setAttribute('aria-hidden','true');
-    document.body.appendChild(menu);
+  }
+  menu.innerHTML = `
+    <button type="button" id="tt-help-close" aria-label="Close">✕</button>
+    <label><input type="checkbox" id="tt-enable-tooltips"> Enable tooltips</label><br/>
+    <label><input type="checkbox" id="tt-enable-guide"> Enable guided tour</label><br/>
+    <button type="button" id="tt-start-guide">Start guide now</button>
+  `;
+  const tipsBox = menu.querySelector('#tt-enable-tooltips');
+  const guideBox = menu.querySelector('#tt-enable-guide');
+  const startBtn = menu.querySelector('#tt-start-guide');
+  const closeBtn = menu.querySelector('#tt-help-close');
+
+  tipsBox.checked = localStorage.getItem('tooltips_enabled') === 'true';
+  guideBox.checked = localStorage.getItem('tally_guide_enabled') === 'true';
+  tipsBox.addEventListener('change', () => {
+    const val = tipsBox.checked ? 'true' : 'false';
+    localStorage.setItem('tooltips_enabled', val);
+    if (typeof window.setTipsEnabled === 'function') window.setTipsEnabled(tipsBox.checked);
+  });
+  guideBox.addEventListener('change', () => {
+    const val = guideBox.checked ? 'true' : 'false';
+    localStorage.setItem('tally_guide_enabled', val);
+    if (typeof window.setGuideEnabled === 'function') window.setGuideEnabled(guideBox.checked);
+    if (startBtn) startBtn.disabled = !guideBox.checked || typeof window.startGuide !== 'function';
+  });
+  if (startBtn) {
+    startBtn.disabled = localStorage.getItem('tally_guide_enabled') !== 'true' || typeof window.startGuide !== 'function';
+    startBtn.addEventListener('click', () => {
+      if (localStorage.getItem('tally_guide_enabled') === 'true' && typeof window.startGuide === 'function') {
+        window.startGuide();
+      }
+    });
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => window.closeHelpMenu());
+  }
+  return menu;
+};
+
+window.openHelpMenu = function openHelpMenu() {
+  const menu = window.renderHelpMenu();
+  document.body.appendChild(menu);
+  menu.style.display = 'block';
+  menu.style.position = 'fixed';
+  menu.style.top = '50%';
+  menu.style.left = '50%';
+  menu.style.transform = 'translate(-50%, -50%)';
+  menu.style.zIndex = '2147483647';
+  menu.style.background = '#222';
+  menu.style.color = '#fff';
+  menu.style.padding = '20px';
+  menu.style.borderRadius = '10px';
+  menu.style.boxShadow = '0 10px 30px rgba(0,0,0,0.6)';
+  menu.setAttribute('role', 'dialog');
+  menu.setAttribute('aria-modal', 'true');
+  menu.setAttribute('aria-hidden', 'false');
+};
+
+window.closeHelpMenu = function closeHelpMenu() {
+  const menu = document.getElementById('tt-help-menu');
+  if (!menu) return;
+  menu.style.display = 'none';
+  menu.setAttribute('aria-hidden', 'true');
+  menu.removeAttribute('aria-modal');
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('help-btn') || document.getElementById('tour-help-btn');
+  if (btn && !btn.__helpBound) {
+    btn.addEventListener('click', (e) => {
+      if (e.shiftKey) {
+        window.openHelpMenu();
+      } else if (localStorage.getItem('tally_guide_enabled') === 'true' && typeof window.startGuide === 'function') {
+        window.startGuide();
+      } else {
+        window.openHelpMenu();
+      }
+    }, true);
+    btn.__helpBound = true;
+  }
+  if (!window.__helpShortcutBound) {
+    document.addEventListener('keydown', (e) => {
+      if (e.altKey && e.key.toLowerCase() === 'h') {
+        const t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+        e.preventDefault();
+        window.openHelpMenu();
+      }
+    });
+    window.__helpShortcutBound = true;
   }
 });
 
@@ -2673,8 +2771,8 @@ function initTallyTooltips() {
     }
   })();
 
-  let tooltipsEnabled = true;
-  let guideEnabled = true;
+  let tooltipsEnabled = localStorage.getItem('tooltips_enabled') === 'true';
+  let guideEnabled = localStorage.getItem('tally_guide_enabled') === 'true';
 
   let guidedMode = false;
   let guidedList = [];
@@ -2933,76 +3031,6 @@ function initTallyTooltips() {
       hideTooltip(); currentTipTarget = null; currentLeaveHandler = null;
     }
   }, true);
-  const helpBtn = document.getElementById('tour-help-btn');
-  const helpMenu = document.getElementById('tt-help-menu');
-
-  function renderHelpMenu() {
-    if (!helpMenu) return;
-    if (localStorage.getItem('tooltips_enabled') == null) localStorage.setItem('tooltips_enabled','true');
-    if (localStorage.getItem('tally_guide_enabled') == null) localStorage.setItem('tally_guide_enabled','true');
-    tooltipsEnabled = localStorage.getItem('tooltips_enabled') === 'true';
-    guideEnabled = localStorage.getItem('tally_guide_enabled') === 'true';
-    helpMenu.innerHTML = `
-      <label><input type="checkbox" id="tt-enable-tooltips"> Enable tooltips</label>
-      <label><input type="checkbox" id="tt-enable-guide"> Enable guided tour</label>
-      <div class="row">
-        <button type="button" id="tt-start-guide">Start guide now</button>
-        <button type="button" id="tt-reset-guide">Reset 'Don\u2019t show again'</button>
-      </div>`;
-    const tipsBox = helpMenu.querySelector('#tt-enable-tooltips');
-    const guideBox = helpMenu.querySelector('#tt-enable-guide');
-    const startBtn = helpMenu.querySelector('#tt-start-guide');
-    const resetBtn = helpMenu.querySelector('#tt-reset-guide');
-    if (tipsBox) {
-      tipsBox.checked = tooltipsEnabled;
-      tipsBox.addEventListener('change', () => setTipsEnabled(tipsBox.checked));
-    }
-    if (guideBox) {
-      guideBox.checked = guideEnabled;
-      guideBox.addEventListener('change', () => setGuideEnabled(guideBox.checked));
-    }
-    if (startBtn) {
-      startBtn.disabled = !guideEnabled;
-      startBtn.addEventListener('click', () => { closeHelpMenu(); startGuide(); });
-    }
-    if (resetBtn) {
-      resetBtn.addEventListener('click', () => { localStorage.removeItem('tally_guide_done'); });
-    }
-  }
-
-  function openHelpMenu(anchorEl) {
-    if (!helpMenu || !anchorEl) return;
-    renderHelpMenu();
-    document.body.appendChild(helpMenu);
-    const rect = anchorEl.getBoundingClientRect();
-    const margin = 8;
-    helpMenu.style.display = 'block';
-    helpMenu.setAttribute('aria-hidden','false');
-    const left = Math.max(margin, Math.min(window.innerWidth - helpMenu.offsetWidth - margin, rect.left));
-    const top = Math.max(margin, Math.min(window.innerHeight - helpMenu.offsetHeight - margin, rect.bottom + margin));
-    helpMenu.style.left = left + 'px';
-    helpMenu.style.top = top + 'px';
-    function outside(e){
-      if (!helpMenu.contains(e.target) && e.target !== anchorEl){
-        closeHelpMenu();
-      }
-    }
-    document.addEventListener('mousedown', outside, true);
-    document.addEventListener('touchstart', outside, true);
-    openHelpMenu._outside = outside;
-  }
-
-  function closeHelpMenu() {
-    if (!helpMenu) return;
-    helpMenu.style.display = 'none';
-    helpMenu.setAttribute('aria-hidden','true');
-    if (openHelpMenu._outside) {
-      document.removeEventListener('mousedown', openHelpMenu._outside, true);
-      document.removeEventListener('touchstart', openHelpMenu._outside, true);
-      openHelpMenu._outside = null;
-    }
-  }
-
   function showGuideDisabledToast() {
     let toast = document.getElementById('tt-disabled-toast');
     if (!toast) {
@@ -3034,7 +3062,6 @@ function initTallyTooltips() {
 
   window.setTipsEnabled = setTipsEnabled;
   window.setGuideEnabled = setGuideEnabled;
-  renderHelpMenu();
 
   function startGuide() {
     if (localStorage.getItem('tally_guide_enabled') !== 'true') {
@@ -3043,37 +3070,6 @@ function initTallyTooltips() {
     }
     startGuidedMode();
   }
-
-  let pressTimer = null;
-  function startPress() {
-    if (isGuidedActive()) return;
-    pressTimer = setTimeout(() => openHelpMenu(helpBtn), 600);
-  }
-  function cancelPress() {
-    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-  }
-  if (helpBtn) {
-    helpBtn.addEventListener('mousedown', startPress);
-    helpBtn.addEventListener('touchstart', startPress, { passive: true });
-    ['mouseup','mouseleave','touchend','touchcancel','touchmove'].forEach(ev => helpBtn.addEventListener(ev, cancelPress));
-    helpBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (e.shiftKey) { openHelpMenu(helpBtn); return; }
-      if (localStorage.getItem('tally_guide_enabled') === 'true') {
-        startGuide();
-      } else {
-        openHelpMenu(helpBtn);
-      }
-    });
-  }
-
-  document.addEventListener('keydown', (e) => {
-    if (e.altKey && e.key.toLowerCase() === 'h') {
-      e.preventDefault();
-      openHelpMenu(helpBtn);
-    }
-  });
 
   // Modal actions
   const tourStartBtn = document.getElementById('tour-start-btn');
