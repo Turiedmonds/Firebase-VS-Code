@@ -2642,6 +2642,9 @@ function initTallyTooltips() {
     document.body.appendChild(tt);
   }
 
+  tt.addEventListener('mousedown', e => e.stopPropagation());
+  tt.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+
   // Ensure tooltip is a direct child of <body> so it can't be clipped
   (function ensureTooltipParent() {
     const ttRoot = document.getElementById('tt-root');
@@ -2661,6 +2664,11 @@ function initTallyTooltips() {
   let guidedList = [];
   let guidedIndex = 0;
   let guidedCurrent = null;
+  let guidedStartTs = 0;
+
+  function isGuidedActive() { return !!window.__tt_guidedActive; }
+  // iPad scroll/touch hide suppression
+  function shouldSuppressAutoHide() { return isGuidedActive(); }
 
   const SELECTOR = 'button,[role="button"],input,select,textarea,table,[data-help]';
   function findTipTarget(node) {
@@ -2745,7 +2753,7 @@ function initTallyTooltips() {
   function showTooltip(target, text) {
     if (!text || !String(text).trim()) { hideTooltip(); return; }
     const tt = document.getElementById('tt-root');
-    if (guidedMode) {
+    if (isGuidedActive()) {
       // tour uses programmatic show; ignore any hover-only constraints here
       // (no change needed if you already call tt.classList.add('tt-show') & aria-hidden="false")
     }
@@ -2782,23 +2790,14 @@ function initTallyTooltips() {
     }
   }
 
-  function scrollAndPosition(el) {
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    if (rect.top < 0 || rect.bottom > window.innerHeight) {
-      el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+  function settleThenPosition(target){
+    let frames = 0, lastY = window.scrollY;
+    function tick(){
+      const y = window.scrollY;
+      if (Math.abs(y - lastY) < 1 || frames > 10) { positionTooltip(target); return; }
+      lastY = y; frames++; requestAnimationFrame(tick);
     }
-    let lastTop = null;
-    function step() {
-      const r = el.getBoundingClientRect();
-      if (lastTop !== null && Math.abs(r.top - lastTop) < 1) {
-        positionTooltip(el);
-      } else {
-        lastTop = r.top;
-        requestAnimationFrame(step);
-      }
-    }
-    requestAnimationFrame(step);
+    requestAnimationFrame(tick);
   }
 
   function showGuidedStep() {
@@ -2813,11 +2812,11 @@ function initTallyTooltips() {
     tt.setAttribute('aria-hidden', 'false');
     tt.classList.remove('tt-hidden');
     tt.classList.add('tt-show');
-    tt.classList.add('guided');
     el.setAttribute('aria-describedby', 'tt-root');
     currentTarget = el;
 
-    scrollAndPosition(el);
+    el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+    settleThenPosition(el);
 
     document.getElementById('tt-back-btn').addEventListener('click', prevGuided);
     document.getElementById('tt-next-btn').addEventListener('click', nextGuided);
@@ -2854,6 +2853,7 @@ function initTallyTooltips() {
   function endGuided() {
     guidedMode = false;
     tt.classList.remove('guided');
+    window.__tt_guidedActive = false;
     hideTooltip();
     clearHighlight();
   }
@@ -2868,12 +2868,15 @@ function initTallyTooltips() {
     if (!guidedList.length) return;
     guidedMode = true;
     guidedIndex = 0;
+    window.__tt_guidedActive = true;
+    guidedStartTs = Date.now();
+    tt.classList.add('guided');
     showGuidedStep();
   }
 
   // Show on first entry into a qualifying element
   document.addEventListener('mouseover', (e) => {
-    if (!tooltipsEnabled || guidedMode) return;
+    if (!tooltipsEnabled || isGuidedActive()) return;
     const t = findTipTarget(e.target);
     if (!t || t === currentTipTarget) return;
 
@@ -2886,7 +2889,7 @@ function initTallyTooltips() {
       try { currentTipTarget.removeEventListener('mouseleave', currentLeaveHandler, true); } catch {}
     }
     currentLeaveHandler = () => {
-      if (guidedMode) return; // don't hide during the guided tour
+      if (shouldSuppressAutoHide()) return;
       hideTooltip();
       currentTipTarget?.removeEventListener('mouseleave', currentLeaveHandler, true);
       currentTipTarget = null;
@@ -2899,7 +2902,7 @@ function initTallyTooltips() {
 
   // Keyboard: show on focus, hide on blur
   document.addEventListener('focusin', (e) => {
-    if (!tooltipsEnabled || guidedMode) return;
+    if (!tooltipsEnabled || isGuidedActive()) return;
     const t = findTipTarget(e.target);
     if (!t) return;
     currentTipTarget = t;
@@ -2907,7 +2910,7 @@ function initTallyTooltips() {
   }, true);
 
   document.addEventListener('focusout', (e) => {
-    if (guidedMode) return; // do not hide tooltips during tour
+    if (shouldSuppressAutoHide()) return;
     if (currentTipTarget && !currentTipTarget.contains(e.relatedTarget)) {
       hideTooltip(); currentTipTarget = null; currentLeaveHandler = null;
     }
@@ -2955,6 +2958,7 @@ function initTallyTooltips() {
   let pressTimer = null;
   let menuOpened = false;
   function startPress() {
+    if (isGuidedActive()) return;
     pressTimer = setTimeout(() => {
       menuOpened = true;
       showHelpMenu();
@@ -2972,7 +2976,9 @@ function initTallyTooltips() {
         menuOpened = false;
         return;
       }
-      openTourWelcomeModal();
+      e.preventDefault();
+      e.stopPropagation();
+      setTimeout(() => startGuidedMode(), 0); // allow touchend to finish first
     });
   }
 
@@ -3012,39 +3018,45 @@ function initTallyTooltips() {
 
   let touchTimer = null;
   document.addEventListener('touchstart', (e) => {
-    if (!tooltipsEnabled || guidedMode) return;
+    if (!tooltipsEnabled || isGuidedActive()) return;
     const t = findTipTarget(e.target);
-    if (!t) { hideTooltip(); return; }
+    if (!t) { if (!shouldSuppressAutoHide()) hideTooltip(); return; }
     touchTimer = setTimeout(() => { showTooltip(t, getHelpText(t)); }, 500);
   }, { passive: true });
   function clearTouch() { if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; } }
   document.addEventListener('touchend', () => {
     clearTouch();
-    if (guidedMode) return; // keep tour step visible on iPad/Safari
+    if (Date.now() - guidedStartTs < 500 || shouldSuppressAutoHide()) return;
     setTimeout(() => {
+      if (shouldSuppressAutoHide()) return;
       hideTooltip();
       currentTipTarget = null;
       currentLeaveHandler = null;
     }, 1000);
   }, { passive: true });
-  document.addEventListener('touchcancel', () => { clearTouch(); hideTooltip(); }, { passive: true });
+  document.addEventListener('touchcancel', () => {
+    clearTouch();
+    if (shouldSuppressAutoHide()) return;
+    hideTooltip();
+  }, { passive: true });
 
-  document.addEventListener('scroll', () => {
-    if (guidedMode && guidedCurrent) {
-      positionTooltip(guidedCurrent);
+  window.addEventListener('scroll', () => {
+    if (shouldSuppressAutoHide()) {
+      if (currentTarget) positionTooltip(currentTarget);
     } else {
       hideTooltip();
     }
-  }, true);
-  window.addEventListener('resize', () => { if (guidedMode && guidedCurrent) positionTooltip(guidedCurrent); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') hideTooltip(); });
+  }, { capture: true, passive: true });
+  window.addEventListener('resize', () => { if (isGuidedActive() && currentTarget) positionTooltip(currentTarget); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (shouldSuppressAutoHide()) return; hideTooltip(); } });
   document.addEventListener('keydown', e => {
+    if (shouldSuppressAutoHide()) return;
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) hideTooltip();
   }, true);
 
   window.showTooltip = showTooltip;
   window.hideTooltip = hideTooltip;
-  window.startGuide = () => startGuidedMode();
+  window.startGuide = startGuidedMode;
 }
 
 window.initTallyTooltips = initTallyTooltips;

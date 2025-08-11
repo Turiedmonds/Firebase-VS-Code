@@ -27,7 +27,10 @@
       position: fixed;
       max-width: 280px;
       pointer-events: none;
-      z-index: 2147483647; /* on top of everything */
+      z-index: 900;
+    }
+    #tt-root.guided {
+      pointer-events: auto;
     }
     .tt-hidden {
       display: none;
@@ -44,7 +47,10 @@
       position: fixed;
       max-width: 280px;
       pointer-events: none;
-      z-index: 2147483647;
+      z-index: 900;
+    }
+    #tt-root.guided {
+      pointer-events: auto;
     }
     #tt-root.tt-hidden,
     #tt-root[aria-hidden="true"] {
@@ -532,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
       color: #fff;
       border-radius: 10px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      z-index: 2147483647;
+      z-index: 900;
       font-size: 14px;
       line-height: 1.35;
       pointer-events: none;
