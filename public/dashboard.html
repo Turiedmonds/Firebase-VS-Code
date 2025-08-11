@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard - SHEAR iQ</title>
-  <link rel="stylesheet" href="styles.css?v=readability2">
+  <link rel="stylesheet" href="styles.css?v=staff-fs1">
   <style>
     body {
       display: flex;
@@ -72,6 +72,52 @@
           <!-- JS renders 5 rows with bars -->
         </div>
       </section>
+      <!-- BEGIN: Top 5 Shed Staff Widget -->
+      <section id="top5-staff" class="dash-card">
+        <header class="dash-card__header">
+          <h2 class="dash-card__title">Top 5 Shed Staff</h2>
+          <div class="dash-card__controls">
+            <div class="view-select">
+              <label for="staff-view">View</label>
+              <select id="staff-view">
+                <option value="12m" selected>12M Rolling</option>
+                <option value="all">All‑Time</option>
+                <option value="year">Specific Year</option>
+              </select>
+              <select id="staff-year" class="year-select" aria-label="Specific year" hidden></select>
+            </div>
+            <button type="button" id="staff-viewall" class="siq-link-button">View Full List</button>
+          </div>
+        </header>
+        <div id="top5-staff-list" class="siq-leaderboard"><!-- JS renders rows --></div>
+      </section>
+
+      <!-- Full list modal -->
+      <div id="staff-modal" class="siq-modal" aria-hidden="true">
+        <div class="siq-modal__backdrop" data-close-modal></div>
+        <div class="siq-modal__panel">
+          <header class="siq-modal__header">
+            <h3>All Shed Staff — Rankings</h3>
+            <button class="siq-modal__close" data-close-modal aria-label="Close">&times;</button>
+          </header>
+          <div class="siq-modal__body">
+            <div class="siq-table-scroll">
+              <table class="siq-rank-table" id="staff-full-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Staff</th>
+                    <th>Hours Worked</th>
+                    <th>Days Worked</th>
+                  </tr>
+                </thead>
+                <tbody><!-- JS fills --></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- END: Top 5 Shed Staff Widget -->
       <!-- When we add the other 3 widgets, they’ll sit beside this one on wide screens -->
     </div>
 

@@ -446,6 +446,239 @@ function initTop5ShearersWidget() {
   })();
 }
 
+function initTop5StaffWidget() {
+  (function () {
+    const rootEl = document.getElementById('top5-staff');
+    if (!rootEl) return;
+
+    // Resolve contractorId (same pattern as shearers)
+    let contractorId = localStorage.getItem('contractor_id');
+    if (!contractorId && firebase?.auth?.currentUser?.uid) {
+      contractorId = firebase.auth().currentUser.uid;
+      try { localStorage.setItem('contractor_id', contractorId); } catch {}
+    }
+    if (!contractorId) return;
+
+    const listEl = rootEl.querySelector('#top5-staff-list');
+    const viewSel = rootEl.querySelector('#staff-view');
+    const yearSel = rootEl.querySelector('#staff-year');
+    const viewAllBtn = rootEl.querySelector('#staff-viewall');
+    const modal = document.getElementById('staff-modal');
+    const modalBodyTbody = document.querySelector('#staff-full-table tbody');
+    if (!listEl || !viewSel || !yearSel || !viewAllBtn || !modal || !modalBodyTbody) return;
+
+    // Helpers reused from shearers style
+    function sessionDateToJS(d) {
+      if (!d) return null;
+      if (typeof d === 'object' && d.toDate) return d.toDate();
+      const dt = new Date(d);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+    function getDateRange(mode, year) {
+      const today = new Date();
+      if (mode === '12m') {
+        const end = today;
+        const start = new Date();
+        start.setDate(start.getDate() - 365);
+        return { start, end };
+      }
+      if (mode === 'year' && year) {
+        const start = new Date(Number(year), 0, 1, 0, 0, 0);
+        const end = new Date(Number(year), 11, 31, 23, 59, 59);
+        return { start, end };
+      }
+      return { start: null, end: null };
+    }
+
+    // Pull staff hour entries from a session (supports multiple shapes)
+    function* iterateStaffHoursFromSession(sessionDoc) {
+      const s = sessionDoc.data ? sessionDoc.data() : sessionDoc;
+      const dt = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
+
+      // Common shapes:
+      // 1) s.shedStaff: [{ name, hours, daysWorked? }, ...]
+      if (Array.isArray(s.shedStaff)) {
+        for (const st of s.shedStaff) {
+          const name = (st?.name || st?.staffName || st?.displayName || '').trim();
+          const hours = Number(st?.hours ?? st?.totalHours ?? st?.hoursWorked ?? 0);
+          const days = Number(st?.daysWorked ?? st?.days ?? 0);
+          if (name && hours > 0) {
+            yield { name, hours, date: dt, daysHint: days > 0 ? days : 1 };
+          }
+        }
+        return;
+      }
+
+      // 2) s.staffCounts or s.staffHours: { name: hours } or [{name, hours}]
+      if (Array.isArray(s.staffCounts)) {
+        for (const row of s.staffCounts) {
+          const name = (row?.name || row?.staffName || '').trim();
+          const hours = Number(row?.hours ?? row?.totalHours ?? 0);
+          if (name && hours > 0) yield { name, hours, date: dt, daysHint: 1 };
+        }
+        return;
+      }
+      if (s.staffHours && typeof s.staffHours === 'object') {
+        for (const [nameRaw, val] of Object.entries(s.staffHours)) {
+          const name = String(nameRaw).trim();
+          const hours = Number(val);
+          if (name && hours > 0) yield { name, hours, date: dt, daysHint: 1 };
+        }
+        return;
+      }
+
+      // 3) Fallback: s.staff array with {name, hoursWorked}
+      if (Array.isArray(s.staff)) {
+        for (const st of s.staff) {
+          const name = (st?.name || st?.staffName || '').trim();
+          const hours = Number(st?.hoursWorked ?? st?.hours ?? 0);
+          if (name && hours > 0) yield { name, hours, date: dt, daysHint: 1 };
+        }
+      }
+    }
+
+    function deriveYearsFromSessions(sessions) {
+      const years = new Set();
+      for (const doc of sessions) {
+        const s = doc.data ? doc.data() : doc;
+        const d = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
+        if (d) years.add(d.getFullYear());
+      }
+      const arr = Array.from(years).sort((a, b) => b - a);
+      const current = (new Date()).getFullYear();
+      if (!arr.includes(current)) arr.unshift(current);
+      return arr;
+    }
+
+    function aggregateStaff(sessions, mode, year) {
+      const { start, end } = getDateRange(mode, year);
+      const totals = new Map();          // name -> total hours
+      const daySets = new Map();         // name -> Set of yyyy-mm-dd visited
+      for (const doc of sessions) {
+        const s = doc.data ? doc.data() : doc;
+        const d = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
+        const dayKey = d ? `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}` : null;
+
+        for (const e of iterateStaffHoursFromSession(doc)) {
+          if (!e || !e.name) continue;
+          if (mode !== 'all') {
+            if (!e.date) continue;
+            if (start && e.date < start) continue;
+            if (end && e.date > end) continue;
+          }
+          const prev = totals.get(e.name) || 0;
+          totals.set(e.name, prev + (e.hours || 0));
+          if (dayKey) {
+            if (!daySets.has(e.name)) daySets.set(e.name, new Set());
+            daySets.get(e.name).add(dayKey);
+          }
+        }
+      }
+      const rows = Array.from(totals.entries())
+        .map(([name, hours]) => ({
+          name,
+          hours,
+          days: (daySets.get(name)?.size || 0)
+        }))
+        .sort((a, b) => b.hours - a.hours);
+      return rows;
+    }
+
+    function renderTop5Staff(rows, container) {
+      const top5 = rows.slice(0, 5);
+      const max = Math.max(1, ...top5.map(r => r.hours));
+      container.innerHTML = top5.map((r, idx) => {
+        const pct = Math.round((r.hours / max) * 100);
+        return `
+          <div class="siq-lb-row">
+            <div class="siq-lb-rank">${idx + 1}</div>
+            <div class="siq-lb-bar">
+              <div class="siq-lb-fill" style="width:${pct}%;"></div>
+              <div class="siq-lb-name" title="${r.name}">${r.name}</div>
+            </div>
+            <div class="siq-lb-value">${r.hours.toLocaleString()}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderFullStaff(rows, tableBody) {
+      tableBody.innerHTML = rows.map((r, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${r.name}</td>
+          <td>${r.hours.toLocaleString()}</td>
+          <td>${r.days}</td>
+        </tr>
+      `).join('');
+    }
+
+    // UI events
+    viewSel.addEventListener('change', () => {
+      yearSel.hidden = viewSel.value !== 'year';
+      scheduleRender();
+    });
+    yearSel.addEventListener('change', scheduleRender);
+
+    // Modal
+    function openModal() { modal.setAttribute('aria-hidden', 'false'); }
+    function closeModal() { modal.setAttribute('aria-hidden', 'true'); }
+    viewAllBtn.addEventListener('click', openModal);
+    modal.addEventListener('click', e => {
+      if (e.target.matches('[data-close-modal], .siq-modal__backdrop')) closeModal();
+    });
+
+    // Live data
+    let unsub = null, colRef = null;
+    let cachedSessions = [];
+    let renderPending = false;
+
+    function scheduleRender() {
+      if (renderPending) return;
+      renderPending = true;
+      requestAnimationFrame(() => {
+        renderPending = false;
+        const mode = viewSel.value || '12m';
+        const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
+        const rows = aggregateStaff(cachedSessions, mode, year);
+        renderTop5Staff(rows, listEl);
+        renderFullStaff(rows, modalBodyTbody);
+      });
+    }
+
+    const onSnap = snap => {
+      const sessions = [];
+      snap.forEach(doc => sessions.push(doc));
+      cachedSessions = sessions;
+      // populate year dropdown
+      const years = deriveYearsFromSessions(sessions);
+      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      if (viewSel.value !== 'year') yearSel.hidden = true;
+      scheduleRender();
+    };
+    const onError = err => {
+      console.error('[Top5Staff] listener error:', err);
+      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
+    };
+
+    try {
+      const db = firebase.firestore ? firebase.firestore() : null;
+      if (!db) throw new Error('Firestore not initialized');
+      colRef = db.collection('contractors').doc(contractorId).collection('sessions');
+      unsub = colRef.onSnapshot(onSnap, onError);
+    } catch (err) {
+      console.error('[Top5Staff] init failed:', err);
+      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { if (unsub) { unsub(); unsub = null; } }
+      else if (!unsub && colRef) { unsub = colRef.onSnapshot(onSnap, onError); }
+    });
+    window.addEventListener('beforeunload', () => { if (unsub) unsub(); });
+  })();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
@@ -539,6 +772,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // After setting contractor_id and after showing the page content:
       if (typeof initTop5ShearersWidget === 'function') {
         try { initTop5ShearersWidget(); } catch (e) { console.error('[Dashboard] initTop5ShearersWidget failed:', e); }
+      }
+      if (typeof initTop5StaffWidget === 'function') {
+        try { initTop5StaffWidget(); } catch (e) { console.error('[Dashboard] initTop5StaffWidget failed:', e); }
       }
     } catch (err) {
       console.error('Failed to fetch contractor profile', err);
