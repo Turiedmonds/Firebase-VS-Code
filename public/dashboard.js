@@ -33,15 +33,26 @@ function initTop5ShearersWidget() {
 
     const listEl = rootEl.querySelector('#top5-shearers-list');
     const viewSel = rootEl.querySelector('#shearers-view');
-    // Relabel 12M option to current year (purely visual)
+    // Relabel 12M option to current year (no extra text)
     (function labelRollingWithYear(sel) {
       if (!sel) return;
       const opt = [...sel.options].find(o => o.value === '12m');
       if (!opt) return;
       const y = new Date().getFullYear();
-      // Choose one:
-      // opt.textContent = String(y);           // just the year
-      opt.textContent = `${y} (12M)`;           // clearer it's rolling
+      opt.textContent = String(y);
+
+      // auto-update at midnight (handles New Year rollover)
+      function refresh() {
+        const yy = new Date().getFullYear();
+        const o = [...sel.options].find(v => v.value === '12m');
+        if (o) o.textContent = String(yy);
+      }
+      const msToMidnight = (() => {
+        const now = new Date();
+        const next = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1, 0,0,0);
+        return next - now;
+      })();
+      setTimeout(() => { refresh(); setInterval(refresh, 24*60*60*1000); }, msToMidnight);
     })(viewSel);
     const yearSel = rootEl.querySelector('#shearers-year');
     const viewAllBtn = rootEl.querySelector('#shearers-viewall');

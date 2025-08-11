@@ -696,3 +696,59 @@ button {
 }
 
 /* Mobile: single column naturally via grid; no extra rules needed */
+
+/* === Top 5 Shearers: 75% scale === */
+#top5-shearers.dash-card {
+  padding: 9px;                    /* was ~12–16px */
+  border-radius: 10px;
+}
+
+#top5-shearers .dash-card__title {
+  font-size: 0.85rem;              /* was ~0.95–1.1rem */
+}
+
+#top5-shearers .dash-card__controls {
+  gap: 6px;
+}
+
+#top5-shearers .siq-segmented__btn,
+#top5-shearers .view-select select,
+#top5-shearers .siq-link-button {
+  font-size: 0.78rem;              /* tighter controls */
+  padding: 3px 7px;
+}
+
+#top5-shearers .siq-leaderboard {
+  gap: 6px;
+  margin-top: 6px;
+}
+
+#top5-shearers .siq-lb-row {
+  grid-template-columns: 24px 1fr 56px; /* narrower rank/value columns */
+  gap: 6px;
+}
+
+#top5-shearers .siq-lb-rank,
+#top5-shearers .siq-lb-value {
+  font-size: 0.82rem;
+}
+
+#top5-shearers .siq-lb-bar {
+  height: 8px;                     /* was 10–14px */
+}
+
+#top5-shearers .siq-lb-name {
+  font-size: 0.74rem;
+  left: 5px;
+}
+
+/* Modal stays readable but slightly tighter */
+#shearers-modal .siq-modal__panel { max-width: 680px; }
+#shearers-modal .siq-rank-table th,
+#shearers-modal .siq-rank-table td { padding: 5px 7px; font-size: 0.9rem; }
+
+/* Optional: allow more cards per row on desktop */
+#page-content .dash-grid {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); /* was ~280px */
+  gap: 10px;
+}
