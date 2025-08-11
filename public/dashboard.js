@@ -451,7 +451,7 @@ function initTop5StaffWidget() {
     const rootEl = document.getElementById('top5-staff');
     if (!rootEl) return;
 
-    // Resolve contractor scope same as Shearers
+    // Resolve contractor scope (same as Shearers)
     let contractorId = localStorage.getItem('contractor_id');
     if (!contractorId && firebase?.auth?.currentUser?.uid) {
       contractorId = firebase.auth().currentUser.uid;
@@ -467,29 +467,25 @@ function initTop5StaffWidget() {
     const fullListEl = document.getElementById('staff-full-list');
     if (!listEl || !viewSel || !yearSel || !viewAllBtn || !modal || !fullListEl) return;
 
-    // Helpers (same pattern as Shearers)
-    function sessionDateToJS(d) {
-      if (!d) return null;
-      if (typeof d === 'object' && d.toDate) return d.toDate();
-      const dt = new Date(d);
-      return isNaN(dt.getTime()) ? null : dt;
-    }
-    function getDateRange(mode, year) {
-      const today = new Date();
-      if (mode === '12m') {
-        const end = today, start = new Date(); start.setDate(start.getDate() - 365);
-        return { start, end };
-      }
-      if (mode === 'year' && year) {
-        const start = new Date(Number(year), 0, 1, 0, 0, 0);
-        const end = new Date(Number(year), 11, 31, 23, 59, 59);
-        return { start, end };
-      }
-      return { start: null, end: null };
+    // Relabel 12M to current year & auto-roll at New Year (like Shearers)
+    (function labelRollingWithYear(sel){
+      const opt = [...sel.options].find(o=>o.value==='12m'); if(!opt) return;
+      const setY=()=>{ opt.textContent=String(new Date().getFullYear()); };
+      setY();
+      const msToMidnight=(()=>{const n=new Date();const nxt=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1,0,0,0);return nxt-n;})();
+      setTimeout(()=>{ setY(); setInterval(setY,24*60*60*1000); }, msToMidnight);
+    })(viewSel);
+
+    // Helpers
+    function sessionDateToJS(d){ if(!d) return null; if(typeof d==='object'&&d.toDate) return d.toDate(); const dt=new Date(d); return isNaN(dt.getTime())?null:dt; }
+    function getDateRange(mode,year){
+      if(mode==='12m'){ const end=new Date(); const start=new Date(); start.setDate(start.getDate()-365); return {start,end}; }
+      if(mode==='year'&&year){ return { start:new Date(Number(year),0,1,0,0,0), end:new Date(Number(year),11,31,23,59,59) }; }
+      return {start:null,end:null};
     }
 
-    // Iterate staff hours across supported shapes
-    function* iterateStaffHoursFromSession(sessionDoc) {
+    // Read hours per staff from known shapes
+    function* iterateStaffHoursFromSession(sessionDoc){
       const s = sessionDoc.data ? sessionDoc.data() : sessionDoc;
       const dt = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
 
@@ -526,116 +522,108 @@ function initTop5StaffWidget() {
       }
     }
 
-    function deriveYearsFromSessions(sessions) {
-      const years = new Set();
-      for (const doc of sessions) {
-        const s = doc.data ? doc.data() : doc;
-        const d = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
-        if (d) years.add(d.getFullYear());
+    function deriveYearsFromSessions(sessions){
+      const years=new Set();
+      for(const doc of sessions){
+        const s=doc.data?doc.data():doc;
+        const d=sessionDateToJS(s.date||s.sessionDate||s.createdAt);
+        if(d) years.add(d.getFullYear());
       }
-      const arr = Array.from(years).sort((a, b) => b - a);
-      const current = (new Date()).getFullYear();
-      if (!arr.includes(current)) arr.unshift(current);
+      const arr=[...years].sort((a,b)=>b-a);
+      const cur=(new Date()).getFullYear();
+      if(!arr.includes(cur)) arr.unshift(cur);
       return arr;
     }
 
-    function aggregateStaff(sessions, mode, year) {
-      const { start, end } = getDateRange(mode, year);
-      const totals = new Map(); // name -> total hours
-      for (const doc of sessions) {
-        for (const e of iterateStaffHoursFromSession(doc)) {
-          if (!e || !e.name) continue;
-          if (mode !== 'all') {
-            if (!e.date) continue;
-            if (start && e.date < start) continue;
-            if (end && e.date > end) continue;
+    function aggregateStaff(sessions,mode,year){
+      const {start,end}=getDateRange(mode,year);
+      const totals=new Map(); // name -> hours
+      for(const doc of sessions){
+        for(const e of iterateStaffHoursFromSession(doc)){
+          if(!e||!e.name) continue;
+          if(mode!=='all'){
+            if(!e.date) continue;
+            if(start && e.date<start) continue;
+            if(end && e.date>end) continue;
           }
-          totals.set(e.name, (totals.get(e.name) || 0) + (e.hours || 0));
+          totals.set(e.name,(totals.get(e.name)||0)+(e.hours||0));
         }
       }
-      return Array.from(totals.entries())
-        .map(([name, hours]) => ({ name, hours }))
-        .sort((a, b) => b.hours - a.hours);
+      return [...totals.entries()]
+        .map(([name,hours])=>({name,hours}))
+        .sort((a,b)=>b.hours-a.hours);
     }
 
-    function renderRows(rows, container, limit = null) {
-      const slice = limit ? rows.slice(0, limit) : rows;
-      const max = Math.max(1, ...slice.map(r => r.hours));
-      container.innerHTML = slice.map((r, idx) => {
-        const pct = Math.round((r.hours / max) * 100);
+    function renderRows(rows,container,limit=null){
+      const slice=limit?rows.slice(0,limit):rows;
+      const max=Math.max(1,...slice.map(r=>r.hours));
+      container.innerHTML=slice.map((r,idx)=>{
+        const pct=Math.round((r.hours/max)*100);
         return `
           <div class="siq-lb-row">
-            <div class="siq-lb-rank">${idx + 1}</div>
+            <div class="siq-lb-rank">${idx+1}</div>
             <div class="siq-lb-bar">
               <div class="siq-lb-fill" style="width:${pct}%;"></div>
               <div class="siq-lb-name" title="${r.name}">${r.name}</div>
             </div>
             <div class="siq-lb-value">${r.hours.toLocaleString()}</div>
-          </div>
-        `;
+          </div>`;
       }).join('');
     }
 
-    // UI events (no Staff tabs)
-    viewSel.addEventListener('change', () => {
-      yearSel.hidden = viewSel.value !== 'year';
-      scheduleRender();
-    });
-    yearSel.addEventListener('change', scheduleRender);
+    // Events
+    viewSel.addEventListener('change',()=>{ yearSel.hidden=viewSel.value!=='year'; scheduleRender(); });
+    yearSel.addEventListener('change',scheduleRender);
 
-    // Modal open/close
-    function openModal() { modal.setAttribute('aria-hidden', 'false'); }
-    function closeModal() { modal.setAttribute('aria-hidden', 'true'); }
-    viewAllBtn.addEventListener('click', openModal);
-    modal.addEventListener('click', e => {
-      if (e.target.matches('[data-close-modal], .siq-modal__backdrop')) closeModal();
-    });
+    function openModal(){ modal.setAttribute('aria-hidden','false'); }
+    function closeModal(){ modal.setAttribute('aria-hidden','true'); }
+    viewAllBtn.addEventListener('click',openModal);
+    modal.addEventListener('click',e=>{ if(e.target.matches('[data-close-modal], .siq-modal__backdrop')) closeModal(); });
 
-    // Live data
-    let unsub = null, colRef = null, cachedSessions = [], renderPending = false, lastRows = [];
+    // Live Firestore
+    let unsub=null, colRef=null, cachedSessions=[], renderPending=false, lastRows=[];
 
-    function scheduleRender() {
-      if (renderPending) return;
-      renderPending = true;
-      requestAnimationFrame(() => {
-        renderPending = false;
-        const mode = viewSel.value || '12m';
-        const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
-        lastRows = aggregateStaff(cachedSessions, mode, year);
-        renderRows(lastRows, listEl, 5);
-        renderRows(lastRows, fullListEl, null);
+    function scheduleRender(){
+      if(renderPending) return;
+      renderPending=true;
+      requestAnimationFrame(()=>{
+        renderPending=false;
+        const mode=viewSel.value||'12m';
+        const year=(mode==='year')?(yearSel.value||new Date().getFullYear()):null;
+        lastRows=aggregateStaff(cachedSessions,mode,year);
+        renderRows(lastRows,listEl,5);
+        renderRows(lastRows,fullListEl,null);
       });
     }
 
-    const onSnap = snap => {
-      const sessions = [];
-      snap.forEach(doc => sessions.push(doc));
-      cachedSessions = sessions;
-      const years = deriveYearsFromSessions(sessions);
-      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-      yearSel.hidden = viewSel.value !== 'year';
+    const onSnap=snap=>{
+      const sessions=[]; snap.forEach(doc=>sessions.push(doc));
+      cachedSessions=sessions;
+      const years=deriveYearsFromSessions(sessions);
+      yearSel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');
+      yearSel.hidden=viewSel.value!=='year';
       scheduleRender();
     };
-    const onError = err => {
-      console.error('[Top5Staff] listener error:', err);
-      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
+    const onError=err=>{
+      console.error('[Top5Staff] listener error:',err);
+      listEl.innerHTML='<p class="siq-inline-error">Data unavailable</p>';
     };
 
-    try {
-      const db = firebase.firestore ? firebase.firestore() : null;
-      if (!db) throw new Error('Firestore not initialized');
-      colRef = db.collection('contractors').doc(contractorId).collection('sessions');
-      unsub = colRef.onSnapshot(onSnap, onError);
-    } catch (err) {
-      console.error('[Top5Staff] init failed:', err);
-      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
+    try{
+      const db=firebase.firestore?firebase.firestore():null;
+      if(!db) throw new Error('Firestore not initialized');
+      colRef=db.collection('contractors').doc(contractorId).collection('sessions');
+      unsub=colRef.onSnapshot(onSnap,onError);
+    }catch(err){
+      console.error('[Top5Staff] init failed:',err);
+      listEl.innerHTML='<p class="siq-inline-error">Data unavailable</p>';
     }
 
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) { if (unsub) { unsub(); unsub = null; } }
-      else if (!unsub && colRef) { unsub = colRef.onSnapshot(onSnap, onError); }
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden){ if(unsub){unsub();unsub=null;} }
+      else if(!unsub&&colRef){ unsub=colRef.onSnapshot(onSnap,onError); }
     });
-    window.addEventListener('beforeunload', () => { if (unsub) unsub(); });
+    window.addEventListener('beforeunload',()=>{ if(unsub) unsub(); });
   })();
 }
 

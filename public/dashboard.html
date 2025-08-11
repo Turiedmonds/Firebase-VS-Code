@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard - SHEAR iQ</title>
-  <link rel="stylesheet" href="styles.css?v=staff-like-shearers1">
+  <link rel="stylesheet" href="styles.css?v=staff-reset1">
   <style>
     body {
       display: flex;
@@ -72,16 +72,16 @@
           <!-- JS renders 5 rows with bars -->
         </div>
       </section>
-      <!-- BEGIN: Top 5 Shed Staff (matches Shearers) -->
+
+      <!-- BEGIN: Top 5 Shed Staff (Shearers-style) -->
       <section id="top5-staff" class="dash-card">
         <header class="dash-card__header">
           <h2 class="dash-card__title">Top 5 Shed Staff</h2>
           <div class="dash-card__controls">
-            <!-- (No Shorn/Crutched tabs for staff; spacer keeps header balanced) -->
+            <!-- spacer to mirror shearers’ tabs layout -->
             <div class="siq-segmented" style="visibility:hidden;">
               <button type="button" class="siq-segmented__btn is-active" tabindex="-1">—</button>
             </div>
-            <!-- View selector -->
             <div class="view-select">
               <label for="staff-view">View</label>
               <select id="staff-view">
@@ -95,9 +95,7 @@
           </div>
         </header>
 
-        <div id="top5-staff-list" class="siq-leaderboard">
-          <!-- JS renders 5 rows with bars -->
-        </div>
+        <div id="top5-staff-list" class="siq-leaderboard"><!-- JS renders rows --></div>
       </section>
 
       <!-- Full list modal (leaderboard rows, no table) -->
