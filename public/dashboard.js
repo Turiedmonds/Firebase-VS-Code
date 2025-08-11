@@ -446,6 +446,211 @@ function initTop5ShearersWidget() {
   })();
 }
 
+function initQuickStatsWidget() {
+  (function () {
+    const rootEl = document.getElementById('quick-stats');
+    if (!rootEl) return;
+    let contractorId = localStorage.getItem('contractor_id') || firebase?.auth?.currentUser?.uid;
+    if (!contractorId) return;
+
+    const totalSheepEl = document.getElementById('stat-total-sheep');
+    const totalHoursEl = document.getElementById('stat-total-hours');
+    const topFarmEl = document.getElementById('stat-top-farm');
+    const avgSheepEl = document.getElementById('stat-avg-sheep');
+    const viewSel = document.getElementById('stats-view');
+    const yearSel = document.getElementById('stats-year');
+    if (!totalSheepEl || !totalHoursEl || !topFarmEl || !avgSheepEl || !viewSel || !yearSel) return;
+
+    function sessionDateToJS(d) {
+      if (!d) return null;
+      if (typeof d === 'object' && d.toDate) return d.toDate();
+      const dt = new Date(d);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+    function getDateRange(mode, year) {
+      const today = new Date();
+      if (mode === '12m') {
+        const end = today, start = new Date(); start.setDate(start.getDate() - 365);
+        return { start, end };
+      }
+      if (mode === 'year' && year) {
+        const start = new Date(Number(year), 0, 1), end = new Date(Number(year), 11, 31, 23, 59, 59);
+        return { start, end };
+      }
+      return { start: null, end: null };
+    }
+
+    // Same total sheep as Farm Totals / Shearers helpers
+    function totalSheepFromSession(sessionDoc) {
+      const s = sessionDoc.data ? sessionDoc.data() : sessionDoc;
+      let total = 0;
+      if (Array.isArray(s.shearerCounts)) {
+        for (const row of s.shearerCounts) {
+          const perStand = Array.isArray(row?.stands) ? row.stands : [];
+          for (const raw of perStand) {
+            const num = Number(raw);
+            if (isFinite(num) && num > 0) total += num;
+          }
+          const extra = Number(row?.total);
+          if (isFinite(extra) && extra > 0 && (!perStand.length || perStand.every(v => !Number(v)))) {
+            total += extra;
+          }
+        }
+        return total;
+      }
+      if (Array.isArray(s.tallies)) {
+        for (const t of s.tallies) total += Number(t.count || t.tally || 0) || 0;
+        return total;
+      }
+      if (Array.isArray(s.shearers)) {
+        for (const sh of s.shearers) {
+          if (typeof sh.total === 'number') total += Number(sh.total) || 0;
+          const runs = sh.runs || sh.tallies || [];
+          for (const r of runs) total += Number(r.count || r.tally || 0) || 0;
+        }
+        return total;
+      }
+      if (s.shearerTallies && typeof s.shearerTallies === 'object') {
+        for (const entries of Object.values(s.shearerTallies)) {
+          for (const e of (entries || [])) total += Number(e.count || e.tally || 0) || 0;
+        }
+      }
+      return total;
+    }
+
+    // Total staff hours per session (robust to shapes)
+    function totalHoursFromSession(sessionDoc) {
+      const s = sessionDoc.data ? sessionDoc.data() : sessionDoc;
+      let hours = 0;
+
+      if (Array.isArray(s.shedStaff)) {
+        for (const st of s.shedStaff) {
+          const h = Number(st?.hours ?? st?.totalHours ?? st?.hoursWorked ?? 0);
+          if (isFinite(h) && h > 0) hours += h;
+        }
+        return hours;
+      }
+      if (Array.isArray(s.staffCounts)) {
+        for (const row of s.staffCounts) {
+          const h = Number(row?.hours ?? row?.totalHours ?? 0);
+          if (isFinite(h) && h > 0) hours += h;
+        }
+        return hours;
+      }
+      if (s.staffHours && typeof s.staffHours === 'object') {
+        for (const v of Object.values(s.staffHours)) {
+          const h = Number(v);
+          if (isFinite(h) && h > 0) hours += h;
+        }
+        return hours;
+      }
+      // fallbacks
+      const h1 = Number(s.totalHours ?? s.hoursWorked ?? 0);
+      if (isFinite(h1) && h1 > 0) hours += h1;
+
+      return hours;
+    }
+
+    function deriveYearsFromSessions(sessions) {
+      const years = new Set();
+      for (const doc of sessions) {
+        const s = doc.data ? doc.data() : doc;
+        const d = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
+        if (d) years.add(d.getFullYear());
+      }
+      const arr = Array.from(years).sort((a, b) => b - a);
+      const current = (new Date()).getFullYear();
+      if (!arr.includes(current)) arr.unshift(current);
+      return arr;
+    }
+
+    function computeStats(sessions, mode, year) {
+      const { start, end } = getDateRange(mode, year);
+      let totalSheep = 0;
+      let totalHours = 0;
+      const farmTotals = new Map();
+      let visits = 0;
+
+      for (const doc of sessions) {
+        const s = doc.data ? doc.data() : doc;
+        const d = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
+        if (mode !== 'all') {
+          if (!d) continue;
+          if (start && d < start) continue;
+          if (end && d > end) continue;
+        }
+        const sheep = totalSheepFromSession(doc);
+        const hours = totalHoursFromSession(doc);
+        const farm = String(s.stationName || s.farmName || s.farm || s.station || 'Unknown').trim() || 'Unknown';
+
+        totalSheep += sheep;
+        totalHours += hours;
+        farmTotals.set(farm, (farmTotals.get(farm) || 0) + sheep);
+        visits += 1;
+      }
+
+      let topFarm = '—';
+      let topFarmVal = 0;
+      for (const [farm, val] of farmTotals.entries()) {
+        if (val > topFarmVal) { topFarmVal = val; topFarm = farm; }
+      }
+      const avgSheep = visits ? Math.round(totalSheep / visits) : 0;
+
+      return { totalSheep, totalHours, topFarm, avgSheep, visits };
+    }
+
+    // live data
+    let colRef = null, unsub = null, cachedSessions = [], renderPending = false;
+
+    function render() {
+      const mode = viewSel.value || '12m';
+      const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
+      const { totalSheep, totalHours, topFarm, avgSheep } = computeStats(cachedSessions, mode, year);
+      totalSheepEl.textContent = totalSheep ? totalSheep.toLocaleString() : '0';
+      totalHoursEl.textContent = totalHours ? totalHours.toLocaleString() : '0';
+      topFarmEl.textContent = topFarm || '—';
+      avgSheepEl.textContent = avgSheep ? avgSheep.toLocaleString() : '0';
+    }
+
+    function scheduleRender() {
+      if (renderPending) return;
+      renderPending = true;
+      requestAnimationFrame(() => { renderPending = false; render(); });
+    }
+
+    const onSnap = snap => {
+      const sessions = [];
+      snap.forEach(doc => sessions.push(doc));
+      cachedSessions = sessions;
+      const years = deriveYearsFromSessions(sessions);
+      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      yearSel.hidden = viewSel.value !== 'year';
+      scheduleRender();
+    };
+    const onError = err => {
+      console.error('[QuickStats] listener error:', err);
+    };
+
+    viewSel.addEventListener('change', () => { yearSel.hidden = viewSel.value !== 'year'; scheduleRender(); });
+    yearSel.addEventListener('change', scheduleRender);
+
+    try {
+      const db = firebase.firestore ? firebase.firestore() : null;
+      if (!db) throw new Error('Firestore not initialized');
+      colRef = db.collection('contractors').doc(contractorId).collection('sessions');
+      unsub = colRef.onSnapshot(onSnap, onError);
+    } catch (err) {
+      console.error('[QuickStats] init failed:', err);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { if (unsub) { unsub(); unsub = null; } }
+      else if (!unsub && colRef) { unsub = colRef.onSnapshot(onSnap, onError); }
+    });
+    window.addEventListener('beforeunload', () => { if (unsub) unsub(); });
+  })();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
@@ -539,6 +744,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // After setting contractor_id and after showing the page content:
       if (typeof initTop5ShearersWidget === 'function') {
         try { initTop5ShearersWidget(); } catch (e) { console.error('[Dashboard] initTop5ShearersWidget failed:', e); }
+      }
+      if (typeof initQuickStatsWidget === 'function') {
+        try { initQuickStatsWidget(); } catch (e) { console.error('[Dashboard] initQuickStatsWidget failed:', e); }
       }
     } catch (err) {
       console.error('Failed to fetch contractor profile', err);

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard - SHEAR iQ</title>
-  <link rel="stylesheet" href="styles.css?v=readability2">
+  <link rel="stylesheet" href="styles.css?v=quickstats-fs1">
   <style>
     body {
       display: flex;
@@ -73,6 +73,42 @@
         </div>
       </section>
       <!-- When we add the other 3 widgets, they’ll sit beside this one on wide screens -->
+      <!-- BEGIN: Quick Stats Widget -->
+      <section id="quick-stats" class="dash-card">
+        <header class="dash-card__header">
+          <h2 class="dash-card__title">Quick Stats</h2>
+          <div class="dash-card__controls">
+            <div class="view-select">
+              <label for="stats-view">View</label>
+              <select id="stats-view">
+                <option value="12m" selected>12M Rolling</option>
+                <option value="all">All‑Time</option>
+                <option value="year">Specific Year</option>
+              </select>
+              <select id="stats-year" class="year-select" aria-label="Specific year" hidden></select>
+            </div>
+          </div>
+        </header>
+        <div class="siq-stats-grid">
+          <div class="siq-stat-card">
+            <div class="siq-stat-label">Total Sheep</div>
+            <div class="siq-stat-value" id="stat-total-sheep">—</div>
+          </div>
+          <div class="siq-stat-card">
+            <div class="siq-stat-label">Total Hours</div>
+            <div class="siq-stat-value" id="stat-total-hours">—</div>
+          </div>
+          <div class="siq-stat-card">
+            <div class="siq-stat-label">Most Productive Farm</div>
+            <div class="siq-stat-value" id="stat-top-farm">—</div>
+          </div>
+          <div class="siq-stat-card">
+            <div class="siq-stat-label">Avg Sheep / Visit</div>
+            <div class="siq-stat-value" id="stat-avg-sheep">—</div>
+          </div>
+        </div>
+      </section>
+      <!-- END: Quick Stats Widget -->
     </div>
 
     <!-- Full list modal -->
