@@ -1,6 +1,6 @@
-import { collectExportData, buildExportRows, buildStationSummary, isNineHourDay, formatHoursWorked, parseHoursWorked } from './tally.js';
+// Functions from tally.js are loaded globally; no module imports needed
 
-export function exportTableToCSV(tableId, baseName = 'table') {
+function exportTableToCSV(tableId, baseName = 'table') {
     const table = document.getElementById(tableId);
     if (!table) return;
     const rows = Array.from(table.querySelectorAll('tr')).map(tr =>
@@ -24,7 +24,7 @@ export function exportTableToCSV(tableId, baseName = 'table') {
 }
 window.exportTableToCSV = exportTableToCSV;
 
-export function exportFarmSummaryCSV() {
+function exportFarmSummaryCSV() {
     const tables = [
         ['stationShearerTable', 'Shearer Summary'],
         ['stationStaffTable', 'Shed Staff'],
@@ -67,7 +67,7 @@ export function exportFarmSummaryCSV() {
 }
 window.exportFarmSummaryCSV = exportFarmSummaryCSV;
 
-export function exportDailySummaryCSV() {
+function exportDailySummaryCSV() {
     const data = collectExportData();
 
     const optionSet = new Set(Array.from(document.querySelectorAll('#sheepTypes option')).map(o => o.value));
@@ -283,9 +283,9 @@ function loadPreviousSession() {
         if (window.promptForPinUnlock) window.promptForPinUnlock();
     }
 }
+window.exportDailySummaryCSV = exportDailySummaryCSV;
 
-
-export function exportCSV() {
+function exportCSV() {
     const data = collectExportData();
     const { rows } = buildExportRows(data);
     const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\r\n');
@@ -305,7 +305,7 @@ export function exportCSV() {
     URL.revokeObjectURL(url);
 }
 
-export function exportDailySummaryExcel() {
+function exportDailySummaryExcel() {
     if (typeof XLSX === 'undefined') {
         alert('Excel export not available');
         return;
@@ -444,7 +444,7 @@ export function exportDailySummaryExcel() {
     XLSX.writeFile(wb, fileName);
 }
 
-export function showExportPrompt() {
+function showExportPrompt() {
     const useExcel = window.confirm('Export as Excel (.xlsx)? Click Cancel for CSV.');
     if (useExcel) exportDailySummaryExcel();
     else exportDailySummaryCSV();

@@ -8,8 +8,8 @@
 <title>SHEAR iQ Tally Processor</title>
 <link rel="stylesheet" href="styles.css">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="firebase-init.js"></script>
   <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json" />
@@ -230,9 +230,9 @@
 
 <script src="xlsx.full.min.js"></script>
 <script type="module" src="auth.js"></script>
-<script type="module" src="tally.js"></script>
-<script type="module" src="export.js"></script>
-<script type="module" src="serviceworker.js"></script>
+<script src="tally.js"></script>
+<script src="export.js"></script>
+<script src="serviceworker.js"></script>
 
   </div> <!-- tallySheetView -->
 
@@ -490,8 +490,7 @@ document.addEventListener('DOMContentLoaded', function () {
   </div>
 </div>
 
-<script type="module">
-import { buildStationSummary, clearStationSummaryView } from './tally.js';
+<script>
 window.clearStationSummaryView = clearStationSummaryView;
 
 document.addEventListener('DOMContentLoaded', () => {

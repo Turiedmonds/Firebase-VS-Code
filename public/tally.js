@@ -1,19 +1,13 @@
-import { getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-
-const app = getApp();
-const firestore = getFirestore(app);
-
 // Firebase is initialized in firebase-init.js
 
-export function formatHoursWorked(decimal) {
+function formatHoursWorked(decimal) {
   if (isNaN(decimal)) return "";
   const hours = Math.floor(decimal);
   const minutes = Math.round((decimal - hours) * 60);
   return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
 }
- 
-export function parseHoursWorked(str) {
+
+function parseHoursWorked(str) {
   if (!str) return 0;
   const match = String(str).trim().match(/^(\d+)h(?:\s*(\d+)m)?$/);
   if (!match) return parseFloat(str) || 0;
@@ -141,7 +135,7 @@ function getDynamicBreaks(startTimeStr) {
  let numStands = defaultStands;
 let runs = defaultRuns;
 let is24HourFormat = true;
-export let isNineHourDay = false;
+var isNineHourDay = false;
 let promptedNineHour = false;
 let layoutBuilt = false
 let isSetupComplete = false;
@@ -1602,7 +1596,7 @@ async function populateStationDropdown() {
 }
 
 // Determine sheep age/sex category from a type name
-export function detectSheepCategory(sheepTypeName) {
+function detectSheepCategory(sheepTypeName) {
    const name = (sheepTypeName || "").toLowerCase().trim();
   const ewe = /\bewes?\b/.test(name);
   const ram = /\brams?\b/.test(name);
@@ -1620,7 +1614,7 @@ export function detectSheepCategory(sheepTypeName) {
   return 'unknown';
 }
  
-export async function buildStationSummary() {
+async function buildStationSummary() {
     const stationInput = document.getElementById('stationSelect');
     const startInput = document.getElementById('summaryStart');
     const endInput = document.getElementById('summaryEnd');
@@ -1810,7 +1804,7 @@ export async function buildStationSummary() {
     document.dispatchEvent(new CustomEvent('station-summary-updated'));
 }
  
-export function clearStationSummaryView() {
+function clearStationSummaryView() {
     document.querySelector('#stationShearerTable thead')?.replaceChildren();
     document.querySelector('#stationShearerTable tbody')?.replaceChildren();
     document.querySelector('#stationStaffTable tbody')?.replaceChildren();
@@ -1822,7 +1816,7 @@ export function clearStationSummaryView() {
     if (msg) msg.style.display = 'block';
 }
 
-export function collectExportData() {
+function collectExportData() {
      const data = {
          date: document.getElementById('date')?.value || '',
         stationName: document.getElementById('stationName')?.value.trim() || '',
@@ -1902,7 +1896,7 @@ export function collectExportData() {
      return data;
  }
  
-export function buildExportRows(data) {
+function buildExportRows(data) {
      const rows = [];
      const boldRows = [];
      const add = (arr, bold=false) => {
@@ -1957,7 +1951,7 @@ function updateUIForRole(role) {
 
 // Verify the signed-in user exists either as a contractor document or within
 // a contractor's users subcollection
-export async function verifyContractorUser() {
+async function verifyContractorUser() {
   const user = firebase.auth().currentUser;
   console.log('[verifyContractorUser] Current user:', user);
 
@@ -2002,7 +1996,7 @@ export async function verifyContractorUser() {
 
 // Save the current session to Firestore under
 // contractors/{contractorId}/sessions/[stationName_date_teamLeader]
-export async function saveSessionToFirestore(showStatus = false) {
+async function saveSessionToFirestore(showStatus = false) {
   if (typeof firebase === 'undefined' || !firebase.firestore || !firebase.auth) {
     return;
   }
@@ -2042,7 +2036,7 @@ export async function saveSessionToFirestore(showStatus = false) {
 }
 
 // Fetch list of all sessions for this contractor from Firestore
-export async function listSessionsFromFirestore() {
+async function listSessionsFromFirestore() {
     if (typeof firebase === 'undefined' ||
         !firebase.firestore ||
         !firebase.auth) {
@@ -2084,7 +2078,7 @@ export async function listSessionsFromFirestore() {
 }
 
 // Fetch a specific session document by ID
-export async function loadSessionFromFirestore(id) {
+async function loadSessionFromFirestore(id) {
     if (!id || typeof firebase === 'undefined' ||
         !firebase.firestore || !firebase.auth) {
         return null;
@@ -2598,38 +2592,39 @@ function closeTourWelcomeModal() {
   ov.setAttribute('aria-hidden', 'true');
 }
 
-async function markTourSeen() {
-  try { localStorage.setItem('tally_guide_done', 'true'); } catch {}
-  const uid = firebase.auth && firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
-  if (!uid) return;
+// --- Tour persistence (compat Firestore) ---
+async function markTourSeen(uid) {
   try {
-    const ref = doc(firestore, 'users', uid);
-    await setDoc(ref, { hasSeenTour: true }, { merge: true });
+    // Local first (works offline)
+    localStorage.setItem('tally_guide_done', 'true');
+    // Cloud (per-user) if authed
+    if (!uid || !firebase?.firestore) return;
+    const db = firebase.firestore();
+    await db.collection('users').doc(uid).set({ hasSeenTour: true }, { merge: true });
   } catch (e) {
-    console.warn('Failed to persist tour flag', e);
+    console.warn('markTourSeen failed; local flag only:', e);
   }
 }
 
-async function checkTourWelcomeStatus() {
-  const uid = firebase.auth && firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
-  if (uid) {
+async function checkTourWelcomeStatus(uid) {
+  // If local says done, skip (supports offline)
+  if (localStorage.getItem('tally_guide_done') === 'true') return;
+  // Try Firestore if we have a user and firestore loaded
+  if (uid && firebase?.firestore) {
     try {
-      const ref = doc(firestore, 'users', uid);
-      const snap = await getDoc(ref);
-      if (snap.exists() && snap.data().hasSeenTour) {
-        try { localStorage.setItem('tally_guide_done', 'true'); } catch {}
+      const db = firebase.firestore();
+      const snap = await db.collection('users').doc(uid).get();
+      const seen = snap.exists && snap.data() && snap.data().hasSeenTour === true;
+      if (seen) {
+        localStorage.setItem('tally_guide_done','true');
         return;
       }
     } catch (e) {
-      console.warn('Tour flag check failed', e);
+      console.warn('Tour Firestore read failed; using local fallback:', e);
     }
   }
-  try {
-    const done = localStorage.getItem('tally_guide_done') === 'true';
-    if (!done) openTourWelcomeModal();
-  } catch {
-    openTourWelcomeModal();
-  }
+  // Still not marked → show the welcome modal
+  openTourWelcomeModal();
 }
 
 function initTallyTooltips() {
@@ -2983,15 +2978,17 @@ function initTallyTooltips() {
   const tourStartBtn = document.getElementById('tour-start-btn');
   const tourSkipBtn  = document.getElementById('tour-skip-btn');
   if (tourStartBtn) {
-    tourStartBtn.addEventListener('click', () => {
-      markTourSeen();
+    tourStartBtn.addEventListener('click', async () => {
+      const uid = (firebase.auth && firebase.auth().currentUser) ? firebase.auth().currentUser.uid : null;
+      await markTourSeen(uid);
       closeTourWelcomeModal();
       startGuidedMode();
     });
   }
   if (tourSkipBtn) {
-    tourSkipBtn.addEventListener('click', () => {
-      markTourSeen();
+    tourSkipBtn.addEventListener('click', async () => {
+      const uid = (firebase.auth && firebase.auth().currentUser) ? firebase.auth().currentUser.uid : null;
+      await markTourSeen(uid);
       closeTourWelcomeModal();
     });
   }
@@ -3037,7 +3034,6 @@ function initTallyTooltips() {
   window.showTooltip = showTooltip;
   window.hideTooltip = hideTooltip;
   window.startGuide = () => startGuidedMode();
-  checkTourWelcomeStatus();
 }
 
 window.initTallyTooltips = initTallyTooltips;
@@ -3073,6 +3069,7 @@ firebase.auth().onAuthStateChanged(user => {
     if (user) {
       setup().finally(() => {
         requestAnimationFrame(() => initTallyTooltips());
+        setTimeout(() => { checkTourWelcomeStatus(user.uid); }, 0);
       });
     } else {
       requestAnimationFrame(() => initTallyTooltips());
