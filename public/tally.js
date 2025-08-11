@@ -2607,6 +2607,7 @@ async function markTourSeen(uid) {
 }
 
 async function checkTourWelcomeStatus(uid) {
+  if (localStorage.getItem('tally_guide_enabled') === 'false') return;
   // If local says done, skip (supports offline)
   if (localStorage.getItem('tally_guide_done') === 'true') return;
   // Try Firestore if we have a user and firestore loaded
@@ -2653,12 +2654,20 @@ function initTallyTooltips() {
     }
   })();
 
-  let stored = localStorage.getItem('tooltips_enabled');
-  if (stored === null) {
+  // tips/tour master switches
+  let storedTips = localStorage.getItem('tooltips_enabled');
+  if (storedTips === null) {
     localStorage.setItem('tooltips_enabled', 'true');
-    stored = 'true';
+    storedTips = 'true';
   }
-  let tooltipsEnabled = stored === 'true';
+  let tooltipsEnabled = storedTips === 'true';
+
+  let storedGuide = localStorage.getItem('tally_guide_enabled');
+  if (storedGuide === null) {
+    localStorage.setItem('tally_guide_enabled', 'true');
+    storedGuide = 'true';
+  }
+  let guideEnabled = storedGuide === 'true';
 
   let guidedMode = false;
   let guidedList = [];
@@ -2860,6 +2869,10 @@ function initTallyTooltips() {
 
   function startGuidedMode() {
     hideHelpMenu();
+    if (!guideEnabled) {
+      showGuideDisabledToast();
+      return;
+    }
     if (guidedMode) {
       endGuided();
       return;
@@ -2910,6 +2923,7 @@ function initTallyTooltips() {
   }, true);
 
   document.addEventListener('focusout', (e) => {
+    if (!tooltipsEnabled) return;
     if (shouldSuppressAutoHide()) return;
     if (currentTipTarget && !currentTipTarget.contains(e.relatedTarget)) {
       hideTooltip(); currentTipTarget = null; currentLeaveHandler = null;
@@ -2918,16 +2932,25 @@ function initTallyTooltips() {
 
   const helpBtn = document.getElementById('tour-help-btn');
   const helpMenu = document.getElementById('tt-help-menu');
+  let menuEnableTips, menuEnableGuide, menuStartBtn;
   if (helpMenu) {
-    helpMenu.innerHTML = `<button type="button" data-act="start">Start guide</button><label><input type="checkbox" id="tt-enable-tooltips"> Enable tooltips</label><button type="button" data-act="reset">Reset 'Don't show again'</button>`;
-    const enable = helpMenu.querySelector('#tt-enable-tooltips');
-    if (enable) {
-      enable.checked = tooltipsEnabled;
-      enable.addEventListener('change', () => {
-        tooltipsEnabled = enable.checked;
-        localStorage.setItem('tooltips_enabled', tooltipsEnabled ? 'true' : 'false');
-      });
+    helpMenu.innerHTML = `
+      <label><input type="checkbox" id="tt-enable-tooltips"> Enable tooltips</label>
+      <label><input type="checkbox" id="tt-enable-guide"> Enable guided tour</label>
+      <button type="button" data-act="start">Start guide now</button>
+      <button type="button" data-act="reset">Reset 'Don't show again'</button>`;
+    menuEnableTips = helpMenu.querySelector('#tt-enable-tooltips');
+    menuEnableGuide = helpMenu.querySelector('#tt-enable-guide');
+    menuStartBtn = helpMenu.querySelector('[data-act="start"]');
+    if (menuEnableTips) {
+      menuEnableTips.checked = tooltipsEnabled;
+      menuEnableTips.addEventListener('change', () => { setTipsEnabled(menuEnableTips.checked); });
     }
+    if (menuEnableGuide) {
+      menuEnableGuide.checked = guideEnabled;
+      menuEnableGuide.addEventListener('change', () => { setGuideEnabled(menuEnableGuide.checked); });
+    }
+    if (menuStartBtn) menuStartBtn.disabled = !guideEnabled;
     helpMenu.addEventListener('click', e => {
       const act = e.target.getAttribute('data-act');
       if (act === 'start') { startGuidedMode(); }
@@ -2938,13 +2961,19 @@ function initTallyTooltips() {
 
   function showHelpMenu() {
     if (!helpBtn || !helpMenu) return;
-    const rect = helpBtn.getBoundingClientRect();
-    helpMenu.style.top = `${rect.bottom + 4}px`;
-    helpMenu.style.right = `${window.innerWidth - rect.right}px`;
     helpMenu.style.display = 'block';
     helpMenu.setAttribute('aria-hidden', 'false');
-    const enable = helpMenu.querySelector('#tt-enable-tooltips');
-    if (enable) enable.checked = tooltipsEnabled;
+    const rect = helpBtn.getBoundingClientRect();
+    let top = rect.bottom + 4;
+    let left = rect.left;
+    const mRect = helpMenu.getBoundingClientRect();
+    if (top + mRect.height > window.innerHeight - 4) top = Math.max(4, window.innerHeight - mRect.height - 4);
+    if (left + mRect.width > window.innerWidth - 4) left = Math.max(4, window.innerWidth - mRect.width - 4);
+    helpMenu.style.top = `${top}px`;
+    helpMenu.style.left = `${left}px`;
+    if (menuEnableTips) menuEnableTips.checked = tooltipsEnabled;
+    if (menuEnableGuide) menuEnableGuide.checked = guideEnabled;
+    if (menuStartBtn) menuStartBtn.disabled = !guideEnabled;
   }
 
   function hideHelpMenu() {
@@ -2954,6 +2983,37 @@ function initTallyTooltips() {
     }
     menuOpened = false;
   }
+
+  function showGuideDisabledToast() {
+    let toast = document.getElementById('tt-disabled-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'tt-disabled-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = 'Tips & tour are disabled. Long\u2011press ? to re\u2011enable.';
+    toast.style.display = 'block';
+    clearTimeout(showGuideDisabledToast._t);
+    showGuideDisabledToast._t = setTimeout(() => { toast.style.display = 'none'; }, 3000);
+  }
+
+  function setTipsEnabled(v) {
+    tooltipsEnabled = !!v;
+    localStorage.setItem('tooltips_enabled', tooltipsEnabled ? 'true' : 'false');
+    if (!tooltipsEnabled) hideTooltip();
+    if (menuEnableTips) menuEnableTips.checked = tooltipsEnabled;
+  }
+
+  function setGuideEnabled(v) {
+    guideEnabled = !!v;
+    localStorage.setItem('tally_guide_enabled', guideEnabled ? 'true' : 'false');
+    if (menuEnableGuide) menuEnableGuide.checked = guideEnabled;
+    if (menuStartBtn) menuStartBtn.disabled = !guideEnabled;
+    if (!guideEnabled && guidedMode) endGuided();
+  }
+
+  window.setTipsEnabled = setTipsEnabled;
+  window.setGuideEnabled = setGuideEnabled;
 
   let pressTimer = null;
   let menuOpened = false;
@@ -2978,7 +3038,13 @@ function initTallyTooltips() {
       }
       e.preventDefault();
       e.stopPropagation();
-      setTimeout(() => startGuidedMode(), 0); // allow touchend to finish first
+      setTimeout(() => {
+        if (guideEnabled) {
+          startGuidedMode();
+        } else {
+          showHelpMenu();
+        }
+      }, 0); // allow touchend to finish first
     });
   }
 
@@ -3026,9 +3092,9 @@ function initTallyTooltips() {
   function clearTouch() { if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; } }
   document.addEventListener('touchend', () => {
     clearTouch();
-    if (Date.now() - guidedStartTs < 500 || shouldSuppressAutoHide()) return;
+    if (!tooltipsEnabled || Date.now() - guidedStartTs < 500 || shouldSuppressAutoHide()) return;
     setTimeout(() => {
-      if (shouldSuppressAutoHide()) return;
+      if (!tooltipsEnabled || shouldSuppressAutoHide()) return;
       hideTooltip();
       currentTipTarget = null;
       currentLeaveHandler = null;
@@ -3036,21 +3102,21 @@ function initTallyTooltips() {
   }, { passive: true });
   document.addEventListener('touchcancel', () => {
     clearTouch();
-    if (shouldSuppressAutoHide()) return;
+    if (!tooltipsEnabled || shouldSuppressAutoHide()) return;
     hideTooltip();
   }, { passive: true });
 
   window.addEventListener('scroll', () => {
     if (shouldSuppressAutoHide()) {
       if (currentTarget) positionTooltip(currentTarget);
-    } else {
+    } else if (tooltipsEnabled) {
       hideTooltip();
     }
   }, { capture: true, passive: true });
   window.addEventListener('resize', () => { if (isGuidedActive() && currentTarget) positionTooltip(currentTarget); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (shouldSuppressAutoHide()) return; hideTooltip(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (shouldSuppressAutoHide() || !tooltipsEnabled) return; hideTooltip(); } });
   document.addEventListener('keydown', e => {
-    if (shouldSuppressAutoHide()) return;
+    if (!tooltipsEnabled || shouldSuppressAutoHide()) return;
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) hideTooltip();
   }, true);
 
