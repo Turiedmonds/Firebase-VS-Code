@@ -613,6 +613,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   </style>
 
+<style id="tt-help-menu-base">
+  #tt-help-menu{
+    position:fixed;
+    z-index:2147483646;
+    display:none;
+    background:rgba(20,20,20,0.97);
+    color:#fff;
+    padding:12px;
+    border-radius:10px;
+    min-width:240px;
+    max-width:92vw;
+    box-shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+  #tt-help-menu .row{display:flex;gap:8px;margin-top:10px}
+  #tt-help-menu button,#tt-help-menu label{font-size:14px;line-height:1.2}
+</style>
+
 <!-- Tour Welcome Modal -->
 <div id="tour-welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-welcome-title" aria-hidden="true">
   <div id="tour-welcome-dialog">
