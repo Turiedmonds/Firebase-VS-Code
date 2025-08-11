@@ -2990,7 +2990,7 @@ function initTallyTooltips() {
     highlight(el);
     const text = getHelpText(el);
     const isLast = guidedIndex === guidedList.length - 1;
-    tt.innerHTML = `<div>${text}</div><div class="tt-guided-controls"><button type="button" id="tt-back-btn"${guidedIndex===0?' disabled':''}>Back</button><button type="button" id="tt-next-btn">${isLast ? 'Finish' : 'Next'}</button><button type="button" id="tt-skip-btn">Skip</button></div><div style="margin-top:4px;font-size:12px;"><a href="#" id="tt-noagain">Don't show again</a></div>`;
+    tt.innerHTML = `<div>${text}</div><div class="tt-guided-controls"><button type="button" id="tt-back-btn"${guidedIndex===0?' disabled':''}>Back</button><button type="button" id="tt-next-btn">${isLast ? 'Finish' : 'Next'}</button><button type="button" id="tt-skip-btn">Skip</button></div><div style="margin-top:4px;font-size:12px;"><button id="guide-open-help" class="btn btn-secondary" type="button">Open Help Menu</button></div>`;
     tt.setAttribute('aria-hidden', 'false');
     tt.classList.remove('tt-hidden');
     tt.classList.add('tt-show');
@@ -3003,12 +3003,13 @@ function initTallyTooltips() {
     document.getElementById('tt-back-btn').addEventListener('click', prevGuided);
     document.getElementById('tt-next-btn').addEventListener('click', nextGuided);
     document.getElementById('tt-skip-btn').addEventListener('click', skipGuided);
-    const noAgain = document.getElementById('tt-noagain');
-    if (noAgain) {
-      noAgain.addEventListener('click', (e) => {
-        e.preventDefault();
-        localStorage.setItem('tally_guide_done', 'true');
-      });
+    const btnOpenHelp = document.getElementById('guide-open-help');
+    if (btnOpenHelp && !btnOpenHelp.dataset.wired) {
+      btnOpenHelp.dataset.wired = '1';
+      btnOpenHelp.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        if (typeof window.openHelpMenu === 'function') window.openHelpMenu();
+      }, { capture:true });
     }
   }
   function nextGuided() {
