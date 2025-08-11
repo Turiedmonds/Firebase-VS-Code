@@ -753,110 +753,42 @@ button {
   gap: 10px;
 }
 
-/* === Top 5 Shearers: readability boost === */
-#top5-shearers .lb-name {
-  /* make the name pop regardless of bar color behind it */
-  color: #ffffff;
-  font-weight: 600;
-  letter-spacing: 0.1px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);           /* dark pill */
-  backdrop-filter: saturate(120%) blur(2px);  /* subtle glass, supported on modern browsers */
-  text-shadow: 0 1px 1px rgba(0,0,0,0.6);     /* extra legibility */
-  z-index: 2;
-}
 
-#top5-shearers .lb-fill {
-  /* keep the gold bright but not blinding */
-  filter: saturate(110%);
-}
-
-/* Right-side totals: brighter and bolder */
-#top5-shearers .lb-value {
-  color: #f5f7ff;          /* near-white */
-  font-weight: 700;
-  font-size: 0.92rem;      /* small bump */
-  text-shadow: 0 1px 1px rgba(0,0,0,0.5);
-  min-width: 3.5ch;        /* keeps alignment tidy for 3–4 digit numbers */
-}
-
-/* Rank number also a touch brighter for balance */
-#top5-shearers .lb-rank {
-  color: #dbe2f0;
-  font-weight: 600;
-}
-
-/* If you ever find the name too tight on very short bars, this gives a hair more space */
-#top5-shearers .lb-bar { padding-left: 2px; }
-
-/* === FORCE READABILITY (higher specificity) === */
-#top5-shearers .leaderboard .lb-row .lb-bar { 
-  position: relative; 
-  overflow: visible;           /* allow name pill to sit above the bar */
-}
-
-#top5-shearers .leaderboard .lb-row .lb-name {
-  position: absolute;
-  top: 50%;
-  left: 6px;
-  transform: translateY(-50%);
-  color: #fff !important;
-  font-weight: 700;
-  font-size: 0.82rem;
-  letter-spacing: 0.1px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55) !important;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.6);
-  z-index: 2;
-}
-
-#top5-shearers .leaderboard .lb-row .lb-value {
-  color: #f7f9ff !important;
-  font-weight: 800;
-  font-size: 0.98rem;
-  text-shadow: 0 1px 1px rgba(0,0,0,0.5);
-  min-width: 3.5ch;
-}
-
-#top5-shearers .leaderboard .lb-row .lb-rank {
-  color: #e1e7f5 !important;
-  font-weight: 700;
-}
-
-/* === Top 5 Shearers: forced readability === */
-#top5-shearers .leaderboard .lb-row .lb-bar {
+/* === Top 5 Shearers — final readability rules (siq classes) === */
+#top5-shearers .siq-lb-bar {
   position: relative;
-  overflow: visible;                    /* let the pill sit above the bar */
+  overflow: visible; /* allow name pill to sit above the bar */
 }
 
-#top5-shearers .leaderboard .lb-row .lb-name {
+#top5-shearers .siq-lb-name {
   position: absolute;
   top: 50%;
   left: 6px;
   transform: translateY(-50%);
-  color: #fff !important;
+  color: #fff;
   font-weight: 700;
-  font-size: 0.86rem;                   /* bump for legibility */
+  font-size: 0.86rem;
   letter-spacing: 0.1px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(0,0,0,0.6) !important;  /* dark pill */
+  background: rgba(0,0,0,0.6);
   text-shadow: 0 1px 2px rgba(0,0,0,0.9);
-  text-decoration: none !important;     /* kill any underline */
   z-index: 2;
 }
 
-#top5-shearers .leaderboard .lb-row .lb-value {
-  color: #ffffff !important;            /* brighter totals */
+#top5-shearers .siq-lb-value {
+  color: #ffffff;
   font-weight: 800;
-  font-size: 1.02rem;                   /* small bump */
+  font-size: 1.02rem;
   text-shadow: 0 1px 2px rgba(0,0,0,0.7);
-  min-width: 3.8ch;                     /* keeps alignment tidy */
+  min-width: 3.8ch;
 }
 
-#top5-shearers .leaderboard .lb-row .lb-rank {
-  color: #e6ecff !important;
+#top5-shearers .siq-lb-rank {
+  color: #e6ecff;
   font-weight: 700;
+}
+
+#top5-shearers .siq-lb-fill {
+  filter: saturate(110%);
 }
