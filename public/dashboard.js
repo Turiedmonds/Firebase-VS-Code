@@ -26,6 +26,16 @@ function initTop5ShearersWidget() {
 
     const listEl = rootEl.querySelector('#top5-shearers-list');
     const viewSel = rootEl.querySelector('#shearers-view');
+    // Relabel 12M option to current year (purely visual)
+    (function labelRollingWithYear(sel) {
+      if (!sel) return;
+      const opt = [...sel.options].find(o => o.value === '12m');
+      if (!opt) return;
+      const y = new Date().getFullYear();
+      // Choose one:
+      // opt.textContent = String(y);           // just the year
+      opt.textContent = `${y} (12M)`;           // clearer it's rolling
+    })(viewSel);
     const yearSel = rootEl.querySelector('#shearers-year');
     const viewAllBtn = rootEl.querySelector('#shearers-viewall');
     const tabs = rootEl.querySelector('#worktype-tabs');
