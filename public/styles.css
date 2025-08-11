@@ -792,3 +792,13 @@ button {
 #top5-shearers .siq-lb-fill {
   filter: saturate(110%);
 }
+
+/* === Farm Totals (Firestore) — scoped === */
+#farm-totals {
+  background:#0f1115; border:1px solid #1c1f27; border-radius:12px; padding:12px; box-shadow:0 6px 20px rgba(0,0,0,0.25);
+}
+#farm-totals .dash-card__header { display:flex; gap:8px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+#farm-totals .dash-card__title { margin:0; font-size:0.95rem; font-weight:600; }
+#farm-totals .dash-card__controls { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+#farm-totals .year-select[hidden] { display:none; }
+#farm-totals .siq-chart-wrap { overflow:auto; margin-top:8px; }

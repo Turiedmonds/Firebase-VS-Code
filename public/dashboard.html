@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard - SHEAR iQ</title>
-  <link rel="stylesheet" href="styles.css?v=readability2">
+  <link rel="stylesheet" href="styles.css?v=farmtotals-fs1">
   <style>
     body {
       display: flex;
@@ -72,6 +72,27 @@
           <!-- JS renders 5 rows with bars -->
         </div>
       </section>
+      <!-- BEGIN: Farm Totals Widget -->
+      <section id="farm-totals" class="dash-card">
+        <header class="dash-card__header">
+          <h2 class="dash-card__title">Farm Totals</h2>
+          <div class="dash-card__controls">
+            <div class="view-select">
+              <label for="farms-view">View</label>
+              <select id="farms-view">
+                <option value="12m" selected>12M Rolling</option>
+                <option value="all">All‑Time</option>
+                <option value="year">Specific Year</option>
+              </select>
+              <select id="farms-year" class="year-select" aria-label="Specific year" hidden></select>
+            </div>
+          </div>
+        </header>
+        <div class="siq-chart-wrap">
+          <canvas id="farm-totals-canvas" width="720" height="300" aria-label="Farm Totals Bar Chart"></canvas>
+        </div>
+      </section>
+      <!-- END: Farm Totals Widget -->
       <!-- When we add the other 3 widgets, they’ll sit beside this one on wide screens -->
     </div>
 

@@ -446,6 +446,204 @@ function initTop5ShearersWidget() {
   })();
 }
 
+function initFarmTotalsWidget() {
+  (function () {
+    const rootEl = document.getElementById('farm-totals');
+    if (!rootEl) return;
+    let contractorId = localStorage.getItem('contractor_id') || firebase?.auth?.currentUser?.uid;
+    if (!contractorId) return;
+
+    const canvas = document.getElementById('farm-totals-canvas');
+    const ctx = canvas?.getContext('2d');
+    const viewSel = document.getElementById('farms-view');
+    const yearSel = document.getElementById('farms-year');
+    if (!canvas || !ctx || !viewSel || !yearSel) return;
+
+    function sessionDateToJS(d) {
+      if (!d) return null;
+      if (typeof d === 'object' && d.toDate) return d.toDate();
+      const dt = new Date(d);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+    function getDateRange(mode, year) {
+      const today = new Date();
+      if (mode === '12m') {
+        const end = today, start = new Date(); start.setDate(start.getDate() - 365);
+        return { start, end };
+      }
+      if (mode === 'year' && year) {
+        const start = new Date(Number(year), 0, 1), end = new Date(Number(year), 11, 31, 23, 59, 59);
+        return { start, end };
+      }
+      return { start: null, end: null };
+    }
+
+    // Sum sheep totals for a session by reading the same shapes as the shearers widget
+    function totalSheepFromSession(sessionDoc) {
+      const s = sessionDoc.data ? sessionDoc.data() : sessionDoc;
+      let total = 0;
+
+      // Preferred: shearerCounts[].stands[]
+      if (Array.isArray(s.shearerCounts)) {
+        for (const row of s.shearerCounts) {
+          const perStand = Array.isArray(row?.stands) ? row.stands : [];
+          for (const raw of perStand) {
+            const num = Number(raw);
+            if (isFinite(num) && num > 0) total += num;
+          }
+          const extra = Number(row?.total);
+          if (isFinite(extra) && extra > 0 && (!perStand.length || perStand.every(v => !Number(v)))) {
+            total += extra; // rare fallback
+          }
+        }
+        return total;
+      }
+
+      if (Array.isArray(s.tallies)) {
+        for (const t of s.tallies) total += Number(t.count || t.tally || 0) || 0;
+        return total;
+      }
+
+      if (Array.isArray(s.shearers)) {
+        for (const sh of s.shearers) {
+          if (typeof sh.total === 'number') total += Number(sh.total) || 0;
+          const runs = sh.runs || sh.tallies || [];
+          for (const r of runs) total += Number(r.count || r.tally || 0) || 0;
+        }
+        return total;
+      }
+
+      if (s.shearerTallies && typeof s.shearerTallies === 'object') {
+        for (const entries of Object.values(s.shearerTallies)) {
+          for (const e of (entries || [])) total += Number(e.count || e.tally || 0) || 0;
+        }
+      }
+
+      return total;
+    }
+
+    function deriveYearsFromSessions(sessions) {
+      const years = new Set();
+      for (const doc of sessions) {
+        const s = doc.data ? doc.data() : doc;
+        const d = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
+        if (d) years.add(d.getFullYear());
+      }
+      const arr = Array.from(years).sort((a, b) => b - a);
+      const current = (new Date()).getFullYear();
+      if (!arr.includes(current)) arr.unshift(current);
+      return arr;
+    }
+
+    function aggregateFarms(sessions, mode, year) {
+      const { start, end } = getDateRange(mode, year);
+      const byFarm = new Map();   // farmName -> total sheep
+      for (const doc of sessions) {
+        const s = doc.data ? doc.data() : doc;
+        const d = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
+        if (mode !== 'all') {
+          if (!d) continue;
+          if (start && d < start) continue;
+          if (end && d > end) continue;
+        }
+        const farm = String(s.stationName || s.farmName || s.farm || s.station || 'Unknown').trim() || 'Unknown';
+        const tot = totalSheepFromSession(doc);
+        byFarm.set(farm, (byFarm.get(farm) || 0) + tot);
+      }
+      return Array.from(byFarm.entries())
+        .map(([farm, total]) => ({ farm, total }))
+        .sort((a, b) => b.total - a.total);
+    }
+
+    function drawChart(rows) {
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0,0,W,H);
+      if (!rows.length) return;
+
+      const margin = { t: 20, r: 20, b: 24, l: 110 };
+      const innerW = W - margin.l - margin.r;
+      const innerH = H - margin.t - margin.b;
+      const barH = Math.min(40, Math.floor(innerH / (rows.length * 1.4)));
+      const gap = Math.floor(barH * 0.4);
+      const max = Math.max(1, ...rows.map(r => r.total));
+
+      ctx.font = '12px Arial';
+      ctx.textBaseline = 'middle';
+
+      rows.forEach((d, i) => {
+        const y = margin.t + i * (barH + gap);
+        // label
+        ctx.fillStyle = '#9aa3b6';
+        ctx.textAlign = 'right';
+        ctx.fillText(d.farm, margin.l - 10, y + barH/2);
+
+        // bg
+        ctx.fillStyle = '#141824';
+        ctx.fillRect(margin.l, y, innerW, barH);
+
+        // fill (gold)
+        const w = Math.round((d.total / max) * innerW);
+        const grd = ctx.createLinearGradient(margin.l, y, margin.l + w, y);
+        grd.addColorStop(0, '#b58b2a'); grd.addColorStop(1, '#f0cd66');
+        ctx.fillStyle = grd;
+        ctx.fillRect(margin.l, y, w, barH);
+
+        // value
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.fillText(d.total.toLocaleString(), margin.l + w + 8, y + barH/2);
+      });
+    }
+
+    // live data
+    let colRef = null, unsub = null, cachedSessions = [], renderPending = false;
+
+    function scheduleRender() {
+      if (renderPending) return;
+      renderPending = true;
+      requestAnimationFrame(() => {
+        renderPending = false;
+        const mode = viewSel.value || '12m';
+        const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
+        const rows = aggregateFarms(cachedSessions, mode, year);
+        drawChart(rows);
+      });
+    }
+
+    const onSnap = snap => {
+      const sessions = [];
+      snap.forEach(doc => sessions.push(doc));
+      cachedSessions = sessions;
+      const years = deriveYearsFromSessions(sessions);
+      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      yearSel.hidden = viewSel.value !== 'year';
+      scheduleRender();
+    };
+    const onError = err => {
+      console.error('[FarmTotals] listener error:', err);
+      // leave canvas blank
+    };
+
+    viewSel.addEventListener('change', () => { yearSel.hidden = viewSel.value !== 'year'; scheduleRender(); });
+    yearSel.addEventListener('change', scheduleRender);
+
+    try {
+      const db = firebase.firestore ? firebase.firestore() : null;
+      if (!db) throw new Error('Firestore not initialized');
+      colRef = db.collection('contractors').doc(contractorId).collection('sessions');
+      unsub = colRef.onSnapshot(onSnap, onError);
+    } catch (err) {
+      console.error('[FarmTotals] init failed:', err);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { if (unsub) { unsub(); unsub = null; } }
+      else if (!unsub && colRef) { unsub = colRef.onSnapshot(onSnap, onError); }
+    });
+    window.addEventListener('beforeunload', () => { if (unsub) unsub(); });
+  })();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
@@ -536,10 +734,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
-      // After setting contractor_id and after showing the page content:
-      if (typeof initTop5ShearersWidget === 'function') {
-        try { initTop5ShearersWidget(); } catch (e) { console.error('[Dashboard] initTop5ShearersWidget failed:', e); }
-      }
+        // After setting contractor_id and after showing the page content:
+        if (typeof initTop5ShearersWidget === 'function') {
+          try { initTop5ShearersWidget(); } catch (e) { console.error('[Dashboard] initTop5ShearersWidget failed:', e); }
+        }
+        if (typeof initFarmTotalsWidget === 'function') {
+          try { initFarmTotalsWidget(); } catch (e) { console.error('[Dashboard] initFarmTotalsWidget failed:', e); }
+        }
     } catch (err) {
       console.error('Failed to fetch contractor profile', err);
       const subheading = document.getElementById('dashboard-subheading');
