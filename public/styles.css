@@ -907,3 +907,41 @@ button {
   overflow: auto;
 }
 
+/* Auto Hours Guard */
+.hours-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.hours-modal.show { display: flex; }
+.hours-modal-content {
+  background: #111;
+  color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 90%;
+  text-align: center;
+}
+.hours-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 14px;
+}
+.manual-badge {
+  background: #ff0;
+  color: #000;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.8rem;
+  margin-left: 6px;
+}
+.reset-auto-btn {
+  margin-left: 6px;
+  font-size: 0.8rem;
+}
+

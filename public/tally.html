@@ -142,7 +142,7 @@
 </div>
 <div style="flex: 1;">
 <label for="hoursWorked" class="meta-label">Hours Worked:</label><br/>
-<input id="hoursWorked" class="small-input" type="text" data-help="Total hours worked. Auto-calculated."/>
+<input id="hoursWorked" class="small-input" type="text" data-help="Total hours worked. Auto-calculated." data-auto-hours="shearer" placeholder="Auto — set Start &amp; Finish" readonly/>
 </div>
 </div>
 <button id="timeFormatToggle" class="toggle-button" data-help="Switch between 24- and 12-hour times.">Switch to 12-hour format</button>
@@ -557,6 +557,15 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <div id="autosaveStatus" style="display:none; position:fixed; bottom:10px; right:10px; background:#222; color:#fff; padding:4px 8px; border-radius:4px; font-size:14px;"></div>
+<div id="hours-modal" class="hours-modal" aria-hidden="true">
+  <div class="hours-modal-content">
+    <p>Hours Worked automatically fills from Start and Finish times.</p>
+    <div class="hours-modal-actions">
+      <button type="button" id="hours-modal-ok">OK</button>
+      <button type="button" id="hours-modal-manual">Enable manual entry</button>
+    </div>
+  </div>
+</div>
 <div id="autosaveInfo" style="display:none; position:fixed; bottom:10px; left:10px; color:#888; font-size:12px;"></div>
 <div id="loading-overlay">
   <div class="circle-spinner"></div>
