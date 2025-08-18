@@ -1,3 +1,91 @@
+// ===== Dashboard welcome modal: show ONCE EVER =====
+
+// Returns true if we should show the dashboard welcome on this visit
+function shouldShowDashboardWelcomeOnce(){
+  try {
+    // Only show if never seen before AND (if you have a master enable flag, respect it)
+    if (localStorage.getItem('dashboard_welcome_seen') === 'true') return false;
+
+    // Optional master toggle: localStorage['welcome_enabled'] !== 'false'
+    var enabled = localStorage.getItem('welcome_enabled');
+    if (enabled === 'false') return false;
+
+    // Role guard (optional but nice): only contractors see this dashboard intro
+    var role = (localStorage.getItem('user_role') || '').toLowerCase();
+    if (role && role !== 'contractor') return false;
+
+    return true;
+  } catch(e){ return false; }
+}
+
+// Mark as seen forever
+function markDashboardWelcomeSeen(){
+  try { localStorage.setItem('dashboard_welcome_seen','true'); } catch(e){}
+}
+
+// If your app already exposes a function to open the dashboard welcome modal,
+// wrap it so it only opens once automatically. We leave a manual "force" path.
+(function(){
+  var fnNames = ['showWelcomeModal','openWelcomeModal','startOnboarding','openSetupModal','showSetupPrompt'];
+  fnNames.forEach(function(name){
+    if (typeof window[name] === 'function') {
+      var orig = window[name];
+      window[name] = function(force){
+        if (force === true) return orig.apply(this, arguments); // manual open bypass
+        if (!shouldShowDashboardWelcomeOnce()) return;          // auto-open only once
+        var res = orig.apply(this, arguments);
+        // Hook common "close" / "complete" marks if you have callbacks.
+        // If not, mark immediately to ensure once-only behavior.
+        markDashboardWelcomeSeen();
+        return res;
+      };
+    }
+  });
+})();
+
+// Auto-open on first dashboard load (only once)
+document.addEventListener('DOMContentLoaded', function(){
+  try {
+    // Contractor default role/pref (as you already do elsewhere)
+    localStorage.setItem('user_role','contractor');
+    localStorage.setItem('preferred_start','dashboard');
+  } catch(e){}
+
+  // Try to auto-open only if truly first time
+  if (shouldShowDashboardWelcomeOnce()) {
+    // Prefer your actual function name below if you have a specific one:
+    if (typeof window.showWelcomeModal === 'function') {
+      window.showWelcomeModal(false); // false = not forced (will mark seen)
+    } else if (typeof window.openWelcomeModal === 'function') {
+      window.openWelcomeModal(false);
+    } else if (typeof window.openSetupModal === 'function') {
+      window.openSetupModal(false);
+    } else if (typeof window.showSetupPrompt === 'function') {
+      window.showSetupPrompt(false);
+    } else {
+      // If no modal function exists, just mark as seen to avoid future tries
+      markDashboardWelcomeSeen();
+    }
+  }
+});
+
+// Provide a manual trigger for Help menu to re-open the dashboard welcome
+window.forceShowDashboardWelcome = function(){
+  // Allow manual show any time, but DO NOT reset the seen flag automatically.
+  // Your modal's own "Reset" control can clear the flag if you want.
+  if (typeof window.showWelcomeModal === 'function') return window.showWelcomeModal(true);
+  if (typeof window.openWelcomeModal === 'function') return window.openWelcomeModal(true);
+  if (typeof window.openSetupModal === 'function')   return window.openSetupModal(true);
+  if (typeof window.showSetupPrompt === 'function')  return window.showSetupPrompt(true);
+  // If there is no modal function, do nothing.
+};
+
+// (Optional) Helper for your Help menu "Reset onboarding" action:
+window.resetDashboardWelcomeOnce = function(){
+  try { localStorage.removeItem('dashboard_welcome_seen'); } catch(e){}
+  // Next visit to dashboard will auto-show again.
+};
+
 try {
   localStorage.setItem('user_role', 'contractor');
   localStorage.setItem('preferred_start', 'dashboard');
