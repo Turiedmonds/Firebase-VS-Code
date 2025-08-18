@@ -3325,8 +3325,10 @@ firebase.auth().onAuthStateChanged(user => {
 // ===== Help Dropdown: resilient wiring =====
 (function registerHelpDropdown(){
   if (window.__helpDropdownWired__) return;
+  window.__helpDropdownWired__ = true;
 
   function wire() {
+    // Pick the *last* instance on the page in case duplicates ever slip back in
     const helpBtn = Array.from(document.querySelectorAll('#help-btn')).pop();
     const menu = Array.from(document.querySelectorAll('#tt-help-menu')).pop();
     if (!helpBtn || !menu) return false; // elements not yet in DOM
@@ -3334,7 +3336,6 @@ firebase.auth().onAuthStateChanged(user => {
     // Guard: prevent double-binding
     if (menu.__wired__) return true;
     menu.__wired__ = true;
-    window.__helpDropdownWired__ = true;
 
     let open = false;
     let outsideHandler = null;
@@ -3360,6 +3361,7 @@ firebase.auth().onAuthStateChanged(user => {
       if (open) return;
       if (typeof window.renderHelpMenu === 'function') window.renderHelpMenu();
       positionMenu();
+      menu.classList.remove('tt-hidden');
       menu.style.display = 'block';
       menu.setAttribute('aria-hidden', 'false');
       open = true;
@@ -3381,6 +3383,7 @@ firebase.auth().onAuthStateChanged(user => {
       if (!open) return;
       menu.style.display = 'none';
       menu.setAttribute('aria-hidden', 'true');
+      menu.classList.add('tt-hidden');
       open = false;
 
       document.removeEventListener('mousedown', outsideHandler);
