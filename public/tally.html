@@ -636,7 +636,9 @@ document.addEventListener('DOMContentLoaded', () => {
     padding:12px;
     border-radius:10px;
     min-width:240px;
-    max-width:92vw;
+    max-width:calc(100vw - 16px);
+    max-height:80vh;
+    overflow:auto;
     box-shadow:0 10px 30px rgba(0,0,0,.45);
   }
   #tt-help-menu .row{display:flex;gap:8px;margin-top:10px}
