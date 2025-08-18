@@ -2532,10 +2532,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.addEventListener('click', () => showView(btn.dataset.view));
     });
-    showView('tallySheetView');
-
     if (showFarmSummary) {
-        showView('stationSummaryView');
+        const dailySummary = document.getElementById('daily-summary') || document.getElementById('summaryView');
+        if (dailySummary) dailySummary.style.display = 'none';
+        const farmSummary = document.getElementById('farm-summary') || document.getElementById('stationSummaryView');
+        if (farmSummary) farmSummary.style.display = 'block';
+
+        const dailyTab = document.getElementById('daily-summary-tab') || document.querySelector('[data-view="summaryView"]');
+        if (dailyTab) dailyTab.classList.remove('active');
+        const farmTab = document.getElementById('farm-summary-tab') || document.querySelector('[data-view="stationSummaryView"]');
+        if (farmTab) farmTab.classList.add('active');
+
+        showView(farmSummary && farmSummary.id ? farmSummary.id : 'stationSummaryView');
+    } else {
+        showView('tallySheetView');
     }
 
     const loadBtn = document.getElementById('loadSessionBtn');
