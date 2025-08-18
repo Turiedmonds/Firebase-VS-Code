@@ -770,3 +770,135 @@ document.addEventListener('DOMContentLoaded', () => {
     maybeOpenWelcome();
   }
 })();
+
+// === Dashboard prefs sync for Welcome & Tour ===
+(function dashboardPrefsSync(){
+  // Keys
+  const K_WELCOME_ENABLED = 'dashboard_welcome_enabled';
+  const K_WELCOME_DONE    = 'dashboard_welcome_done';
+  const K_TOUR_ENABLED    = 'dashboard_tour_enabled';
+
+  // Ensure defaults
+  if (localStorage.getItem(K_WELCOME_ENABLED) == null) localStorage.setItem(K_WELCOME_ENABLED, 'true');
+  if (localStorage.getItem(K_TOUR_ENABLED)    == null) localStorage.setItem(K_TOUR_ENABLED, 'true');
+
+  // Modal elements
+  const overlay   = document.getElementById('dashboard-welcome-overlay');
+  const modal     = document.getElementById('dashboard-welcome-modal');
+  const cbDont    = document.getElementById('dw-dont-show');
+  const cbWelM    = document.getElementById('dw-enable-welcome');
+  const cbTourM   = document.getElementById('dw-enable-tour');
+  const btnSaveM  = document.getElementById('dw-save');
+  const btnStartM = document.getElementById('dw-start');
+
+  // Help menu elements
+  const helpMenu  = document.getElementById('dash-help-menu');
+  const cbWelH    = document.getElementById('toggle-welcome');
+  const cbTourH   = document.getElementById('toggle-tour');
+  const btnSaveH  = document.getElementById('btnSaveHelp');
+
+  // Exposed helpers from earlier code (if present)
+  const openHelpMenu = window.openHelpMenu || (()=>{});
+  const startDashboardTour = window.startDashboardTour || (()=>{});
+
+  // --- Model ---
+  function getPrefs(){
+    return {
+      welcomeEnabled: localStorage.getItem(K_WELCOME_ENABLED) !== 'false',
+      welcomeDone:    localStorage.getItem(K_WELCOME_DONE) === 'true',
+      tourEnabled:    localStorage.getItem(K_TOUR_ENABLED) !== 'false'
+    };
+  }
+  function setPrefs(next){
+    if (typeof next.welcomeEnabled === 'boolean') {
+      localStorage.setItem(K_WELCOME_ENABLED, next.welcomeEnabled ? 'true' : 'false');
+    }
+    if (typeof next.tourEnabled === 'boolean') {
+      localStorage.setItem(K_TOUR_ENABLED, next.tourEnabled ? 'true' : 'false');
+    }
+    if (typeof next.welcomeDone === 'boolean') {
+      localStorage.setItem(K_WELCOME_DONE, next.welcomeDone ? 'true' : 'false');
+    }
+  }
+
+  // --- View sync ---
+  function syncModalFromPrefs(){
+    const p = getPrefs();
+    if (cbWelM)  cbWelM.checked  = p.welcomeEnabled;
+    if (cbTourM) cbTourM.checked = p.tourEnabled;
+    if (cbDont)  cbDont.checked  = p.welcomeDone;
+  }
+  function syncHelpFromPrefs(){
+    const p = getPrefs();
+    if (cbWelH)  cbWelH.checked  = p.welcomeEnabled;
+    if (cbTourH) cbTourH.checked = p.tourEnabled;
+  }
+  // Call once at load so UI matches storage
+  syncModalFromPrefs();
+  syncHelpFromPrefs();
+
+  // --- Persist from UI (Modal) ---
+  function persistFromModal({lockDone=false} = {}){
+    const next = {};
+    if (cbWelM)  next.welcomeEnabled = !!cbWelM.checked;
+    if (cbTourM) next.tourEnabled    = !!cbTourM.checked;
+    if (lockDone && cbDont) next.welcomeDone = !!cbDont.checked;
+    setPrefs(next);
+    // reflect to help menu
+    syncHelpFromPrefs();
+  }
+
+  // --- Persist from UI (Help) ---
+  function persistFromHelp(){
+    const next = {};
+    if (cbWelH)  next.welcomeEnabled = !!cbWelH.checked;
+    if (cbTourH) next.tourEnabled    = !!cbTourH.checked;
+    setPrefs(next);
+    // reflect to modal
+    syncModalFromPrefs();
+  }
+
+  // AUTOSAVE on checkbox changes (both places), so choices “stick” even if user closes without pressing Save
+  cbWelM?.addEventListener('change', () => persistFromModal());
+  cbTourM?.addEventListener('change', () => persistFromModal());
+  cbDont?.addEventListener('change', () => persistFromModal({lockDone:true}));
+
+  cbWelH?.addEventListener('change', persistFromHelp);
+  cbTourH?.addEventListener('change', persistFromHelp);
+
+  // SAVE buttons
+  btnSaveM?.addEventListener('click', () => {
+    persistFromModal({lockDone:true}); // lock “Don’t show again” if ticked
+    // Optional: close modal after saving
+    if (overlay) {
+      overlay.style.display = 'none';
+      overlay.setAttribute('aria-hidden','true');
+    }
+  });
+  btnSaveH?.addEventListener('click', () => {
+    persistFromHelp();
+    // Optional: keep help menu open to confirm, or close it:
+    const helpBtn = document.getElementById('help-btn');
+    if (helpMenu && !helpMenu.hidden && helpBtn) {
+      helpMenu.hidden = true;
+      helpBtn.setAttribute('aria-expanded','false');
+    }
+  });
+
+  // Start Tour from modal
+  btnStartM?.addEventListener('click', () => {
+    // Ensure tour is enabled; if disabled, enable & save immediately
+    if (localStorage.getItem(K_TOUR_ENABLED) === 'false') {
+      setPrefs({ tourEnabled: true });
+      syncModalFromPrefs();
+      syncHelpFromPrefs();
+    }
+    startDashboardTour();
+  });
+
+  // Keep “first-visit” rule intact elsewhere in your code:
+  // shouldShowWelcome() must check welcomeEnabled && !welcomeDone
+  // If you want "Got it" to also mark done when “Don’t show again” is ticked,
+  // ensure your existing dw-ok handler calls:
+  //   if (cbDont?.checked) setPrefs({ welcomeDone: true });
+})();

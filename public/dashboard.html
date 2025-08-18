@@ -38,6 +38,7 @@
     <div class="dhm-actions">
       <button id="btnStartTour" class="dhm-btn">Start Tour</button>
       <button id="btnSkipTour" class="dhm-btn">Skip Tour</button>
+      <button id="btnSaveHelp" class="dhm-btn">Save</button>
     </div>
   </div>
 </div>
@@ -139,10 +140,25 @@
         <li><strong>Settings / Preferences</strong>: Coming soon (not yet enabled).</li>
         <li><strong>Logout</strong>: Safely sign out.</li>
       </ul>
-      <label class="dw-inline"><input type="checkbox" id="dw-dont-show"> Don’t show again</label>
+      <div class="dw-row" style="margin-top:10px; display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+        <label class="dw-inline">
+          <input type="checkbox" id="dw-enable-welcome">
+          Enable Welcome Popup
+        </label>
+        <label class="dw-inline">
+          <input type="checkbox" id="dw-enable-tour">
+          Enable Dashboard Tour
+        </label>
+        <label class="dw-inline">
+          <input type="checkbox" id="dw-dont-show">
+          Don’t show again
+        </label>
+      </div>
     </div>
     <div class="dw-footer">
       <button class="dw-btn" id="dw-help">Open Help Menu</button>
+      <button class="dw-btn" id="dw-start">Start Tour</button>
+      <button class="dw-btn" id="dw-save">Save</button>
       <button class="dw-btn primary" id="dw-ok">Got it</button>
     </div>
   </div>
