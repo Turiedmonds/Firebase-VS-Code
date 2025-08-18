@@ -588,6 +588,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
+      const farmSummaryBtn = document.getElementById('farm-summary-btn');
+      if (farmSummaryBtn) {
+        farmSummaryBtn.addEventListener('click', () => {
+          sessionStorage.setItem('launch_override', 'tally');
+          window.location.href = 'tally.html?view=farm';
+        });
+      }
+
       const btnReturnToActive = document.getElementById('btnReturnToActive');
       const activeSession = localStorage.getItem('active_session');
 
@@ -604,6 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const btnStartNewDay = document.getElementById('btnStartNewDay');
       if (btnStartNewDay) {
         btnStartNewDay.addEventListener('click', () => {
+          sessionStorage.setItem('launch_override', 'tally');
           window.location.href = 'tally.html?newDay=true';
         });
       }
