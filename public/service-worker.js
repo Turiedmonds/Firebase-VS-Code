@@ -7,7 +7,6 @@ const STATIC_CACHE = `static-${CACHE_VERSION}`;
 
 // Cache *explicit* core shell (no wildcards)
 const CORE_ASSETS = [
-  '/', // if served at site root; otherwise remove
   '/auth-check.html',
   '/dashboard.html',
   '/tally.html',

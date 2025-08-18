@@ -37,6 +37,19 @@ try {
 } catch (e) {}
 </script>
 
+<!-- Early SW registration (ensures cached fallback is ready on PWA launch) -->
+<script>
+(function(){
+  try {
+    if ('serviceWorker' in navigator) {
+      // Use the same path you deploy at (root scope assumed). Adjust if hosted under a subpath.
+      navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+        .catch(console.error);
+    }
+  } catch(e) { /* ignore */ }
+})();
+</script>
+
 <div id="loading-overlay" class="show">
   <div class="circle-spinner"></div>
   <div>Checking login… Please wait.</div>
