@@ -6,6 +6,20 @@ body { font-family: Arial, sans-serif; background: #000; color: #fff; padding: 2
   align-items: center;
   padding-top: 40px;
   gap: 16px;
+  margin: auto;
+  text-align: center;
+}
+
+.dashboard-container button {
+  width: 90%;
+  max-width: 320px;
+  margin: auto;
+  text-align: center;
+}
+
+.dashboard-container .tab-button:hover,
+.dashboard-container .dashboard-button:hover {
+  background: #555;
 }
 
 /* Prevent double-tap zoom on interactive controls while still allowing pinch
