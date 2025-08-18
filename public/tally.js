@@ -1,5 +1,11 @@
 // Firebase is initialized in firebase-init.js
 
+// TEST: Confirm we are loading the right view from the URL
+const urlParams = new URLSearchParams(window.location.search);
+const viewParam = urlParams.get('view');
+console.log('%c[Debug] URL view param = ' + viewParam, 'color: orange; font-size: 16px');
+
+
 function formatHoursWorked(decimal) {
   if (isNaN(decimal)) return "";
   const hours = Math.floor(decimal);

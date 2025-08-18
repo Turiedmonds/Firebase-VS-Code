@@ -1,0 +1,103 @@
+[33mae30434[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #242 from Turiedmonds/codex/reset-top-5-shed-staff-implementation
+[33m6a96520[m Reset Top 5 Shed Staff widget
+[33ma115236[m Merge pull request #241 from Turiedmonds/codex/implement-staff-leaderboard-like-shearers
+[33m5f44bf8[m Align staff leaderboard with shearers style
+[33m15e0df3[m Merge pull request #238 from Turiedmonds/codex/add-top-5-shed-staff-widget
+[33m5179e46[m Add Top 5 staff widget
+[33mc5a8b87[m Merge pull request #237 from Turiedmonds/codex/update-top-5-shearers-widget-styling
+[33m859cec1[m Remove old Top5 lb selectors and add final readability rules
+[33m48a027f[m Merge pull request #236 from Turiedmonds/codex/add-styles-for-top-5-shearers
+[33m0f1888a[m Enhance Top 5 Shearers readability
+[33m65fcedc[m Merge pull request #235 from Turiedmonds/codex/update-styles-for-leaderboard-readability
+[33m63a35fd[m Improve leaderboard readability
+[33m65b1ee9[m Merge pull request #234 from Turiedmonds/codex/update-shearer-names-for-dark-ui
+[33m326cb99[m Improve leaderboard readability
+[33mdb34afa[m Merge pull request #233 from Turiedmonds/codex/update-dashboard.js-and-styles.css
+[33me9fdcfe[m Relabel 12M view and tighten shearers widget
+[33mb9ae0eb[m Merge pull request #232 from Turiedmonds/codex/normalize-stand-index-to-0-based
+[33m91b75b8[m Normalize stand index mapping
+[33m7f1ad04[m Merge pull request #231 from Turiedmonds/codex/update-top-5-shearers-widget-aggregator
+[33m6c3fa3a[m feat: handle shearer session schema
+[33m13af367[m Merge pull request #230 from Turiedmonds/codex/add-contractor-scope-to-top-5-shearers-widget
+[33m5120da6[m Persist contractor scope for Top5 widget
+[33m81b9ff4[m Merge pull request #229 from Turiedmonds/codex/update-top-5-shearers-widget-layout
+[33m73ea67b[m feat: compact top shearers widget
+[33m4fc4447[m Merge pull request #228 from Turiedmonds/codex/add-top-5-shearers-widget-to-dashboard
+[33mf33bbe2[m feat: add top 5 shearers widget
+[33m2dba1bf[m Merge pull request #227 from Turiedmonds/codex/add-open-help-menu-button-in-guided-tour
+[33m95e7e54[m Add help menu button to guided tour
+[33mb6423ad[m Merge pull request #226 from Turiedmonds/codex/fix-long-press-help-menu-on-ios
+[33m12460d2[m Fix iOS long-press help menu
+[33m105aa5a[m Merge pull request #225 from Turiedmonds/codex/add-long-press-support-for-help-menu
+[33ma9822fb[m Add long-press support for Help menu
+[33m987e37a[m Merge pull request #224 from Turiedmonds/codex/add-long-press-feature-to-help-button
+[33me111fba[m feat: add long-press to help button
+[33m5c8fd8b[m Merge pull request #223 from Turiedmonds/codex/add-permanent-help-menu-functionality
+[33m193e470[m feat: wire permanent help menu
+[33m287baea[m Merge pull request #222 from Turiedmonds/codex/add-help-menu-system-with-button
+[33mc4a7e07[m feat: add help menu
+[33m1804658[m Merge pull request #221 from Turiedmonds/codex/fix-help-menu-rendering-issues
+[33m2e7723f[m feat: improve tooltip help menu accessibility
+[33m00bdd07[m Merge pull request #220 from Turiedmonds/codex/update-tally-files-for-user-controls
+[33m808a357[m Add local tooltip and tour disable controls
+[33ma3c4170[m Merge pull request #219 from Turiedmonds/codex/update-tally.js-and-tally.html-for-guided-mode
+[33m466f76b[m feat: stabilize guided tooltip
+[33m6e88a81[m Merge pull request #218 from Turiedmonds/codex/update-guided-tour-tooltip-behavior
+[33m4bdf589[m Keep guided tour tooltips visible
+[33m3984e9b[m Merge pull request #217 from Turiedmonds/codex/fix-blank-tally-page-due-to-firestore-import
+[33m8488bab[m Switch tally page to Firestore compat
+[33m0dcc4bf[m Merge pull request #216 from Turiedmonds/codex/modify-tour-welcome-modal-logic
+[33m14e75f3[m feat: persist tally tour welcome status
+[33ma3aacee[m Merge pull request #215 from Turiedmonds/codex/add-pre-tour-welcome-modal
+[33m4ba2781[m feat: add tour welcome modal
+[33m952309a[m Merge pull request #214 from Turiedmonds/codex/update-tooltip-visibility-logic
+[33mbf41f67[m Fix tooltip visibility overrides
+[33m8b70d28[m Merge pull request #213 from Turiedmonds/codex/update-tooltip-event-logic-in-tally.js
+[33md876a46[m Improve tooltip hover stability
+[33ma3388f8[m Merge pull request #212 from Turiedmonds/codex/fix-tooltip-visibility-and-initialization
+[33mc3ac788[m fix: ensure tooltips always visible
+[33mb0c03ab[m Merge pull request #211 from Turiedmonds/codex/implement-guided-tooltips-for-tally-page
+[33mcaf570a[m Ensure guided tooltips always available
+[33m3c20a90[m Merge pull request #210 from Turiedmonds/codex/polish-guided-tooltips-on-tally-page
+[33m360d403[m Enhance guided tooltips and seed data-help
+[33ma293036[m Merge pull request #209 from Turiedmonds/codex/refactor-guided-tour-to-new-tooltip-system
+[33m1b26a2d[m Refactor tally guided tour into tooltip walkthrough
+[33ma872c29[m Merge pull request #208 from Turiedmonds/codex/implement-universal-tooltips-on-tally-page
+[33m516fd7d[m Improve tally tooltips
+[33mce319ca[m Merge pull request #207 from Turiedmonds/codex/add-accessible-tooltips-to-tally-page
+[33ma5c45a8[m feat: add accessible tooltips to tally
+[33m4294310[m Merge pull request #206 from Turiedmonds/codex/add-offline-tooltip-walkthrough-to-tally-page
+[33maa2394e[m Add interactive tally page tour
+[33m305ffc9[m Merge pull request #205 from Turiedmonds/codex/update-dashboard-heading-for-contractors
+[33m5fda676[m feat: show contractor name in dashboard
+[33md4476f7[m Merge pull request #204 from Turiedmonds/codex/fix-manage-staff-layout-on-mobile
+[33mb5fee63[m fix manage staff horizontal scroll
+[33m3338ccb[m Merge pull request #203 from Turiedmonds/codex/update-staff-tables-for-horizontal-scrolling
+[33ma89260d[m Make staff tables horizontally scrollable
+[33m7d12fb9[m Merge pull request #202 from Turiedmonds/codex/update-manage-staff.html-styles
+[33me283365[m fix: improve staff table layout
+[33m6d2eb6f[m Remove emoji from Return to Dashboard buttons
+[33mdd73c9e[m Merge pull request #201 from Turiedmonds/codex/remove-emoji-from-dashboard-buttons
+[33m39c33a2[m Remove emoji from back to dashboard
+[33m8c36640[m Merge pull request #200 from Turiedmonds/codex/change-password-field-type-to-text
+[33m73ffdd4[m Make new password input visible
+[33m4c0d298[m Merge pull request #199 from Turiedmonds/codex/remove-password-visibility-toggle-functionality
+[33ma46f6f7[m[33m ([m[1;31morigin/codex/remove-password-visibility-toggle-functionality[m[33m)[m Remove password toggle from manage staff form
+[33mfdbdcf5[m Merge pull request #198 from Turiedmonds/codex/update-password-input-layout
+[33mf088615[m Embed password toggle in Manage Staff
+[33mb4f6b29[m Merge pull request #197 from Turiedmonds/codex/style-password-input-with-show-button
+[33md8db4e3[m style: embed show password button
+[33mac6fc90[m Merge pull request #196 from Turiedmonds/codex/update-password-field-styling-and-functionality
+[33me7abea6[m[33m ([m[1;31morigin/codex/update-password-field-styling-and-functionality[m[33m)[m feat: add show password toggle to manage staff
+[33mf068e47[m Merge pull request #194 from Turiedmonds/codex/refactor-password-input-layout
+[33m183a7e3[m style: align show password button with input
+[33m3caec9c[m Merge pull request #193 from Turiedmonds/codex/fix-layout-issues-on-manage-staff.html
+[33md5b8d54[m fix: improve manage staff mobile layout
+[33m3eb5bb9[m Merge pull request #192 from Turiedmonds/codex/fix-layout-issues-on-manage-staff.html
+[33m2aea2b3[m feat: improve staff management mobile layout
+[33m9f5556a[m Merge pull request #191 from Turiedmonds/codex/fix-css-for-responsive-manage-staff-page
+[33ma86f234[m feat: improve manage staff responsiveness
+[33m1458088[m Merge pull request #190 from Turiedmonds/codex/unregister-active-service-workers-on-load
+[33meea301c[m Unregister service workers on dashboard
+[33mab82e62[m Merge pull request #189 from Turiedmonds/codex/debug-farm-summary-button-functionality
+[33m9052489[m feat: log Farm Summa
