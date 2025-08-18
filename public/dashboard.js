@@ -537,3 +537,236 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// === Dashboard: Welcome + Help Menu + Simple Tour ===
+(function initDashboardWelcomeAndHelp(){
+  // Default flags
+  if (localStorage.getItem('dashboard_welcome_enabled') == null) {
+    localStorage.setItem('dashboard_welcome_enabled','true');
+  }
+  if (localStorage.getItem('dashboard_tour_enabled') == null) {
+    localStorage.setItem('dashboard_tour_enabled','true');
+  }
+
+  const overlay = document.getElementById('dashboard-welcome-overlay');
+  const modal   = document.getElementById('dashboard-welcome-modal');
+  const btnOK   = document.getElementById('dw-ok');
+  const btnHelp = document.getElementById('dw-help');
+  const btnX    = document.getElementById('dw-close');
+  const cbDont  = document.getElementById('dw-dont-show');
+
+  const helpBtn     = document.getElementById('help-btn');
+  const helpMenu    = document.getElementById('dash-help-menu');
+  const helpClose   = document.getElementById('dhm-close');
+  const toggleWelcome = document.getElementById('toggle-welcome');
+  const toggleTour    = document.getElementById('toggle-tour');
+  const btnStartTour  = document.getElementById('btnStartTour');
+  const btnSkipTour   = document.getElementById('btnSkipTour');
+
+  // Graceful bail-out if HTML not present
+  if (!helpBtn || !helpMenu) return;
+
+  // === HELP MENU OPEN/CLOSE ===
+  function openHelpMenu() {
+    helpMenu.hidden = false;
+    helpBtn.setAttribute('aria-expanded','true');
+  }
+  function closeHelpMenu() {
+    helpMenu.hidden = true;
+    helpBtn.setAttribute('aria-expanded','false');
+  }
+  window.openHelpMenu = openHelpMenu; // allow other buttons to open it
+
+  helpBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (helpMenu.hidden) openHelpMenu(); else closeHelpMenu();
+  });
+  helpClose?.addEventListener('click', closeHelpMenu);
+  document.addEventListener('click', (e) => {
+    if (!helpMenu.hidden && !helpMenu.contains(e.target) && e.target !== helpBtn) {
+      closeHelpMenu();
+    }
+  });
+  window.addEventListener('resize', () => { if (!helpMenu.hidden) closeHelpMenu(); });
+
+  // Reflect flags in help menu
+  function syncHelpMenuChecks() {
+    const welcomeEnabled = localStorage.getItem('dashboard_welcome_enabled') !== 'false';
+    const tourEnabled    = localStorage.getItem('dashboard_tour_enabled') !== 'false';
+    if (toggleWelcome) toggleWelcome.checked = welcomeEnabled;
+    if (toggleTour)    toggleTour.checked    = tourEnabled;
+  }
+  syncHelpMenuChecks();
+
+  toggleWelcome?.addEventListener('change', () => {
+    localStorage.setItem('dashboard_welcome_enabled', toggleWelcome.checked ? 'true' : 'false');
+  });
+  toggleTour?.addEventListener('change', () => {
+    localStorage.setItem('dashboard_tour_enabled', toggleTour.checked ? 'true' : 'false');
+  });
+
+  // === WELCOME MODAL OPEN/CLOSE & ACCESSIBILITY ===
+  const focusableSel = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+  let lastFocused = null;
+
+  function trapFocus(e){
+    if (e.key === 'Escape') { closeWelcome(); return; }
+    if (e.key !== 'Tab') return;
+    const nodes = modal.querySelectorAll(focusableSel);
+    if (!nodes.length) return;
+    const first = nodes[0], last = nodes[nodes.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  function openWelcome() {
+    overlay.style.display = 'flex';
+    overlay.setAttribute('aria-hidden','false');
+    lastFocused = document.activeElement;
+    document.addEventListener('keydown', trapFocus);
+    setTimeout(() => (btnOK?.focus()), 0);
+  }
+
+  function closeWelcome() {
+    overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden','true');
+    document.removeEventListener('keydown', trapFocus);
+    if (cbDont?.checked) localStorage.setItem('dashboard_welcome_done','true');
+    if (lastFocused && lastFocused.focus) lastFocused.focus();
+  }
+
+  btnOK?.addEventListener('click', closeWelcome);
+  btnX?.addEventListener('click', closeWelcome);
+  btnHelp?.addEventListener('click', () => openHelpMenu());
+  overlay?.addEventListener('click', (e) => { if (e.target === overlay) { /* require explicit close */ } });
+
+  // Show only on first login (and when enabled)
+  function shouldShowWelcome() {
+    const enabled = localStorage.getItem('dashboard_welcome_enabled') !== 'false';
+    const done    = localStorage.getItem('dashboard_welcome_done') === 'true';
+    return enabled && !done;
+  }
+
+  // === SIMPLE DASHBOARD TOUR ===
+  // Minimal, self-contained tour with overlay + tooltip.
+  let tourIndex = 0;
+  const tourOverlay = document.createElement('div');
+  tourOverlay.className = 'siq-tour-overlay';
+  document.body.appendChild(tourOverlay);
+
+  const tourTip = document.createElement('div');
+  tourTip.className = 'siq-tour-tooltip';
+  tourTip.innerHTML = `
+    <div class="siq-tour-text"></div>
+    <div class="siq-tour-ctrls">
+      <button class="siq-tour-btn" data-act="prev">Back</button>
+      <button class="siq-tour-btn" data-act="next">Next</button>
+      <button class="siq-tour-btn primary" data-act="finish">Finish</button>
+    </div>
+  `;
+  document.body.appendChild(tourTip);
+  tourTip.style.display = 'none';
+
+  const steps = [
+    { sel: '#top5-shearers', text: 'Top 5 Shearers — tap “View Full List” to see rankings.' },
+    { sel: '#btnManageStaff', text: 'Manage Staff — add/remove users and see online status.' },
+    { sel: '#farm-summary-btn', text: 'Farm Summary — compare farm totals and visits.' },
+    { sel: '#btnViewSavedSessions', text: 'Saved Sessions — reopen previous tally days.' },
+    { sel: '#btnReturnToActive', text: 'Return to Active Session — jump back into an unfinished tally (shown only when a session exists).', optional: true },
+    { sel: '#btnStartNewDay', text: 'Start New Day — begin today’s tally.' },
+    { sel: '#btnChangePin', text: 'Change Contractor PIN — secure control for edits.' },
+    { sel: '#btnSettings', text: 'Settings / Preferences — coming soon (not yet enabled).' },
+    { sel: '#logoutBtn', text: 'Logout — safely sign out.' }
+  ];
+
+  function getStepTargets() {
+    // Filter out optional steps if element is hidden/absent
+    return steps.filter(s => {
+      const el = document.querySelector(s.sel);
+      if (!el) return !s.optional ? false : false;
+      if (s.sel === '#btnReturnToActive' && el.style.display === 'none') return false;
+      return true;
+    });
+  }
+
+  function positionTipNear(el) {
+    const rect = el.getBoundingClientRect();
+    const tipRect = tourTip.getBoundingClientRect();
+    // Default position: above and centered; if not enough space, go below
+    let top = rect.top - tipRect.height - 10;
+    let left = rect.left + (rect.width - tipRect.width)/2;
+    if (top < 10) top = rect.bottom + 10;
+    left = Math.max(10, Math.min(left, window.innerWidth - tipRect.width - 10));
+    tourTip.style.top = `${Math.round(top + window.scrollY)}px`;
+    tourTip.style.left = `${Math.round(left + window.scrollX)}px`;
+  }
+
+  function showTourStep(i) {
+    const targets = getStepTargets();
+    if (!targets.length) return finishTour();
+    tourIndex = Math.max(0, Math.min(i, targets.length - 1));
+    const step = targets[tourIndex];
+    const el = document.querySelector(step.sel);
+    if (!el) return finishTour();
+
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    tourOverlay.classList.add('active');
+    tourTip.style.display = 'block';
+    tourTip.querySelector('.siq-tour-text').textContent = step.text;
+
+    // After layout, position
+    requestAnimationFrame(() => positionTipNear(el));
+  }
+
+  function finishTour() {
+    tourOverlay.classList.remove('active');
+    tourTip.style.display = 'none';
+    localStorage.setItem('dashboard_welcome_done','true');
+  }
+
+  tourTip.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const act = btn.getAttribute('data-act');
+    if (act === 'prev') showTourStep(tourIndex - 1);
+    else if (act === 'next') showTourStep(tourIndex + 1);
+    else finishTour();
+  });
+
+  function startDashboardTour() {
+    const enabled = localStorage.getItem('dashboard_tour_enabled') !== 'false';
+    if (!enabled) return;
+    showTourStep(0);
+  }
+  window.startDashboardTour = startDashboardTour; // optional external call
+
+  // Wire Help menu actions
+  btnStartTour?.addEventListener('click', () => {
+    closeHelpMenu();
+    startDashboardTour();
+  });
+  btnSkipTour?.addEventListener('click', () => {
+    localStorage.setItem('dashboard_welcome_done','true');
+    closeHelpMenu();
+    alert('Tour skipped. You can run it later from the Help menu.');
+  });
+
+  // Auto-show welcome on first visit (but don't block auth-driven layout)
+  function maybeOpenWelcome() {
+    if (!overlay || !modal) return;
+    if (localStorage.getItem('dashboard_welcome_enabled') === 'false') return;
+    if (localStorage.getItem('dashboard_welcome_done') === 'true') return;
+    openWelcome();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      // Sync menu checks and conditionally show welcome
+      syncHelpMenuChecks();
+      maybeOpenWelcome();
+    });
+  } else {
+    syncHelpMenuChecks();
+    maybeOpenWelcome();
+  }
+})();

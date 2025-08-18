@@ -945,3 +945,178 @@ button {
   font-size: 0.8rem;
 }
 
+/* === DASHBOARD HELP MENU (dropdown panel) === */
+#dash-help-menu {
+  position: fixed;
+  top: 64px; /* below the help button */
+  right: 12px;
+  width: min(320px, 90vw);
+  background: #121212;
+  color: #f2f2f2;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+  z-index: 2147483001;
+}
+#dash-help-menu[hidden] { display: none; }
+#dash-help-menu .dhm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+#dash-help-menu .dhm-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+#dash-help-menu .dhm-close {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #dfe6f1;
+  font-size: 20px;
+  cursor: pointer;
+}
+#dash-help-menu .dhm-body { padding: 10px 12px 12px; }
+#dash-help-menu .dhm-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+#dash-help-menu .dhm-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+#dash-help-menu .dhm-btn {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: #1e1e1e;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* === DASHBOARD WELCOME MODAL === */
+#dashboard-welcome-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483000;
+}
+
+#dashboard-welcome-modal {
+  background: #121212;
+  color: #f2f2f2;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  width: min(560px, 92vw);
+  max-height: min(80vh, 720px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#dashboard-welcome-modal .dw-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#dashboard-welcome-modal .dw-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+#dashboard-welcome-modal .dw-close {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #dfe6f1;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+#dashboard-welcome-modal .dw-body {
+  padding: 12px 16px;
+  overflow: auto;
+  line-height: 1.45;
+  font-size: 14px;
+}
+#dashboard-welcome-modal .dw-body .dw-list {
+  padding-left: 18px;
+  margin: 10px 0 0 0;
+}
+#dashboard-welcome-modal .dw-body .dw-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+#dashboard-welcome-modal .dw-footer {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+}
+#dashboard-welcome-modal .dw-btn {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: #1e1e1e;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#dashboard-welcome-modal .dw-btn.primary {
+  background: #2a6df4;
+  border-color: #2a6df4;
+  color: #fff;
+}
+
+@media (max-height: 620px) {
+  #dashboard-welcome-modal { max-height: 88vh; }
+}
+
+/* === SIMPLE TOUR CALLOUT === */
+.siq-tour-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none;
+  z-index: 2147482998;
+}
+.siq-tour-overlay.active { display: block; }
+
+.siq-tour-tooltip {
+  position: absolute;
+  max-width: 320px;
+  padding: 12px;
+  background: #0f1115;
+  color: #fff;
+  border: 1px solid #21283a;
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.5);
+  z-index: 2147482999;
+}
+.siq-tour-ctrls {
+  margin-top: 10px; display: flex; gap: 8px; justify-content: flex-end;
+}
+.siq-tour-btn {
+  appearance: none; border: 1px solid rgba(255,255,255,0.14);
+  background: #1e1e1e; color: #fff; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+}
+.siq-tour-btn.primary { background: #2a6df4; border-color: #2a6df4; }
