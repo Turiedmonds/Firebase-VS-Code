@@ -16,7 +16,9 @@ firebase.auth().onAuthStateChanged(async function (user) {
   if (contractorSnap.exists && contractorSnap.data().role === "contractor") {
     console.log("[auth-check] \u2705 User is a contractor");
     localStorage.setItem("contractor_id", userUid);
-    await waitForContractorIdAndRedirect();
+    localStorage.setItem('user_role', 'contractor'); // NEW
+    console.log('[auth-check] role=contractor saved');
+    window.location.href = "dashboard.html";
     return;
   }
 
@@ -42,6 +44,8 @@ firebase.auth().onAuthStateChanged(async function (user) {
         if (contractorId) {
           try {
             localStorage.setItem("contractor_id", contractorId);
+            localStorage.setItem('user_role', 'staff'); // NEW
+            console.log('[auth-check] role=staff saved');
             window.location.href = "tally.html";
           } catch (e) {
             console.error("\u274c Failed to set contractor_id in localStorage:", e);
@@ -64,17 +68,3 @@ firebase.auth().onAuthStateChanged(async function (user) {
     window.location.href = "login.html";
   }
 });
-
-async function waitForContractorIdAndRedirect(maxWaitMs = 2000) {
-  const start = Date.now();
-  while (Date.now() - start < maxWaitMs) {
-    if (localStorage.getItem('contractor_id')) {
-      console.log('[auth-check.js] \uD83D\uDE80 Redirecting to tally.html');
-      window.location.href = 'tally.html';
-      return;
-    }
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-  console.error('[auth-check.js] \u23F3 Timeout waiting for contractor_id');
-  window.location.href = 'login.html';
-}

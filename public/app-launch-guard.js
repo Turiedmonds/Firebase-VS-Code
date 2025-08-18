@@ -24,21 +24,13 @@
   if (!coldEntry()) return;
 
   const role = (localStorage.getItem('user_role') || '').toLowerCase();
-  const pref = (localStorage.getItem('preferred_start') || '').toLowerCase();
-  let want = '';
 
   if (role === 'contractor') {
-    want = 'dashboard.html';
+    if (!pageIs('dashboard.html')) redirect('dashboard.html');
   } else if (role === 'staff') {
-    want = 'tally.html';
+    if (!pageIs('tally.html')) redirect('tally.html');
   } else {
-    if (pref === 'dashboard') want = 'dashboard.html';
-    else if (pref === 'tally') want = 'tally.html';
+    if (!pageIs('auth-check.html')) redirect('auth-check.html');
   }
-
-  if (!want) return;
-
-  if (want === 'dashboard.html' && !pageIs('dashboard.html')) redirect('dashboard.html');
-  if (want === 'tally.html' && !pageIs('tally.html')) redirect('tally.html');
 })();
 
