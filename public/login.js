@@ -1,3 +1,8 @@
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+    .catch(console.error);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
 
   const auth = firebase.auth();
