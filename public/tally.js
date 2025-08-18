@@ -2505,6 +2505,7 @@ function restoreTodaySession() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
+    const showFarmSummary = params.get('view') === 'farm';
     const isLoadedSession = params.get('loadedSession') === 'true';
     const isNewDay = params.get('newDay') === 'true';
 
@@ -2532,6 +2533,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => showView(btn.dataset.view));
     });
     showView('tallySheetView');
+
+    if (showFarmSummary) {
+        showView('stationSummaryView');
+    }
 
     const loadBtn = document.getElementById('loadSessionBtn');
     const lastBtn = document.getElementById('loadLastBtn');
