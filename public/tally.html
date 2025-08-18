@@ -706,9 +706,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function saveChoices(){
-    sb('tooltips_enabled', tips.checked);
-    sb('tally_guide_enabled', tour.checked);
-    if (disableSetup) setSetupModalEnabled(!disableSetup.checked);
+    // persist to storage
+    localStorage.setItem('tooltips_enabled', tips.checked ? 'true' : 'false');
+    localStorage.setItem('tally_guide_enabled', tour.checked ? 'true' : 'false');
+
+    // NEW: update runtime flags immediately (safe if functions don’t exist)
+    try { if (typeof window.setTipsEnabled  === 'function') window.setTipsEnabled(!!tips.checked); } catch(e){}
+    try { if (typeof window.setGuideEnabled === 'function') window.setGuideEnabled(!!tour.checked); } catch(e){}
+
+    // mark onboarding as seen
     localStorage.setItem('tally_onboard_seen','true');
   }
 

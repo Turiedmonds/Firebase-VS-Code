@@ -56,6 +56,27 @@ function setSetupModalEnabled(enabled){
   localStorage.setItem('setup_modal_enabled', enabled ? 'true' : 'false');
 }
 
+// ===== Help/Tour global runtime state (safe default) =====
+window.TT_STATE = window.TT_STATE || {
+  tooltipsEnabled: (localStorage.getItem('tooltips_enabled') ?? 'true') === 'true',
+  guideEnabled:    (localStorage.getItem('tally_guide_enabled') ?? 'true') === 'true',
+};
+
+// ===== Public setters: keep storage AND runtime in sync, then notify =====
+window.setTipsEnabled = function setTipsEnabled(enabled) {
+  const v = !!enabled;
+  localStorage.setItem('tooltips_enabled', v ? 'true' : 'false');
+  window.TT_STATE.tooltipsEnabled = v;
+  document.dispatchEvent(new CustomEvent('help-flags-changed', { detail: { tooltips: v, guide: window.TT_STATE.guideEnabled }}));
+};
+
+window.setGuideEnabled = function setGuideEnabled(enabled) {
+  const v = !!enabled;
+  localStorage.setItem('tally_guide_enabled', v ? 'true' : 'false');
+  window.TT_STATE.guideEnabled = v;
+  document.dispatchEvent(new CustomEvent('help-flags-changed', { detail: { tooltips: window.TT_STATE.tooltipsEnabled, guide: v }}));
+};
+
 window.renderHelpMenu = function () {
   let m = document.getElementById('tt-help-menu');
   if (!m) { m = document.createElement('div'); m.id = 'tt-help-menu'; document.body.appendChild(m); }
@@ -93,8 +114,8 @@ window.renderHelpMenu = function () {
   }
   tips.checked = gb('tooltips_enabled');
   tour.checked  = gb('tally_guide_enabled');
-  tips.onchange = () => sb('tooltips_enabled', tips.checked);
-  tour.onchange = () => sb('tally_guide_enabled', tour.checked);
+  tips.onchange = () => window.setTipsEnabled(tips.checked);
+  tour.onchange = () => window.setGuideEnabled(tour.checked);
   start.onclick  = () => { if (tour.checked && typeof window.startGuide === 'function') window.startGuide(); };
   ttx.onclick    = () => window.closeHelpMenu();
 };
@@ -3400,13 +3421,12 @@ firebase.auth().onAuthStateChanged(user => {
     function openMenu() {
       if (open) return;
 
-      // If you have a render function, call it first so we measure the real size
-      if (typeof renderHelpMenu === 'function') renderHelpMenu();
-
       // Show before measuring (but keep ARIA/class in sync)
       menu.classList.remove('tt-hidden');
       menu.style.display = 'block';
       menu.setAttribute('aria-hidden', 'false');
+
+      if (typeof window.renderHelpMenu === 'function') window.renderHelpMenu();
 
       // Now position with real dimensions
       positionMenu();
@@ -3472,4 +3492,17 @@ firebase.auth().onAuthStateChanged(user => {
     if (wire()) obs.disconnect();
   });
   obs.observe(document.documentElement, { childList: true, subtree: true });
+})();
+
+(function attachHelpFlagsChangedListener(){
+  const menu = Array.from(document.querySelectorAll('#tt-help-menu')).pop();
+  if (!menu) return;
+
+  document.addEventListener('help-flags-changed', () => {
+    // Re-render only if menu is open
+    const isOpen = getComputedStyle(menu).display !== 'none' && menu.getAttribute('aria-hidden') !== 'true';
+    if (isOpen && typeof window.renderHelpMenu === 'function') {
+      window.renderHelpMenu();
+    }
+  });
 })();
