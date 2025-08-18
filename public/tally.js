@@ -46,6 +46,7 @@ if (localStorage.getItem('tally_guide_enabled') == null) localStorage.setItem('t
 if (localStorage.getItem('setup_modal_enabled') == null){
   localStorage.setItem('setup_modal_enabled', 'true');
 }
+if (localStorage.getItem('hours_modal_enabled') == null) localStorage.setItem('hours_modal_enabled','true');
 
 function isSetupModalEnabled(){
   const v = localStorage.getItem('setup_modal_enabled');
@@ -69,12 +70,16 @@ window.renderHelpMenu = function () {
     <label style="display:block;margin:8px 0;">
       <input id="tour" type="checkbox"> Enable guided tour
     </label>
+    <label style="display:block;margin:8px 0;">
+      <input id="hoursModalToggle" type="checkbox"> Show Hours auto-fill reminder
+    </label>
     <button id="start" style="margin-top:8px;">Start guide now</button>
   `;
   const gb = k => (localStorage.getItem(k) ?? 'true') === 'true';
   const sb = (k,v) => localStorage.setItem(k, v ? 'true' : 'false');
   const tips = m.querySelector('#tips');
   const tour = m.querySelector('#tour');
+  const hoursModalToggle = m.querySelector('#hoursModalToggle');
   const start = m.querySelector('#start');
   const ttx = m.querySelector('#ttx');
   const setupToggleRow = document.createElement('div');
@@ -93,8 +98,10 @@ window.renderHelpMenu = function () {
   }
   tips.checked = gb('tooltips_enabled');
   tour.checked  = gb('tally_guide_enabled');
+  if (hoursModalToggle) hoursModalToggle.checked = gb('hours_modal_enabled');
   tips.onchange = () => sb('tooltips_enabled', tips.checked);
   tour.onchange = () => sb('tally_guide_enabled', tour.checked);
+  if (hoursModalToggle) hoursModalToggle.onchange = () => sb('hours_modal_enabled', hoursModalToggle.checked);
   start.onclick  = () => { if (tour.checked && typeof window.startGuide === 'function') window.startGuide(); };
   ttx.onclick    = () => window.closeHelpMenu();
 };
@@ -671,7 +678,7 @@ function populateSessionData(data) {
         if (Array.isArray(data.shedStaff)) {
             data.shedStaff.forEach(staff => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td><input placeholder="Staff Name" type="text"/></td><td><input placeholder="e.g. 8h 30m" type="text" class="hours-input"/></td>';
+                tr.innerHTML = '<td><input placeholder="Staff Name" type="text"/></td><td><input type="text" class="hours-input" data-auto-hours="shed" readonly/></td>';
                 const nameInput = tr.querySelector('td:nth-child(1) input');
                 const hoursInput = tr.querySelector('td:nth-child(2) input');
                 if (nameInput) {
@@ -682,6 +689,7 @@ function populateSessionData(data) {
                 if (hoursInput) {
                     hoursInput.value = formatHoursWorked(parseHoursWorked(staff.hours));
                     adjustShedStaffHoursWidth(hoursInput);
+                    initAutoHoursField(hoursInput);
                 }
                 staffTableEl.appendChild(tr);
             });
@@ -1293,7 +1301,7 @@ function calculateHoursWorked() {
     const end = new Date("1970-01-01T" + endStr); 
 
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
-        output.value = "";
+        if (output.dataset.manual !== 'true') output.value = "";
         updateShedStaffHours("");
         return;
     }
@@ -1330,27 +1338,99 @@ function calculateHoursWorked() {
     });
  
     const totalHours = totalMinutes / 60;
-    output.value = totalHours > 0 ? formatHoursWorked(totalHours) : "0h";
-    updateShedStaffHours(output.value);
+    const newValue = totalHours > 0 ? formatHoursWorked(totalHours) : "0h";
+    if (output.dataset.manual !== 'true') output.value = newValue;
+    updateShedStaffHours(newValue);
 }
- 
+
  function updateShedStaffHours(value) {
      const table = document.getElementById('shedStaffTable');
      if (!table) return;
      table.querySelectorAll('tr').forEach(row => {
          const input = row.querySelector('td:nth-child(2) input');
-         if (input) {
+         if (input && input.dataset.manual !== 'true') {
              input.value = value;
              adjustShedStaffHoursWidth(input);
          }
      });
  }
+
+let currentAutoHoursField = null;
+
+function showHoursAutoModal(input) {
+    currentAutoHoursField = input;
+    const modal = document.getElementById('hours-modal');
+    if (modal) {
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden','false');
+    }
+}
+
+function hideHoursAutoModal() {
+    const modal = document.getElementById('hours-modal');
+    if (modal) {
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden','true');
+    }
+    currentAutoHoursField = null;
+}
+
+function enableManualHours(input) {
+    input.readOnly = false;
+    input.dataset.manual = 'true';
+    const badge = document.createElement('span');
+    badge.className = 'manual-badge';
+    badge.textContent = 'Manual';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'reset-auto-btn';
+    btn.textContent = 'Reset to Auto';
+    btn.addEventListener('click', () => resetAutoHours(input));
+    const frag = document.createDocumentFragment();
+    frag.appendChild(badge);
+    frag.appendChild(btn);
+    input.parentNode.insertBefore(frag, input.nextSibling);
+    if (input.classList.contains('hours-input')) adjustShedStaffHoursWidth(input);
+}
+
+function resetAutoHours(input) {
+    input.readOnly = true;
+    delete input.dataset.manual;
+    delete input.dataset.modalShown;
+    const parent = input.parentNode;
+    parent.querySelector('.manual-badge')?.remove();
+    parent.querySelector('.reset-auto-btn')?.remove();
+    if (input.dataset.autoHours === 'shearer') {
+        calculateHoursWorked();
+    } else {
+        const hours = document.getElementById('hoursWorked');
+        if (hours) updateShedStaffHours(hours.value);
+    }
+}
+
+function handleAutoHoursFocus(e) {
+    const input = e.target;
+    if (input.dataset.manual === 'true') return;
+    if (localStorage.getItem('hours_modal_enabled') !== 'true') return;
+    if (input.dataset.modalShown === 'true') return;
+    e.preventDefault();
+    input.blur();
+    showHoursAutoModal(input);
+}
+
+function initAutoHoursField(input) {
+    if (!input) return;
+    input.readOnly = true;
+    input.addEventListener('focus', handleAutoHoursFocus);
+}
  
  document.addEventListener("DOMContentLoaded", function () {
      generateTimeOptions();
      const start = document.getElementById("startTime");
      const end = document.getElementById("finishTime");
      const hours = document.getElementById("hoursWorked");
+    const hoursModalOk = document.getElementById('hours-modal-ok');
+    const hoursModalManual = document.getElementById('hours-modal-manual');
      const toggle = document.getElementById('timeFormatToggle');
     const workdayToggle = document.getElementById('workdayToggle');
     const lunchBtn = document.getElementById('lunchToggle');
@@ -1370,6 +1450,7 @@ function calculateHoursWorked() {
       updateLunchIndicatorText();
     }
     updateLunchToggleButton();
+   if (start) start.addEventListener('change', handleStartTimeChange);
    if (end) {
      end.addEventListener('change', () => {
        if (!hasTouchedTallyInputs && !hasShownFinishTimeWarning) {
@@ -1390,13 +1471,22 @@ function calculateHoursWorked() {
  if (hours) {
          hours.addEventListener("input", () => updateShedStaffHours(hours.value));
          updateShedStaffHours(hours.value);
-     }
-     document.querySelectorAll('#headerRow input[type="text"]').forEach(adjustStandNameWidth);
+    }
+    document.querySelectorAll('#headerRow input[type="text"]').forEach(adjustStandNameWidth);
  document.querySelectorAll('#tallyBody td.sheep-type input[type="text"]').forEach(adjustSheepTypeWidth);
-     document.querySelectorAll('#shedStaffTable td:nth-child(1) input').forEach(adjustShedStaffNameWidth);
+    document.querySelectorAll('#shedStaffTable td:nth-child(1) input').forEach(adjustShedStaffNameWidth);
     document.querySelectorAll('#shedStaffTable .hours-input').forEach(adjustShedStaffHoursWidth);
     document.querySelectorAll('input[type="text"]').forEach(applyInputHistory);
-});
+    document.querySelectorAll('input[data-auto-hours]').forEach(initAutoHoursField);
+    if (hoursModalOk) hoursModalOk.addEventListener('click', () => {
+      if (currentAutoHoursField) currentAutoHoursField.dataset.modalShown = 'true';
+      hideHoursAutoModal();
+    });
+    if (hoursModalManual) hoursModalManual.addEventListener('click', () => {
+      if (currentAutoHoursField) enableManualHours(currentAutoHoursField);
+      hideHoursAutoModal();
+    });
+  });
  
  document.addEventListener('input', function(e) {
      if (e.target.matches('#headerRow input[type="text"]')) {
@@ -1417,7 +1507,7 @@ if (e.target.matches('#shedStaffTable td:nth-child(1) input')) {
  function addShedStaff() {
      const body = document.getElementById('shedStaffTable');
      const row = document.createElement('tr');
-     row.innerHTML = `<td><input placeholder="Staff Name" type="text"/></td><td><input placeholder="e.g. 8h 30m" type="text" class="hours-input"/></td>`;
+     row.innerHTML = `<td><input placeholder="Staff Name" type="text"/></td><td><input type="text" class="hours-input" data-auto-hours="shed" readonly/></td>`;
      body.appendChild(row);
      const hours = document.getElementById('hoursWorked');
      const nameInput = row.querySelector('td:nth-child(1) input');
@@ -1429,7 +1519,10 @@ if (e.target.matches('#shedStaffTable td:nth-child(1) input')) {
          adjustShedStaffNameWidth(nameInput);
          applyInputHistory(nameInput);
      }
-     if (hoursInput) adjustShedStaffHoursWidth(hoursInput);
+     if (hoursInput) {
+         adjustShedStaffHoursWidth(hoursInput);
+         initAutoHoursField(hoursInput);
+     }
  }
  
  function removeShedStaff() {
