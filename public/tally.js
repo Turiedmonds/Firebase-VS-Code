@@ -73,57 +73,14 @@ window.renderHelpMenu = function () {
   ttx.onclick    = () => window.closeHelpMenu();
 };
 
-window.openHelpMenu = function () {
-  window.renderHelpMenu();
-  const m = document.getElementById('tt-help-menu');
-  // remove any hiding attrs/classes
-  m.removeAttribute('hidden'); m.removeAttribute('aria-hidden');
-  m.classList.remove('hidden','is-hidden');
-  // force visible on top
-  const s = m.style;
-  s.setProperty('position','fixed','important');
-  s.setProperty('left','50%','important');
-  s.setProperty('top','50%','important');
-  s.setProperty('transform','translate(-50%,-50%)','important');
-  s.setProperty('z-index','2147483647','important');
-  s.setProperty('background','#111','important');
-  s.setProperty('color','#fff','important');
-  s.setProperty('padding','16px','important');
-  s.setProperty('border-radius','12px','important');
-  s.setProperty('max-width','90vw','important');
-  s.setProperty('max-height','80vh','important');
-  s.setProperty('overflow','auto','important');
-  s.setProperty('display','block','important');
-  s.setProperty('visibility','visible','important');
-  s.setProperty('opacity','1','important');
-  s.setProperty('pointer-events','auto','important');
-  if (m.parentElement !== document.body) document.body.appendChild(m);
-  m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true');
-};
+window.addEventListener('keydown', (e) => {
+  if (!(e.altKey && (e.key.toLowerCase() === 'h'))) return;
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  e.preventDefault();
+  if (typeof window.openHelpMenu === 'function') window.openHelpMenu();
+}, { capture: true });
 
-window.closeHelpMenu = function () {
-  const m = document.getElementById('tt-help-menu'); if (m) m.style.display = 'none';
-};
-
-// === HELP BUTTON WIRING ===
-document.addEventListener('DOMContentLoaded', () => {
-  const helpBtn = document.getElementById('help-btn') || document.getElementById('tour-help-btn');
-  if (!helpBtn) return;
-  helpBtn.addEventListener('click', (e) => {
-    const tourEnabled = (localStorage.getItem('tally_guide_enabled') ?? 'true') === 'true';
-    if (e.shiftKey) { window.openHelpMenu(); return; }
-    if (tourEnabled && typeof window.startGuide === 'function') window.startGuide();
-    else window.openHelpMenu();
-  }, true); // capture=true to beat other handlers
-
-  // Alt+H opens Help (not while typing)
-  window.addEventListener('keydown', (e) => {
-    if (!(e.altKey && (e.key.toLowerCase() === 'h'))) return;
-    const t = e.target;
-    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-    e.preventDefault(); window.openHelpMenu();
-  }, { capture:true });
-});
 
 // --- Long-press to open Help menu (iOS-friendly with jitter tolerance) ---
 (function addLongPressToHelp(){
@@ -3065,7 +3022,7 @@ function initTallyTooltips() {
     highlight(el);
     const text = getHelpText(el);
     const isLast = guidedIndex === guidedList.length - 1;
-    tt.innerHTML = `<div>${text}</div><div class="tt-guided-controls"><button type="button" id="tt-back-btn"${guidedIndex===0?' disabled':''}>Back</button><button type="button" id="tt-next-btn">${isLast ? 'Finish' : 'Next'}</button><button type="button" id="tt-skip-btn">Skip</button></div><div style="margin-top:4px;font-size:12px;"><button id="guide-open-help" class="btn btn-secondary" type="button">Open Help Menu</button></div>`;
+    tt.innerHTML = `<div>${text}</div><div class="tt-guided-controls"><button type="button" id="tt-back-btn"${guidedIndex===0?' disabled':''}>Back</button><button type="button" id="tt-next-btn">${isLast ? 'Finish' : 'Next'}</button><button type="button" id="tt-skip-btn">Skip</button></div>`;
     tt.setAttribute('aria-hidden', 'false');
     tt.classList.remove('tt-hidden');
     tt.classList.add('tt-show');
@@ -3078,14 +3035,6 @@ function initTallyTooltips() {
     document.getElementById('tt-back-btn').addEventListener('click', prevGuided);
     document.getElementById('tt-next-btn').addEventListener('click', nextGuided);
     document.getElementById('tt-skip-btn').addEventListener('click', skipGuided);
-    const btnOpenHelp = document.getElementById('guide-open-help');
-    if (btnOpenHelp && !btnOpenHelp.dataset.wired) {
-      btnOpenHelp.dataset.wired = '1';
-      btnOpenHelp.addEventListener('click', (e) => {
-        e.preventDefault(); e.stopPropagation();
-        if (typeof window.openHelpMenu === 'function') window.openHelpMenu();
-      }, { capture:true });
-    }
   }
   function nextGuided() {
     if (guidedIndex >= guidedList.length - 1) {
@@ -3334,3 +3283,75 @@ firebase.auth().onAuthStateChanged(user => {
     window.addEventListener('load', runAll, { once: true });
   }
 });
+
+(function setupHelpDropdown(){
+  const helpBtn = document.getElementById('help-btn');
+  const menu = document.getElementById('tt-help-menu');
+  if (!helpBtn || !menu) return;
+
+  let open = false;
+  let outsideHandler = null;
+  let escHandler = null;
+
+  function positionMenu() {
+    const r = helpBtn.getBoundingClientRect();
+    const top = Math.round(r.bottom + window.scrollY + 8);
+    const left = Math.round(Math.min(
+      r.left + window.scrollX,
+      window.scrollX + (document.documentElement.clientWidth - menu.offsetWidth - 8)
+    ));
+    menu.style.top = top + 'px';
+    menu.style.left = left + 'px';
+  }
+
+  function openMenu() {
+    if (open) return;
+    if (typeof window.renderHelpMenu === 'function') window.renderHelpMenu();
+    positionMenu();
+    menu.style.display = 'block';
+    menu.setAttribute('aria-hidden', 'false');
+    open = true;
+
+    // close on outside click
+    outsideHandler = (e) => {
+      if (!menu.contains(e.target) && e.target !== helpBtn) closeMenu();
+    };
+    // close on ESC
+    escHandler = (e) => {
+      if (e.key === 'Escape') closeMenu();
+    };
+    setTimeout(() => {
+      document.addEventListener('mousedown', outsideHandler);
+      document.addEventListener('touchstart', outsideHandler, {passive:true});
+      document.addEventListener('keydown', escHandler);
+    }, 0);
+  }
+
+  function closeMenu() {
+    if (!open) return;
+    menu.style.display = 'none';
+    menu.setAttribute('aria-hidden', 'true');
+    open = false;
+
+    document.removeEventListener('mousedown', outsideHandler);
+    document.removeEventListener('touchstart', outsideHandler);
+    document.removeEventListener('keydown', escHandler);
+    outsideHandler = null;
+    escHandler = null;
+  }
+
+  function toggleMenu() {
+    if (open) closeMenu(); else openMenu();
+  }
+
+  // Reposition on resize/scroll while open
+  window.addEventListener('resize', () => { if (open) positionMenu(); });
+  window.addEventListener('scroll', () => { if (open) positionMenu(); }, {passive:true});
+
+  // Main trigger: tap/click on the “?” help button
+  helpBtn.addEventListener('click', (e) => { e.preventDefault(); toggleMenu(); });
+
+  // Optional: expose for other code to open programmatically
+  window.openHelpMenu = openMenu;
+  window.closeHelpMenu = closeMenu;
+})();
