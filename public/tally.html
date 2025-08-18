@@ -760,5 +760,14 @@ document.addEventListener('DOMContentLoaded', () => {
 <div id="sync-status-banner"></div>
 <script src="serviceworker.js"></script>
   <script src="/pwa-suppress-install.js" defer></script>
+  <script src="app-launch-guard.js" defer></script>
+  <script>
+    try {
+      if (!localStorage.getItem('user_role')) {
+        localStorage.setItem('user_role', 'staff');
+      }
+      localStorage.setItem('preferred_start', 'tally');
+    } catch(e) {}
+  </script>
 </body>
 </html>
