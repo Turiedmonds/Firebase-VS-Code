@@ -2508,21 +2508,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const showFarmSummary = params.get('view') === 'farm';
 
     if (showFarmSummary) {
-      console.log('[View Switch] Showing Farm Summary');
+      console.log('%c[View Switch] Switching to Farm Summary tab', 'color: limegreen; font-size: 16px; font-weight: bold');
 
-      const farmSection = document.getElementById('farm-summary');
-      const dailySection = document.getElementById('daily-summary');
-      if (farmSection && dailySection) {
-        farmSection.style.display = 'block';
-        dailySection.style.display = 'none';
-      }
+      setTimeout(() => {
+        const farmSection = document.getElementById('farm-summary');
+        const dailySection = document.getElementById('daily-summary');
+        if (farmSection && dailySection) {
+          farmSection.style.display = 'block';
+          dailySection.style.display = 'none';
+        }
 
-      const farmTab = document.getElementById('farm-summary-tab');
-      const dailyTab = document.getElementById('daily-summary-tab');
-      if (farmTab && dailyTab) {
-        farmTab.classList.add('active');
-        dailyTab.classList.remove('active');
-      }
+        const farmTab = document.getElementById('farm-summary-tab');
+        const dailyTab = document.getElementById('daily-summary-tab');
+        if (farmTab && dailyTab) {
+          farmTab.classList.add('active');
+          dailyTab.classList.remove('active');
+        }
+      }, 500); // Add slight delay to help visibility and ensure DOM is ready
     }
 
     const isLoadedSession = params.get('loadedSession') === 'true';
