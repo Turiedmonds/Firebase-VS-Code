@@ -12,21 +12,21 @@
   <script type="module" src="auth.js"></script>
 </head>
 <body>
-  <div id="page-content" class="dashboard-container" style="display: none;">
-    <div class="logo-container">
-      <img src="logo.png" alt="SHEΔR iQ logo" />
-      <h2 id="dashboard-heading">Contractor Dashboard</h2>
-      <p id="dashboard-subheading"></p>
-    </div>
-    <div class="dash-grid">
-      <!-- BEGIN: Top 5 Shearers Widget -->
-      <section id="top5-shearers" class="dash-card">
-        <header class="dash-card__header">
-          <h2 class="dash-card__title">Top 5 Shearers</h2>
-          <div class="dash-card__controls">
-            <!-- Work type tabs -->
-            <div class="siq-segmented" id="worktype-tabs">
-              <button type="button" data-worktype="shorn" class="siq-segmented__btn is-active">Shorn</button>
+    <div id="page-content" class="dashboard-container" style="display: none;">
+      <div class="logo-container">
+        <img src="logo.png" alt="SHEΔR iQ logo" />
+        <h2 id="dashboard-heading">Contractor Dashboard</h2>
+      </div>
+      <div class="dashboard-main">
+        <p id="dashboard-subheading"></p>
+        <!-- BEGIN: Top 5 Shearers Widget -->
+        <section id="top5-shearers" class="dash-card top5-widget">
+          <header class="dash-card__header">
+            <h2 class="dash-card__title">Top 5 Shearers</h2>
+            <div class="dash-card__controls">
+              <!-- Work type tabs -->
+              <div class="siq-segmented" id="worktype-tabs">
+                <button type="button" data-worktype="shorn" class="siq-segmented__btn is-active">Shorn</button>
               <button type="button" data-worktype="crutched" class="siq-segmented__btn">Crutched</button>
             </div>
             <!-- View selector -->
@@ -42,48 +42,48 @@
           </div>
         </header>
 
-        <div id="top5-shearers-list" class="siq-leaderboard">
-          <!-- JS renders 5 rows with bars -->
-        </div>
-      </section>
-      <!-- When we add the other 3 widgets, they’ll sit beside this one on wide screens -->
-    </div>
-
-    <!-- Full list modal -->
-    <div id="shearers-modal" class="siq-modal" aria-hidden="true">
-      <div class="siq-modal__backdrop" data-close-modal></div>
-      <div class="siq-modal__panel">
-        <header class="siq-modal__header">
-          <h3>All Shearers — Rankings</h3>
-          <button class="siq-modal__close" data-close-modal aria-label="Close">&times;</button>
-        </header>
-        <div class="siq-modal__body">
-          <div class="siq-table-scroll">
-            <table class="siq-rank-table" id="shearers-full-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Shearer</th>
-                  <th>Total Sheep</th>
-                  <th>% of Total</th>
-                </tr>
-              </thead>
-              <tbody><!-- JS fills --></tbody>
-            </table>
+          <div id="top5-shearers-list" class="siq-leaderboard">
+            <!-- JS renders 5 rows with bars -->
           </div>
+        </section>
+        <!-- Full list modal -->
+        <div id="shearers-modal" class="siq-modal" aria-hidden="true">
+          <div class="siq-modal__backdrop" data-close-modal></div>
+          <div class="siq-modal__panel">
+            <header class="siq-modal__header">
+              <h3>All Shearers — Rankings</h3>
+              <button class="siq-modal__close" data-close-modal aria-label="Close">&times;</button>
+            </header>
+            <div class="siq-modal__body">
+              <div class="siq-table-scroll">
+                <table class="siq-rank-table" id="shearers-full-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Shearer</th>
+                      <th>Total Sheep</th>
+                      <th>% of Total</th>
+                    </tr>
+                  </thead>
+                  <tbody><!-- JS fills --></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END: Top 5 Shearers Widget -->
+        <div class="dashboard-buttons">
+          <button id="btnManageStaff" class="tab-button">Manage Staff</button>
+          <button id="farm-summary-btn" class="dashboard-button" onclick="window.location.replace('tally.html?view=farm');">Farm Summary</button>
+          <button id="btnViewSavedSessions" class="tab-button">View Saved Sessions</button>
+          <button id="btnReturnToActive" class="tab-button" style="display: none;">Return to Active Session</button>
+          <button id="btnStartNewDay" class="tab-button">Start New Day</button>
+          <button id="btnChangePin" class="tab-button">Change Contractor PIN</button>
+          <button id="btnSettings" class="tab-button">Settings / Preferences</button>
+          <button id="logoutBtn" class="tab-button">Logout</button>
         </div>
       </div>
     </div>
-    <!-- END: Top 5 Shearers Widget -->
-    <button id="btnManageStaff" class="tab-button">Manage Staff</button>
-    <button id="farm-summary-btn" class="dashboard-button" onclick="window.location.replace('tally.html?view=farm');">Farm Summary</button>
-    <button id="btnViewSavedSessions" class="tab-button">View Saved Sessions</button>
-    <button id="btnReturnToActive" class="tab-button" style="display: none;">Return to Active Session</button>
-    <button id="btnStartNewDay" class="tab-button">Start New Day</button>
-    <button id="btnChangePin" class="tab-button">Change Contractor PIN</button>
-    <button id="btnSettings" class="tab-button">Settings / Preferences</button>
-    <button id="logoutBtn" class="tab-button">Logout</button>
-  </div>
 
   <script type="module" src="dashboard.js"></script>
   <div id="loading-overlay">
