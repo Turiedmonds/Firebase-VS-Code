@@ -48,6 +48,12 @@ if (localStorage.getItem('setup_modal_enabled') == null){
 }
 if (localStorage.getItem('hours_modal_enabled') == null) localStorage.setItem('hours_modal_enabled','true');
 
+// ===== Help/Tour global runtime state (safe default) =====
+window.TT_STATE = window.TT_STATE || {
+  tooltipsEnabled: (localStorage.getItem('tooltips_enabled') ?? 'true') === 'true',
+  guideEnabled:    (localStorage.getItem('tally_guide_enabled') ?? 'true') === 'true',
+};
+
 function isSetupModalEnabled(){
   const v = localStorage.getItem('setup_modal_enabled');
   // Default ON if not set
@@ -99,8 +105,8 @@ window.renderHelpMenu = function () {
   tips.checked = gb('tooltips_enabled');
   tour.checked  = gb('tally_guide_enabled');
   if (hoursModalToggle) hoursModalToggle.checked = gb('hours_modal_enabled');
-  tips.onchange = () => sb('tooltips_enabled', tips.checked);
-  tour.onchange = () => sb('tally_guide_enabled', tour.checked);
+  tips.onchange = () => window.setTipsEnabled(tips.checked);
+  tour.onchange = () => window.setGuideEnabled(tour.checked);
   if (hoursModalToggle) hoursModalToggle.onchange = () => sb('hours_modal_enabled', hoursModalToggle.checked);
   start.onclick  = () => { if (tour.checked && typeof window.startGuide === 'function') window.startGuide(); };
   ttx.onclick    = () => window.closeHelpMenu();
@@ -113,6 +119,19 @@ window.addEventListener('keydown', (e) => {
   e.preventDefault();
   if (typeof window.openHelpMenu === 'function') window.openHelpMenu();
 }, { capture: true });
+
+(function attachHelpFlagsChangedListener(){
+  const menu = Array.from(document.querySelectorAll('#tt-help-menu')).pop();
+  if (!menu) return;
+
+  document.addEventListener('help-flags-changed', () => {
+    // Re-render only if menu is open
+    const isOpen = getComputedStyle(menu).display !== 'none' && menu.getAttribute('aria-hidden') !== 'true';
+    if (isOpen && typeof window.renderHelpMenu === 'function') {
+      window.renderHelpMenu();
+    }
+  });
+})();
 
 
 // --- Long-press to open Help menu (iOS-friendly with jitter tolerance) ---
@@ -2954,7 +2973,7 @@ async function markTourSeen(uid) {
 }
 
 async function checkTourWelcomeStatus(uid) {
-  if (localStorage.getItem('tally_guide_enabled') === 'false') return;
+  if (!window.TT_STATE.guideEnabled) return;
   // If local says done, skip (supports offline)
   if (localStorage.getItem('tally_guide_done') === 'true') return;
   // Try Firestore if we have a user and firestore loaded
@@ -3001,8 +3020,10 @@ function initTallyTooltips() {
     }
   })();
 
-  let tooltipsEnabled = localStorage.getItem('tooltips_enabled') === 'true';
-  let guideEnabled = localStorage.getItem('tally_guide_enabled') === 'true';
+  // runtime flags
+  // (mirrors window.TT_STATE so other modules can inspect current settings)
+  // Prefer reading window.TT_STATE directly for up-to-date values
+
 
   let guidedMode = false;
   let guidedList = [];
@@ -3095,7 +3116,7 @@ function initTallyTooltips() {
   }
 
   function showTooltip(target, text) {
-    if (localStorage.getItem('tooltips_enabled') !== 'true') return;
+    if (!window.TT_STATE.tooltipsEnabled) return;
     if (!text || !String(text).trim()) { hideTooltip(); return; }
     const tt = document.getElementById('tt-root');
     if (isGuidedActive()) {
@@ -3214,7 +3235,7 @@ function initTallyTooltips() {
 
   // Show on first entry into a qualifying element
   document.addEventListener('mouseover', (e) => {
-    if (!tooltipsEnabled || isGuidedActive()) return;
+    if (!window.TT_STATE.tooltipsEnabled || isGuidedActive()) return;
     const t = findTipTarget(e.target);
     if (!t || t === currentTipTarget) return;
 
@@ -3240,7 +3261,7 @@ function initTallyTooltips() {
 
   // Keyboard: show on focus, hide on blur
   document.addEventListener('focusin', (e) => {
-    if (!tooltipsEnabled || isGuidedActive()) return;
+    if (!window.TT_STATE.tooltipsEnabled || isGuidedActive()) return;
     const t = findTipTarget(e.target);
     if (!t) return;
     currentTipTarget = t;
@@ -3248,7 +3269,7 @@ function initTallyTooltips() {
   }, true);
 
   document.addEventListener('focusout', (e) => {
-    if (!tooltipsEnabled) return;
+    if (!window.TT_STATE.tooltipsEnabled) return;
     if (shouldSuppressAutoHide()) return;
     if (currentTipTarget && !currentTipTarget.contains(e.relatedTarget)) {
       hideTooltip(); currentTipTarget = null; currentLeaveHandler = null;
@@ -3267,27 +3288,25 @@ function initTallyTooltips() {
     showGuideDisabledToast._t = setTimeout(() => { toast.style.display = 'none'; }, 3000);
   }
 
-  function setTipsEnabled(v) {
-    tooltipsEnabled = !!v;
-    localStorage.setItem('tooltips_enabled', tooltipsEnabled ? 'true' : 'false');
-    if (!tooltipsEnabled) hideTooltip();
-    if (typeof window.onTipsEnabledChange === 'function') { try { window.onTipsEnabledChange(tooltipsEnabled); } catch {} }
-    renderHelpMenu();
-  }
+  // ===== Public setters: keep storage AND runtime in sync, then notify =====
+  window.setTipsEnabled = function setTipsEnabled(enabled) {
+    const v = !!enabled;
+    localStorage.setItem('tooltips_enabled', v ? 'true' : 'false');
+    window.TT_STATE.tooltipsEnabled = v;
+    if (!v) hideTooltip();
+    document.dispatchEvent(new CustomEvent('help-flags-changed', { detail: { tooltips: v, guide: window.TT_STATE.guideEnabled }}));
+  };
 
-  function setGuideEnabled(v) {
-    guideEnabled = !!v;
-    localStorage.setItem('tally_guide_enabled', guideEnabled ? 'true' : 'false');
-    if (!guideEnabled && guidedMode) endGuided();
-    if (typeof window.onGuideEnabledChange === 'function') { try { window.onGuideEnabledChange(guideEnabled); } catch {} }
-    renderHelpMenu();
-  }
-
-  window.setTipsEnabled = setTipsEnabled;
-  window.setGuideEnabled = setGuideEnabled;
+  window.setGuideEnabled = function setGuideEnabled(enabled) {
+    const v = !!enabled;
+    localStorage.setItem('tally_guide_enabled', v ? 'true' : 'false');
+    window.TT_STATE.guideEnabled = v;
+    if (!v && guidedMode) endGuided();
+    document.dispatchEvent(new CustomEvent('help-flags-changed', { detail: { tooltips: window.TT_STATE.tooltipsEnabled, guide: v }}));
+  };
 
   function startGuide() {
-    if (localStorage.getItem('tally_guide_enabled') !== 'true') {
+    if (!window.TT_STATE.guideEnabled) {
       showGuideDisabledToast();
       return;
     }
@@ -3324,7 +3343,7 @@ function initTallyTooltips() {
 
   let touchTimer = null;
   document.addEventListener('touchstart', (e) => {
-    if (!tooltipsEnabled || isGuidedActive()) return;
+    if (!window.TT_STATE.tooltipsEnabled || isGuidedActive()) return;
     const t = findTipTarget(e.target);
     if (!t) { if (!shouldSuppressAutoHide()) hideTooltip(); return; }
     touchTimer = setTimeout(() => { showTooltip(t, getHelpText(t)); }, 500);
@@ -3332,9 +3351,9 @@ function initTallyTooltips() {
   function clearTouch() { if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; } }
   document.addEventListener('touchend', () => {
     clearTouch();
-    if (!tooltipsEnabled || Date.now() - guidedStartTs < 500 || shouldSuppressAutoHide()) return;
+    if (!window.TT_STATE.tooltipsEnabled || Date.now() - guidedStartTs < 500 || shouldSuppressAutoHide()) return;
     setTimeout(() => {
-      if (!tooltipsEnabled || shouldSuppressAutoHide()) return;
+      if (!window.TT_STATE.tooltipsEnabled || shouldSuppressAutoHide()) return;
       hideTooltip();
       currentTipTarget = null;
       currentLeaveHandler = null;
@@ -3342,21 +3361,21 @@ function initTallyTooltips() {
   }, { passive: true });
   document.addEventListener('touchcancel', () => {
     clearTouch();
-    if (!tooltipsEnabled || shouldSuppressAutoHide()) return;
+    if (!window.TT_STATE.tooltipsEnabled || shouldSuppressAutoHide()) return;
     hideTooltip();
   }, { passive: true });
 
   window.addEventListener('scroll', () => {
     if (shouldSuppressAutoHide()) {
       if (currentTarget) positionTooltip(currentTarget);
-    } else if (tooltipsEnabled) {
+    } else if (window.TT_STATE.tooltipsEnabled) {
       hideTooltip();
     }
   }, { capture: true, passive: true });
   window.addEventListener('resize', () => { if (isGuidedActive() && currentTarget) positionTooltip(currentTarget); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (shouldSuppressAutoHide() || !tooltipsEnabled) return; hideTooltip(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (shouldSuppressAutoHide() || !window.TT_STATE.tooltipsEnabled) return; hideTooltip(); } });
   document.addEventListener('keydown', e => {
-    if (!tooltipsEnabled || shouldSuppressAutoHide()) return;
+    if (!window.TT_STATE.tooltipsEnabled || shouldSuppressAutoHide()) return;
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) hideTooltip();
   }, true);
 
@@ -3494,7 +3513,7 @@ firebase.auth().onAuthStateChanged(user => {
       if (open) return;
 
       // If you have a render function, call it first so we measure the real size
-      if (typeof renderHelpMenu === 'function') renderHelpMenu();
+      if (typeof window.renderHelpMenu === 'function') window.renderHelpMenu();
 
       // Show before measuring (but keep ARIA/class in sync)
       menu.classList.remove('tt-hidden');
