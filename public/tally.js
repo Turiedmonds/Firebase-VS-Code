@@ -3284,74 +3284,102 @@ firebase.auth().onAuthStateChanged(user => {
   }
 });
 
-(function setupHelpDropdown(){
-  const helpBtn = document.getElementById('help-btn');
-  const menu = document.getElementById('tt-help-menu');
-  if (!helpBtn || !menu) return;
+// ===== Help Dropdown: resilient wiring =====
+(function registerHelpDropdown(){
+  if (window.__helpDropdownWired__) return;
 
-  let open = false;
-  let outsideHandler = null;
-  let escHandler = null;
+  function wire() {
+    const helpBtn = document.getElementById('help-btn');
+    const menu = document.getElementById('tt-help-menu');
+    if (!helpBtn || !menu) return false; // elements not yet in DOM
 
-  function positionMenu() {
-    const r = helpBtn.getBoundingClientRect();
-    const top = Math.round(r.bottom + window.scrollY + 8);
-    const left = Math.round(Math.min(
-      r.left + window.scrollX,
-      window.scrollX + (document.documentElement.clientWidth - menu.offsetWidth - 8)
-    ));
-    menu.style.top = top + 'px';
-    menu.style.left = left + 'px';
+    // Guard: prevent double-binding
+    if (menu.__wired__) return true;
+    menu.__wired__ = true;
+    window.__helpDropdownWired__ = true;
+
+    let open = false;
+    let outsideHandler = null;
+    let escHandler = null;
+
+    function positionMenu() {
+      const r = helpBtn.getBoundingClientRect();
+      const top = Math.round(r.bottom + window.scrollY + 8);
+      const left = Math.round(Math.min(
+        r.left + window.scrollX,
+        window.scrollX + (document.documentElement.clientWidth - menu.offsetWidth - 8)
+      ));
+      menu.style.top = top + 'px';
+      menu.style.left = left + 'px';
+    }
+
+    function focusFirstItem() {
+      const first = menu.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (first) first.focus();
+    }
+
+    function openMenu() {
+      if (open) return;
+      if (typeof window.renderHelpMenu === 'function') window.renderHelpMenu();
+      positionMenu();
+      menu.style.display = 'block';
+      menu.setAttribute('aria-hidden', 'false');
+      open = true;
+
+      outsideHandler = (e) => {
+        if (!menu.contains(e.target) && e.target !== helpBtn) closeMenu();
+      };
+      escHandler = (e) => { if (e.key === 'Escape') closeMenu(); };
+
+      setTimeout(() => {
+        document.addEventListener('mousedown', outsideHandler);
+        document.addEventListener('touchstart', outsideHandler, {passive:true});
+        document.addEventListener('keydown', escHandler);
+        focusFirstItem();
+      }, 0);
+    }
+
+    function closeMenu() {
+      if (!open) return;
+      menu.style.display = 'none';
+      menu.setAttribute('aria-hidden', 'true');
+      open = false;
+
+      document.removeEventListener('mousedown', outsideHandler);
+      document.removeEventListener('touchstart', outsideHandler);
+      document.removeEventListener('keydown', escHandler);
+      outsideHandler = null;
+      escHandler = null;
+
+      // return focus to trigger for accessibility
+      helpBtn.focus();
+    }
+
+    function toggleMenu() { open ? closeMenu() : openMenu(); }
+
+    // Keep positioned on layout changes
+    window.addEventListener('resize', () => { if (open) positionMenu(); });
+    window.addEventListener('scroll', () => { if (open) positionMenu(); }, {passive:true});
+
+    // Main trigger
+    helpBtn.addEventListener('click', (e) => { e.preventDefault(); toggleMenu(); });
+
+    // Programmatic API (used elsewhere in app)
+    window.openHelpMenu = openMenu;
+    window.closeHelpMenu = closeMenu;
+
+    return true;
   }
 
-  function openMenu() {
-    if (open) return;
-    if (typeof window.renderHelpMenu === 'function') window.renderHelpMenu();
-    positionMenu();
-    menu.style.display = 'block';
-    menu.setAttribute('aria-hidden', 'false');
-    open = true;
+  // Try immediately
+  if (wire()) return;
 
-    // close on outside click
-    outsideHandler = (e) => {
-      if (!menu.contains(e.target) && e.target !== helpBtn) closeMenu();
-    };
-    // close on ESC
-    escHandler = (e) => {
-      if (e.key === 'Escape') closeMenu();
-    };
-    setTimeout(() => {
-      document.addEventListener('mousedown', outsideHandler);
-      document.addEventListener('touchstart', outsideHandler, {passive:true});
-      document.addEventListener('keydown', escHandler);
-    }, 0);
-  }
+  // Try on DOM ready
+  document.addEventListener('DOMContentLoaded', () => { wire(); });
 
-  function closeMenu() {
-    if (!open) return;
-    menu.style.display = 'none';
-    menu.setAttribute('aria-hidden', 'true');
-    open = false;
-
-    document.removeEventListener('mousedown', outsideHandler);
-    document.removeEventListener('touchstart', outsideHandler);
-    document.removeEventListener('keydown', escHandler);
-    outsideHandler = null;
-    escHandler = null;
-  }
-
-  function toggleMenu() {
-    if (open) closeMenu(); else openMenu();
-  }
-
-  // Reposition on resize/scroll while open
-  window.addEventListener('resize', () => { if (open) positionMenu(); });
-  window.addEventListener('scroll', () => { if (open) positionMenu(); }, {passive:true});
-
-  // Main trigger: tap/click on the “?” help button
-  helpBtn.addEventListener('click', (e) => { e.preventDefault(); toggleMenu(); });
-
-  // Optional: expose for other code to open programmatically
-  window.openHelpMenu = openMenu;
-  window.closeHelpMenu = closeMenu;
+  // As a last resort, observe for late-inserted nodes and then disconnect
+  const obs = new MutationObserver(() => {
+    if (wire()) obs.disconnect();
+  });
+  obs.observe(document.documentElement, { childList: true, subtree: true });
 })();
