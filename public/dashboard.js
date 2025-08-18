@@ -1,13 +1,5 @@
 import { handleLogout } from './auth.js';
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(function(registrations) {
-    for (let registration of registrations) {
-      registration.unregister();
-    }
-  });
-}
-
 function initTop5ShearersWidget() {
   (function () {
     const flag = localStorage.getItem('dash_top5_shearers_enabled');
