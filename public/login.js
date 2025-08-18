@@ -72,6 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const contractorDoc = await db.collection('contractors').doc(uid).get();
       if (contractorDoc.exists) {
         // Use replace to ensure a hard reload after login
+        localStorage.setItem('user_role', 'contractor');
+        console.log('[login] role=contractor saved');
         window.location.href = 'dashboard.html';
         return;
       }
@@ -97,6 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (foundContractorId) {
         localStorage.setItem('contractor_id', foundContractorId);
         console.log('[login] 💾 contractor_id stored in localStorage:', foundContractorId);
+        localStorage.setItem('user_role', 'staff');
+        console.log('[login] role=staff saved');
         window.location.href = 'tally.html';
       } else {
         // No matching staff record
