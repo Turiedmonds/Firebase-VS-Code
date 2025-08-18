@@ -2,6 +2,31 @@
 
 <html lang="en">
 <head>
+<!-- First paint: dark background + no-flash gate -->
+<style>
+  /* Match the app's dark theme color */
+  html { background: #0b0b0f; }
+  /* Hide body during the head redirect decision to avoid flicker */
+  html.boot-hiding body { visibility: hidden; }
+</style>
+<script>
+  // Start hidden immediately (before styles/scripts load)
+  document.documentElement.classList.add('boot-hiding');
+  // Fail-safe: if anything goes wrong, unhide after 1.5s
+  setTimeout(function(){
+    document.documentElement.classList.remove('boot-hiding');
+  }, 1500);
+</script>
+
+<!-- Mobile UI theming (safe if duplicates are avoided) -->
+<meta name="theme-color" content="#0b0b0f">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- Preload main stylesheet so styles are ready ASAP -->
+<!-- If the page already links to styles.css, add this JUST ABOVE that link -->
+<link rel="preload" href="styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="styles.css"></noscript>
+
 <meta charset="utf-8"/>
    <!-- Configure the viewport so mobile browsers size the page correctly -->
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -16,11 +41,7 @@
 
     <!-- iOS Home Screen Support -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <link rel="apple-touch-icon" href="icon-192.png" />
-
-    <!-- Theme Color -->
-    <meta name="theme-color" content="#000000" />
   <!-- Tooltip visibility fix -->
   <style id="tt-tooltip-fix">
     #tt-root {
@@ -151,16 +172,18 @@
     if (hasExplicitIntent || launchOverride === 'tally' || launchOverride === 'any') {
       // consume the one-time bypass so it doesn't affect later launches
       sessionStorage.removeItem('launch_override');
-      return; // skip auto-redirect this time
-    }
-
-    if (cold && want && here && want !== here) {
+    } else if (cold && want && here && want !== here) {
       // Mark pre-redirect to prevent any visual flash
       document.documentElement.setAttribute('data-pre-redirect','1');
       // Redirect immediately before anything renders
       if (want === 'dashboard') location.replace('dashboard.html');
       else if (want === 'tally') location.replace('tally.html');
+      return;
     }
+
+    document.addEventListener('DOMContentLoaded', function(){
+      document.documentElement.classList.remove('boot-hiding');
+    });
   })();
 </script>
 </head>
