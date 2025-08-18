@@ -165,5 +165,12 @@
 </div>
   <script src="serviceworker.js"></script>
   <script src="/pwa-suppress-install.js" defer></script>
+  <script src="app-launch-guard.js" defer></script>
+  <script>
+    try {
+      localStorage.setItem('user_role', 'contractor');
+      localStorage.setItem('preferred_start', 'dashboard');
+    } catch(e) {}
+  </script>
 </body>
 </html>

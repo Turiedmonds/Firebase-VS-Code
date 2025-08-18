@@ -1,3 +1,8 @@
+try {
+  localStorage.setItem('user_role', 'contractor');
+  localStorage.setItem('preferred_start', 'dashboard');
+} catch(e) {}
+
 import { handleLogout } from './auth.js';
 
 function initTop5ShearersWidget() {
