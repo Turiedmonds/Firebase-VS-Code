@@ -43,6 +43,18 @@ document.addEventListener('DOMContentLoaded', () => {
 // === HELP MENU GLOBALS ===
 if (localStorage.getItem('tooltips_enabled') == null) localStorage.setItem('tooltips_enabled','true');
 if (localStorage.getItem('tally_guide_enabled') == null) localStorage.setItem('tally_guide_enabled','true');
+if (localStorage.getItem('setup_modal_enabled') == null){
+  localStorage.setItem('setup_modal_enabled', 'true');
+}
+
+function isSetupModalEnabled(){
+  const v = localStorage.getItem('setup_modal_enabled');
+  // Default ON if not set
+  return (v === null) ? true : (v === 'true');
+}
+function setSetupModalEnabled(enabled){
+  localStorage.setItem('setup_modal_enabled', enabled ? 'true' : 'false');
+}
 
 window.renderHelpMenu = function () {
   let m = document.getElementById('tt-help-menu');
@@ -65,6 +77,20 @@ window.renderHelpMenu = function () {
   const tour = m.querySelector('#tour');
   const start = m.querySelector('#start');
   const ttx = m.querySelector('#ttx');
+  const setupToggleRow = document.createElement('div');
+  setupToggleRow.innerHTML = `
+    <label style="display:block;margin:8px 0;">
+      <input type="checkbox" id="toggleSetupModal"> Enable Setup Day popup
+    </label>
+  `;
+  start?.before(setupToggleRow);
+  const toggleSetupBox = setupToggleRow.querySelector('#toggleSetupModal');
+  if (toggleSetupBox){
+    toggleSetupBox.checked = isSetupModalEnabled();
+    toggleSetupBox.addEventListener('change', () => {
+      setSetupModalEnabled(toggleSetupBox.checked);
+    });
+  }
   tips.checked = gb('tooltips_enabled');
   tour.checked  = gb('tally_guide_enabled');
   tips.onchange = () => sb('tooltips_enabled', tips.checked);
@@ -795,7 +821,19 @@ function populateCloudSessionDropdown(list) {
 
 function showSetupModal() {
     const modal = document.getElementById('setupModal');
-    if (modal) modal.style.display = 'flex';
+    if (!modal) return;
+    modal.style.display = 'flex';
+
+    const disableChk = document.getElementById('disableSetupModalFromSetup');
+    if (disableChk){
+        disableChk.checked = (isSetupModalEnabled() === false);
+        const setupSaveBtn = document.getElementById('setupConfirmBtn') || modal.querySelector('.close-setup') || modal.querySelector('[data-action="save-setup"]');
+        if (setupSaveBtn){
+            setupSaveBtn.addEventListener('click', () => {
+                setSetupModalEnabled(!disableChk.checked);
+            }, { once: true });
+        }
+    }
 }
 
 function hideSetupModal() {
@@ -2591,9 +2629,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (stationNameInput) {
       stationNameInput.addEventListener('change', () => {
-        if (window.awaitingSetupPrompt && stationNameInput.value.trim()) {
+        if (window.awaitingSetupPrompt && stationNameInput.value.trim() && isSetupModalEnabled()) {
           window.awaitingSetupPrompt = false;
-        showSetupModal(); // safer version that works
+          showSetupModal(); // safer version that works
         }
       });
     }
