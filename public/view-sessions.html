@@ -1,74 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>View Saved Sessions - SHEΔR iQ</title>
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      background: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Saved Sessions — SHEΔR iQ</title>
+  <link rel="stylesheet" href="styles.css?v=sessions_v3" />
+  <!-- Firebase compat (match app) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="firebase-init.js"></script>
+  <script type="module" src="auth.js"></script>
 </head>
 <body>
-  <div id="page-content" style="display: none;">
-    <div class="logo-container">
-      <img src="logo.png" alt="SHEΔR iQ logo" />
-      <h2>View Saved Sessions</h2>
-    </div>
-    <div class="tabs">
-      <button id="backToDashboard" class="tab-button" style="display: none;">Return to Dashboard</button>
-    </div>
-    <div id="sessionList">
-      <!-- Sessions will be loaded here -->
-    </div>
+  <div class="sessions-page">
+    <header class="sessions-header">
+      <div class="logo-row">
+        <img src="logo.png" alt="SHEΔR iQ logo" />
+        <h1>Saved Sessions</h1>
+      </div>
+      <div class="sessions-actions">
+        <button id="back-to-dashboard" class="siq-btn">Back to Dashboard</button>
+      </div>
+    </header>
+
+    <section class="card sessions-card">
+      <div id="sessions-controls" class="sessions-controls">
+        <!-- Time preset -->
+        <label class="preset-group">
+          <span>Period</span>
+          <select id="sess-preset" aria-label="Time preset">
+            <option value="today" selected>Today</option>
+            <option value="7d">Last 7 days</option>
+            <option value="14d">Last 14 days</option>
+            <option value="month">This Month</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </label>
+
+        <!-- Custom range (visible only when preset = custom) -->
+        <label class="date-range" id="custom-from-wrap" hidden>
+          <span>From</span>
+          <input id="sess-from" type="date" aria-label="From date" />
+        </label>
+        <label class="date-range" id="custom-to-wrap" hidden>
+          <span>To</span>
+          <input id="sess-to" type="date" aria-label="To date" />
+        </label>
+
+        <!-- Specific single day (overrides preset if set) -->
+        <label class="date-range">
+          <span>Specific Day</span>
+          <input id="sess-day" type="date" aria-label="Specific day" />
+        </label>
+
+        <!-- Station (exact match, forces 10/page) -->
+        <input id="sess-station" list="station-list" type="text" placeholder="Filter by station…" aria-label="Station filter" />
+        <datalist id="station-list"></datalist>
+
+        <!-- Text search (contains) -->
+        <input id="sess-search" type="text" placeholder="Search station text…" aria-label="Search station text" />
+
+        <!-- Sort + page size -->
+        <select id="sess-sort" aria-label="Sort order">
+          <option value="newest" selected>Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="station_az">Station A–Z</option>
+        </select>
+
+        <select id="sess-size" aria-label="Page size">
+          <option value="25" selected>25 / page</option>
+          <option value="50">50 / page</option>
+          <option value="100">100 / page</option>
+        </select>
+
+        <!-- Pager -->
+        <div class="pager">
+          <button id="sess-prev" disabled>Prev</button>
+          <span id="sess-range">—</span>
+          <button id="sess-next" disabled>Next</button>
+        </div>
+      </div>
+
+      <!-- Fallback banner -->
+      <div id="sessions-banner" class="sessions-banner" hidden></div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <table id="sessions-table" class="sessions-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Station</th>
+              <th>Sheep</th>
+              <th>Stands</th>
+              <th>Staff</th>
+              <th>Last Saved</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="sessions-tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="sessions-empty" class="empty-state" hidden>
+        No sessions found for the selected filters.
+      </div>
+
+      <!-- Keep any legacy list hidden for rollback (if present) -->
+      <div id="legacy-sessions-list" style="display:none;"></div>
+    </section>
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const overlay = document.getElementById('loading-overlay');
-      if (overlay) overlay.style.display = 'flex';
-      firebase.auth().onAuthStateChanged(async user => {
-        if (!user) {
-          window.location.replace('login.html');
-          return;
-        }
-        try {
-          const doc = await firebase.firestore().collection('contractors').doc(user.uid).get();
-          if (!doc.exists) {
-            window.location.replace('login.html');
-            return;
-          }
-          const page = document.getElementById('page-content');
-          if (page) page.style.display = 'block';
-          const dashBtn = document.getElementById('backToDashboard');
-          if (dashBtn) dashBtn.style.display = 'inline-block';
-        } catch (err) {
-          console.error('Failed to verify contractor', err);
-          window.location.replace('login.html');
-        } finally {
-          if (overlay) overlay.style.display = 'none';
-        }
-      });
-    });
-  </script>
-
-  <script type="module" src="view-sessions.js"></script>
-
+  <!-- Loading overlay (reuses existing global styles) -->
   <div id="loading-overlay">
     <div class="circle-spinner"></div>
-    <div>Loading…</div>
+    <div>Loading sessions…</div>
   </div>
+
+  <script type="module" src="view-sessions.js"></script>
+  <script src="serviceworker.js"></script>
 </body>
 </html>
