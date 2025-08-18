@@ -5,19 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard - SHEAR iQ</title>
   <link rel="stylesheet" href="styles.css?v=readability2">
-  <style>
-    #buttonContainer {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      max-width: 400px;
-      gap: 12px;
-    }
-    #buttonContainer .tab-button:hover,
-    #buttonContainer .dashboard-button:hover {
-      background: #555;
-    }
-  </style>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -88,16 +75,14 @@
       </div>
     </div>
     <!-- END: Top 5 Shearers Widget -->
-    <div id="buttonContainer">
-      <button id="btnManageStaff" class="tab-button">Manage Staff</button>
-        <button id="farm-summary-btn" class="dashboard-button" onclick="window.location.replace('tally.html?view=farm');">Farm Summary</button>
-      <button id="btnViewSavedSessions" class="tab-button">View Saved Sessions</button>
-      <button id="btnReturnToActive" class="tab-button" style="display: none;"> Return to Active Session</button>
-      <button id="btnStartNewDay" class="tab-button">Start New Day</button>
-      <button id="btnChangePin" class="tab-button">Change Contractor PIN</button>
-      <button id="btnSettings" class="tab-button">Settings / Preferences</button>
-      <button id="logoutBtn" class="tab-button">Logout</button>
-    </div>
+    <button id="btnManageStaff" class="tab-button">Manage Staff</button>
+    <button id="farm-summary-btn" class="dashboard-button" onclick="window.location.replace('tally.html?view=farm');">Farm Summary</button>
+    <button id="btnViewSavedSessions" class="tab-button">View Saved Sessions</button>
+    <button id="btnReturnToActive" class="tab-button" style="display: none;">Return to Active Session</button>
+    <button id="btnStartNewDay" class="tab-button">Start New Day</button>
+    <button id="btnChangePin" class="tab-button">Change Contractor PIN</button>
+    <button id="btnSettings" class="tab-button">Settings / Preferences</button>
+    <button id="logoutBtn" class="tab-button">Logout</button>
   </div>
 
   <script type="module" src="dashboard.js"></script>
