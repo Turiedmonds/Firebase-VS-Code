@@ -84,6 +84,21 @@
   .tw-btn-ghost { background: #222; color: #eee; }
   .tw-btn:focus { outline: 2px solid #5aa0ff; outline-offset: 2px; }
 </style>
+<style id="tally-onboard-styles">
+  #tally-onboard-overlay {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.5); z-index: 2147483647;
+  }
+  #tally-onboard-overlay.show { display: flex; }
+  #tally-onboard-dialog {
+    background: #111; color: #fff; width: min(520px, 92vw); border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6); padding: 20px;
+  }
+  #tally-onboard-dialog h2 { margin: 0 0 12px; font-size: 1.3rem; }
+  #tally-onboard-dialog p { margin: 0 0 16px; line-height: 1.5; color: #ddd; }
+  #tally-onboard-form label { display: block; margin: 8px 0; }
+  #tally-onboard-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+</style>
 <style>
   #help-btn, #tour-help-btn {
     touch-action: none;              /* reduce scroll/pan interference */
@@ -633,6 +648,25 @@ document.addEventListener('DOMContentLoaded', () => {
   #tt-help-menu button,#tt-help-menu label{font-size:14px;line-height:1.2}
 </style>
 
+<!-- Tally Onboarding Modal -->
+<div id="tally-onboard-overlay" role="dialog" aria-modal="true" aria-labelledby="tally-onboard-title" aria-hidden="true">
+  <div id="tally-onboard-dialog">
+    <h2 id="tally-onboard-title">Welcome to SHEΔR iQ Tally</h2>
+    <p>You can enable or disable tips and the guided tour. These settings can be changed anytime from the Help menu (the "?" button).</p>
+    <form id="tally-onboard-form">
+      <label><input type="checkbox" id="onboard-tooltips"> Enable tooltips</label>
+      <label><input type="checkbox" id="onboard-tour"> Enable guided tour</label>
+    </form>
+    <div id="tally-onboard-actions">
+      <button type="button" id="onboard-save-start" class="tw-btn tw-btn-primary">Save &amp; Start Tour</button>
+      <button type="button" id="onboard-save" class="tw-btn tw-btn-ghost">Save Only</button>
+      <button type="button" id="onboard-help" class="tw-btn tw-btn-ghost">Open Help Menu</button>
+      <button type="button" id="onboard-skip" class="tw-btn tw-btn-ghost">Skip for now</button>
+    </div>
+  </div>
+  <span aria-hidden="true"></span>
+</div>
+
 <!-- Tour Welcome Modal -->
 <div id="tour-welcome-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-welcome-title" aria-hidden="true">
   <div id="tour-welcome-dialog">
@@ -645,6 +679,66 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
   <span aria-hidden="true"></span>
 </div>
+<script>
+(function(){
+  const overlay = document.getElementById('tally-onboard-overlay');
+  const tips = document.getElementById('onboard-tooltips');
+  const tour = document.getElementById('onboard-tour');
+  const saveStart = document.getElementById('onboard-save-start');
+  const saveOnly = document.getElementById('onboard-save');
+  const openHelp = document.getElementById('onboard-help');
+  const skip = document.getElementById('onboard-skip');
+
+  const gb = k => (localStorage.getItem(k) ?? 'true') === 'true';
+  const sb = (k,v) => localStorage.setItem(k, v ? 'true' : 'false');
+
+  function openModal(){
+    if (localStorage.getItem('tally_onboard_seen') === 'true') return;
+    tips.checked = gb('tooltips_enabled');
+    tour.checked = gb('tally_guide_enabled');
+    overlay.classList.add('show');
+    overlay.removeAttribute('aria-hidden');
+    document.body.style.overflow = 'hidden';
+    const first = overlay.querySelector('input,button');
+    if (first) first.focus();
+  }
+
+  function closeModal(){
+    overlay.classList.remove('show');
+    overlay.setAttribute('aria-hidden','true');
+    document.body.style.overflow = '';
+  }
+
+  function saveChoices(){
+    sb('tooltips_enabled', tips.checked);
+    sb('tally_guide_enabled', tour.checked);
+    localStorage.setItem('tally_onboard_seen','true');
+  }
+
+  saveStart.addEventListener('click', () => {
+    saveChoices();
+    closeModal();
+    if (tour.checked && typeof window.startGuide === 'function') window.startGuide();
+  });
+  saveOnly.addEventListener('click', () => { saveChoices(); closeModal(); });
+  openHelp.addEventListener('click', () => { saveChoices(); closeModal(); if (typeof window.openHelpMenu === 'function') window.openHelpMenu(); });
+  skip.addEventListener('click', () => { localStorage.setItem('tally_onboard_seen','true'); closeModal(); });
+
+  overlay.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); skip.click(); }
+    if (e.key === 'Tab') {
+      const focusables = overlay.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', openModal);
+})();
+</script>
 <div id="sync-status-banner"></div>
 <script src="serviceworker.js"></script>
   <script src="/pwa-suppress-install.js" defer></script>
