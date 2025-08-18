@@ -339,6 +339,48 @@ let firestoreSessionId = '';
 
 let autosaveHideTimer = null;
 
+let syncBannerHideTimer = null;
+let syncBannerRemoveTimer = null;
+
+function updateSyncStatusBanner() {
+    const banner = document.getElementById('sync-status-banner');
+    if (!banner) return;
+
+    if (syncBannerHideTimer) {
+        clearTimeout(syncBannerHideTimer);
+        syncBannerHideTimer = null;
+    }
+    if (syncBannerRemoveTimer) {
+        clearTimeout(syncBannerRemoveTimer);
+        syncBannerRemoveTimer = null;
+    }
+
+    let pending = [];
+    try {
+        pending = JSON.parse(localStorage.getItem('pending_cloud_sessions') || '[]');
+    } catch {}
+    const count = Array.isArray(pending) ? pending.length : 0;
+
+    if (!navigator.onLine || count > 0) {
+        const msg = count > 0
+            ? `🔁 ${count} session${count !== 1 ? 's' : ''} pending sync`
+            : '🔁 Offline';
+        banner.textContent = msg;
+        banner.style.display = 'block';
+        banner.style.opacity = '1';
+    } else {
+        banner.textContent = '✅ All sessions synced';
+        banner.style.display = 'block';
+        banner.style.opacity = '1';
+        syncBannerHideTimer = setTimeout(() => {
+            banner.style.opacity = '0';
+            syncBannerRemoveTimer = setTimeout(() => {
+                banner.style.display = 'none';
+            }, 500);
+        }, 4000);
+    }
+}
+
 function updateAutosaveIndicator() {
     const el = document.getElementById('autosaveInfo');
     if (!el) return;
@@ -366,6 +408,7 @@ function scheduleAutosave() {
         if (json === lastSavedJson) return;
         const now = Date.now();
         let saved = false;
+        let cloudPromise = Promise.resolve();
 
         // Always save to localStorage if 10s passed
         if (now - lastLocalSave >= 10000) {
@@ -377,7 +420,7 @@ function scheduleAutosave() {
         // Only save to Firestore if station, date, and leader are all filled in
         const hasAllKeys = data.stationName && data.date && data.teamLeader;
         if (hasAllKeys && now - lastCloudSave >= 10000) {
-            saveSessionToFirestore(false);
+            cloudPromise = saveSessionToFirestore(false);
             lastCloudSave = now;
             saved = true;
         }
@@ -386,6 +429,8 @@ function scheduleAutosave() {
             lastSavedJson = json;
             updateAutosaveIndicator();
         }
+
+        cloudPromise.finally(updateSyncStatusBanner);
     }, 3000);
 }
 
@@ -2206,16 +2251,20 @@ async function saveSessionToFirestore(showStatus = false) {
   }
 
   const path = `contractors/${contractorId}/sessions/${firestoreSessionId}`;
-  await firebase.firestore()
-    .doc(path)
-    .set({
-      ...data,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-    });
+  try {
+    await firebase.firestore()
+      .doc(path)
+      .set({
+        ...data,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      });
 
-  if (showStatus) {
-    alert('✅ Session saved to the cloud!');
-    showAutosaveStatus('\u2601\ufe0f Saved to cloud');
+    if (showStatus) {
+      alert('✅ Session saved to the cloud!');
+      showAutosaveStatus('\u2601\ufe0f Saved to cloud');
+    }
+  } finally {
+    updateSyncStatusBanner();
   }
 }
 
@@ -3263,6 +3312,10 @@ async function setup() {
     if (overlay) overlay.style.display = 'none';
   }
 }
+
+window.addEventListener('online', updateSyncStatusBanner);
+window.addEventListener('offline', updateSyncStatusBanner);
+window.addEventListener('load', updateSyncStatusBanner);
 
 firebase.auth().onAuthStateChanged(user => {
   const runAll = () => {
