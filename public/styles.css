@@ -898,3 +898,12 @@ button {
   background: linear-gradient(135deg, #333, #111);
   transform: translateY(0);
 }
+
+/* Help menu: fixed to viewport with safe bounds */
+#tt-help-menu {
+  position: fixed;
+  max-width: calc(100vw - 16px);
+  max-height: 80vh;
+  overflow: auto;
+}
+

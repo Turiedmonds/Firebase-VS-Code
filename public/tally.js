@@ -3342,14 +3342,54 @@ firebase.auth().onAuthStateChanged(user => {
     let escHandler = null;
 
     function positionMenu() {
-      const r = helpBtn.getBoundingClientRect();
-      const top = Math.round(r.bottom + window.scrollY + 8);
-      const left = Math.round(Math.min(
-        r.left + window.scrollX,
-        window.scrollX + (document.documentElement.clientWidth - menu.offsetWidth - 8)
-      ));
-      menu.style.top = top + 'px';
-      menu.style.left = left + 'px';
+      const margin = 8;
+      const btnRect = helpBtn.getBoundingClientRect();
+      const vw = document.documentElement.clientWidth;
+      const vh = document.documentElement.clientHeight;
+
+      // Measure menu size safely (temporarily reveal if hidden)
+      const wasHidden = getComputedStyle(menu).display === 'none' || menu.getAttribute('aria-hidden') === 'true' || menu.classList.contains('tt-hidden');
+      const prevDisplay = menu.style.display;
+      const prevVisibility = menu.style.visibility;
+      if (wasHidden) { menu.style.visibility = 'hidden'; menu.style.display = 'block'; }
+
+      // Use getBoundingClientRect for accurate width/height
+      const mRect = menu.getBoundingClientRect();
+      let mW = mRect.width || menu.offsetWidth || 240;
+      let mH = mRect.height || menu.offsetHeight || 200;
+
+      if (wasHidden) { menu.style.display = prevDisplay || 'none'; menu.style.visibility = prevVisibility || ''; }
+
+      // ---- Horizontal placement (clamp into viewport) ----
+      // Start left-aligned with button
+      let left = btnRect.left;
+
+      // If that would overflow to the right, shift left
+      if (left + mW + margin > vw) {
+        // Try aligning the right edges (button right to menu right)
+        left = btnRect.right - mW;
+      }
+      // Clamp to [margin, vw - mW - margin]
+      left = Math.max(margin, Math.min(left, vw - mW - margin));
+
+      // ---- Vertical placement (prefer below, flip above if needed) ----
+      let top = btnRect.bottom + margin;         // default: below
+      if (top + mH + margin > vh) {
+        // Not enough space below -> open above
+        top = btnRect.top - mH - margin;
+
+        // If still doesn’t fit (menu taller than viewport), clamp inside
+        if (top < margin) {
+          top = Math.max(margin, vh - mH - margin);
+        }
+      }
+
+      // Since #tt-help-menu is position: fixed, DO NOT add scroll offsets
+      menu.style.left = Math.round(left) + 'px';
+      menu.style.top  = Math.round(top)  + 'px';
+
+      // Optional: better animation origin depending on flip
+      menu.style.transformOrigin = (top < btnRect.top) ? 'bottom left' : 'top left';
     }
 
     function focusFirstItem() {
@@ -3359,11 +3399,18 @@ firebase.auth().onAuthStateChanged(user => {
 
     function openMenu() {
       if (open) return;
-      if (typeof window.renderHelpMenu === 'function') window.renderHelpMenu();
-      positionMenu();
+
+      // If you have a render function, call it first so we measure the real size
+      if (typeof renderHelpMenu === 'function') renderHelpMenu();
+
+      // Show before measuring (but keep ARIA/class in sync)
       menu.classList.remove('tt-hidden');
       menu.style.display = 'block';
       menu.setAttribute('aria-hidden', 'false');
+
+      // Now position with real dimensions
+      positionMenu();
+
       open = true;
 
       outsideHandler = (e) => {
@@ -3398,9 +3445,11 @@ firebase.auth().onAuthStateChanged(user => {
 
     function toggleMenu() { open ? closeMenu() : openMenu(); }
 
-    // Keep positioned on layout changes
+    // Keep positioned on layout or content changes
     window.addEventListener('resize', () => { if (open) positionMenu(); });
     window.addEventListener('scroll', () => { if (open) positionMenu(); }, {passive:true});
+    const ro = new ResizeObserver(() => { if (open) positionMenu(); });
+    ro.observe(menu);
 
     // Main trigger
     helpBtn.addEventListener('click', (e) => { e.preventDefault(); toggleMenu(); });
