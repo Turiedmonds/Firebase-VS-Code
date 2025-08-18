@@ -2,6 +2,7 @@ const CACHE_NAME = 'sheariq-pwa-v4';
 const FILES_TO_CACHE = [
   'tally.html',
   'farm-summary.html',
+    'dashboard.html',
   'login.html',
   'styles.css',
   'tally.js',
