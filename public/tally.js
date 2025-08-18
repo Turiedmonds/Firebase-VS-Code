@@ -2506,6 +2506,25 @@ function restoreTodaySession() {
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const showFarmSummary = params.get('view') === 'farm';
+
+    if (showFarmSummary) {
+      console.log('[View Switch] Showing Farm Summary');
+
+      const farmSection = document.getElementById('farm-summary');
+      const dailySection = document.getElementById('daily-summary');
+      if (farmSection && dailySection) {
+        farmSection.style.display = 'block';
+        dailySection.style.display = 'none';
+      }
+
+      const farmTab = document.getElementById('farm-summary-tab');
+      const dailyTab = document.getElementById('daily-summary-tab');
+      if (farmTab && dailyTab) {
+        farmTab.classList.add('active');
+        dailyTab.classList.remove('active');
+      }
+    }
+
     const isLoadedSession = params.get('loadedSession') === 'true';
     const isNewDay = params.get('newDay') === 'true';
 
@@ -2533,17 +2552,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => showView(btn.dataset.view));
     });
     if (showFarmSummary) {
-        const dailySummary = document.getElementById('daily-summary') || document.getElementById('summaryView');
-        if (dailySummary) dailySummary.style.display = 'none';
-        const farmSummary = document.getElementById('farm-summary') || document.getElementById('stationSummaryView');
-        if (farmSummary) farmSummary.style.display = 'block';
-
-        const dailyTab = document.getElementById('daily-summary-tab') || document.querySelector('[data-view="summaryView"]');
-        if (dailyTab) dailyTab.classList.remove('active');
-        const farmTab = document.getElementById('farm-summary-tab') || document.querySelector('[data-view="stationSummaryView"]');
-        if (farmTab) farmTab.classList.add('active');
-
-        showView(farmSummary && farmSummary.id ? farmSummary.id : 'stationSummaryView');
+        showView('stationSummaryView');
     } else {
         showView('tallySheetView');
     }
