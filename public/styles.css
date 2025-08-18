@@ -10,12 +10,6 @@ body { font-family: Arial, sans-serif; background: #000; color: #fff; padding: 2
   text-align: center;
 }
 
-.dashboard-container button {
-  width: 90%;
-  max-width: 320px;
-  margin: auto;
-  text-align: center;
-}
 
 .dashboard-container .tab-button:hover,
 .dashboard-container .dashboard-button:hover {
@@ -40,40 +34,32 @@ body { font-family: Arial, sans-serif; background: #000; color: #fff; padding: 2
 }
 
 .dashboard-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
   gap: 12px;
-  max-width: 700px;
+  justify-content: center;
+  max-width: 500px;
   width: 100%;
+  margin: 0 auto;
 }
 
 .dashboard-buttons button {
-  flex: 1 1 200px;
-  max-width: 220px;
-  min-width: 140px;
+  width: 100%;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
+  padding: 0 16px;
+  margin: 0;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 500px) {
   .dashboard-buttons {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .dashboard-buttons button {
-    width: 90%;
-    max-width: 100%;
+    grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 400px) {
-  .dashboard-buttons button {
-    width: 90%;
-    max-width: 320px;
-    margin: 0 auto;
-  }
-}
 
 /* Prevent double-tap zoom on interactive controls while still allowing pinch
    zoom. This improves the experience on mobile browsers like iOS Safari when
@@ -389,17 +375,6 @@ button {
     margin-bottom: 16px;
   }
 
-  .dashboard-buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .dashboard-buttons button {
-    width: 100%;
-    max-width: 260px;
-    margin: 10px auto;
-  }
 }
 
 .highlight-error {
