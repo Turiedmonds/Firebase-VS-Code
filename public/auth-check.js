@@ -1,3 +1,43 @@
+// === FAST PATH: bootstrap redirect from localStorage (works offline) ===
+(function fastRoleBootstrap(){
+  try {
+    const role = localStorage.getItem('user_role');
+    if (role === 'contractor') {
+      // Contractors always land on the dashboard
+      window.location.replace('dashboard.html');
+      return;
+    }
+    if (role === 'staff') {
+      // Staff always land on the tally page
+      window.location.replace('tally.html');
+      return;
+    }
+    // If no role saved, fall through to the normal Firebase/Firestore checks below
+  } catch (e) {
+    // If localStorage is blocked for any reason, fall through safely
+    console.warn('[auth-check] fastRoleBootstrap failed:', e);
+  }
+})();
+
+// Watchdog: if auth checks take too long but we do have a saved role, go anyway.
+(function watchdogRedirect(){
+  try {
+    const savedRole = localStorage.getItem('user_role');
+    if (!savedRole) return; // nothing to do
+
+    setTimeout(() => {
+      if (!window.__authCheckRedirected) {
+        console.warn('[auth-check] watchdog redirect');
+        if (savedRole === 'staff') {
+          window.location.replace('tally.html');
+        } else if (savedRole === 'contractor') {
+          window.location.replace('dashboard.html');
+        }
+      }
+    }, 6000); // 6s grace period
+  } catch(e){}
+})();
+
 firebase.auth().onAuthStateChanged(async function (user) {
   if (!user) {
     window.location.href = "login.html";
@@ -19,6 +59,7 @@ firebase.auth().onAuthStateChanged(async function (user) {
     localStorage.setItem('user_role', 'contractor'); // NEW
     console.log('[auth-check] role=contractor saved');
     window.location.href = "dashboard.html";
+    window.__authCheckRedirected = true;
     return;
   }
 
@@ -47,6 +88,7 @@ firebase.auth().onAuthStateChanged(async function (user) {
             localStorage.setItem('user_role', 'staff'); // NEW
             console.log('[auth-check] role=staff saved');
             window.location.href = "tally.html";
+            window.__authCheckRedirected = true;
           } catch (e) {
             console.error("\u274c Failed to set contractor_id in localStorage:", e);
             await firebase.auth().signOut();
