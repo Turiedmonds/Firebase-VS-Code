@@ -6,25 +6,12 @@
   <title>Dashboard - SHEAR iQ</title>
   <link rel="stylesheet" href="styles.css?v=readability2">
   <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      background: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-    }
     #buttonContainer {
-      margin-top: 20px;
       display: flex;
       flex-direction: column;
       width: 100%;
       max-width: 400px;
-    }
-    #buttonContainer .tab-button,
-    #buttonContainer .dashboard-button {
-      margin: 6px 0;
+      gap: 12px;
     }
     #buttonContainer .tab-button:hover,
     #buttonContainer .dashboard-button:hover {
@@ -38,7 +25,7 @@
   <script type="module" src="auth.js"></script>
 </head>
 <body>
-  <div id="page-content" style="display: none;">
+  <div id="page-content" class="dashboard-container" style="display: none;">
     <div class="logo-container">
       <img src="logo.png" alt="SHEΔR iQ logo" />
       <h2 id="dashboard-heading">Contractor Dashboard</h2>

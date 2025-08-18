@@ -1,5 +1,13 @@
 body { font-family: Arial, sans-serif; background: #000; color: #fff; padding: 20px; overflow-x: auto; }
 
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 40px;
+  gap: 16px;
+}
+
 /* Prevent double-tap zoom on interactive controls while still allowing pinch
    zoom. This improves the experience on mobile browsers like iOS Safari when
    users tap buttons rapidly. */
