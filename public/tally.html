@@ -138,6 +138,22 @@
 
     var here = herePage();
 
+    // >>> NEW: honor explicit user navigation <<<
+    var url = new URL(location.href);
+    var hasExplicitIntent =
+      url.searchParams.has('view') ||
+      url.searchParams.has('newDay') ||
+      url.searchParams.has('loadedSession') ||
+      url.searchParams.get('override') === 'tally';
+
+    // One-time bypass set by buttons before navigating
+    var launchOverride = (sessionStorage.getItem('launch_override') || '').toLowerCase();
+    if (hasExplicitIntent || launchOverride === 'tally' || launchOverride === 'any') {
+      // consume the one-time bypass so it doesn't affect later launches
+      sessionStorage.removeItem('launch_override');
+      return; // skip auto-redirect this time
+    }
+
     if (cold && want && here && want !== here) {
       // Mark pre-redirect to prevent any visual flash
       document.documentElement.setAttribute('data-pre-redirect','1');

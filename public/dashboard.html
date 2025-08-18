@@ -49,6 +49,22 @@
 
       var here = herePage();
 
+      // >>> NEW: honor explicit user navigation <<<
+      var url = new URL(location.href);
+      var hasExplicitIntent =
+        url.searchParams.has('view') ||
+        url.searchParams.has('newDay') ||
+        url.searchParams.has('loadedSession') ||
+        url.searchParams.get('override') === 'tally';
+
+      // One-time bypass set by buttons before navigating
+      var launchOverride = (sessionStorage.getItem('launch_override') || '').toLowerCase();
+      if (hasExplicitIntent || launchOverride === 'tally' || launchOverride === 'any') {
+        // consume the one-time bypass so it doesn't affect later launches
+        sessionStorage.removeItem('launch_override');
+        return; // skip auto-redirect this time
+      }
+
       if (cold && want && here && want !== here) {
         // Mark pre-redirect to prevent any visual flash
         document.documentElement.setAttribute('data-pre-redirect','1');
@@ -145,7 +161,7 @@
         <!-- END: Top 5 Shearers Widget -->
         <section class="dashboard-buttons">
           <button id="btnManageStaff" class="tab-button">Manage Staff</button>
-          <button id="farm-summary-btn" class="dashboard-button" onclick="window.location.replace('tally.html?view=farm');">Farm Summary</button>
+          <button id="farm-summary-btn" class="dashboard-button">Farm Summary</button>
           <button id="btnViewSavedSessions" class="tab-button">View Saved Sessions</button>
           <button id="btnReturnToActive" class="tab-button" style="display: none;">Return to Active Session</button>
           <button id="btnStartNewDay" class="tab-button">Start New Day</button>
