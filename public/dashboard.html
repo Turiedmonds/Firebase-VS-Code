@@ -17,6 +17,47 @@
   <!-- PWA icons -->
   <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <!-- Ultra-early launch redirect + no-flash guard -->
+  <style>
+    /* If a redirect is imminent, prevent any paint */
+    html[data-pre-redirect] { visibility: hidden !important; }
+  </style>
+  <script>
+    (function(){
+      // Decide as early as possible if we need to redirect, then hide to prevent flash.
+      function navIsCold(){
+        try {
+          var n = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+          return !n || n.type === 'navigate' || n.type === 'reload';
+        } catch(e){ return true; }
+      }
+      function herePage(){
+        var p = (location.pathname || '').toLowerCase();
+        if (/tally\.html(\?|#|$)/.test(p)) return 'tally';
+        if (/dashboard\.html(\?|#|$)/.test(p)) return 'dashboard';
+        // Fallback: if unknown, leave blank and do nothing here
+        return '';
+      }
+
+      var cold = navIsCold();
+      var role = (localStorage.getItem('user_role') || '').toLowerCase();
+      var pref = (localStorage.getItem('preferred_start') || '').toLowerCase();
+
+      var want = role === 'contractor' ? 'dashboard'
+               : role === 'staff'      ? 'tally'
+               : (pref || '');
+
+      var here = herePage();
+
+      if (cold && want && here && want !== here) {
+        // Mark pre-redirect to prevent any visual flash
+        document.documentElement.setAttribute('data-pre-redirect','1');
+        // Redirect immediately before anything renders
+        if (want === 'dashboard') location.replace('dashboard.html');
+        else if (want === 'tally') location.replace('tally.html');
+      }
+    })();
+  </script>
 </head>
 <body>
 <!-- DASHBOARD HELP BUTTON -->
