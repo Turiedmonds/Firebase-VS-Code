@@ -3327,8 +3327,8 @@ firebase.auth().onAuthStateChanged(user => {
   if (window.__helpDropdownWired__) return;
 
   function wire() {
-    const helpBtn = document.getElementById('help-btn');
-    const menu = document.getElementById('tt-help-menu');
+    const helpBtn = Array.from(document.querySelectorAll('#help-btn')).pop();
+    const menu = Array.from(document.querySelectorAll('#tt-help-menu')).pop();
     if (!helpBtn || !menu) return false; // elements not yet in DOM
 
     // Guard: prevent double-binding
