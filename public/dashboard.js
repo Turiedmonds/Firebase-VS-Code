@@ -23,16 +23,6 @@ function markDashboardWelcomeSeen(){
   try { localStorage.setItem('dashboard_welcome_seen','true'); } catch(e){}
 }
 
-const ACTIVE_FS_LISTENERS = [];
-function trackFirestoreListener(unsub){ if (typeof unsub === 'function') ACTIVE_FS_LISTENERS.push(unsub); }
-function cleanupFirestoreListeners(){
-  while (ACTIVE_FS_LISTENERS.length){
-    try { ACTIVE_FS_LISTENERS.pop()(); } catch(e){}
-  }
-}
-window.addEventListener('beforeunload', cleanupFirestoreListeners);
-document.addEventListener('visibilitychange', () => { if (document.hidden) cleanupFirestoreListeners(); });
-
 // If your app already exposes a function to open the dashboard welcome modal,
 // wrap it so it only opens once automatically. We leave a manual "force" path.
 (function(){
@@ -516,12 +506,10 @@ function initTop5ShearersWidget() {
     };
 
     try {
-      const db = firebase.firestore ? firebase.firestore() : null;
+      const db = firebase.firestore ? firebase.firestore() : (typeof getFirestore === 'function' ? getFirestore() : null);
       if (!db) throw new Error('Firestore not initialized');
       colRef = db.collection('contractors').doc(contractorId).collection('sessions');
-      cleanupFirestoreListeners();
       shearersUnsub = colRef.onSnapshot(onSnap, onError);
-      trackFirestoreListener(shearersUnsub);
     } catch (err) {
       console.error('[Top5Shearers] init failed:', err);
       listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
@@ -530,13 +518,15 @@ function initTop5ShearersWidget() {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         if (shearersUnsub) {
-          cleanupFirestoreListeners();
+          shearersUnsub();
           shearersUnsub = null;
         }
       } else if (!shearersUnsub && colRef) {
         shearersUnsub = colRef.onSnapshot(onSnap, onError);
-        trackFirestoreListener(shearersUnsub);
       }
+    });
+    window.addEventListener('beforeunload', () => {
+      if (shearersUnsub) shearersUnsub();
     });
   })();
 }

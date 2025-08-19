@@ -28,28 +28,6 @@ function detectAgeCategory(sheepTypeName) {
   return 'unknown';
 }
 
-const ACTIVE_FS_LISTENERS = [];
-function trackFirestoreListener(unsub) {
-  if (typeof unsub === 'function') ACTIVE_FS_LISTENERS.push(unsub);
-}
-function cleanupFirestoreListeners() {
-  while (ACTIVE_FS_LISTENERS.length) {
-    try { ACTIVE_FS_LISTENERS.pop()(); } catch (e) { /* ignore */ }
-  }
-}
-window.addEventListener('beforeunload', () => {
-  cleanupFirestoreListeners();
-  try { sessionStorage.removeItem('launch_override'); } catch (e) {}
-});
-
-async function waitForState(predicate, attempts = 20, interval = 250) {
-  for (let i = 0; i < attempts; i++) {
-    if (predicate()) return true;
-    await new Promise(r => setTimeout(r, interval));
-  }
-  return false;
-}
-
 document.addEventListener('DOMContentLoaded', () => {
   if (!document.getElementById('tt-root')) {
     const tt = document.createElement('div');
@@ -1745,11 +1723,8 @@ function handleSaveOption(option) {
     manualSave = false;
 }
  
- let currentView = null;
  function showView(id) {
-     if (!id || id === currentView) return;
-     cleanupFirestoreListeners();
-     currentView = id;
+     if (!id) return;
      document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
      const view = document.getElementById(id);
      if (view) view.style.display = 'block';
@@ -1877,9 +1852,6 @@ function handleSaveOption(option) {
 async function populateStationDropdown() {
     const select = document.getElementById('stationSelect');
     if (!select) return;
-    const uid = firebase.auth()?.currentUser?.uid;
-    const contractorId = localStorage.getItem('contractor_id');
-    if (!uid || !contractorId) return;
     const current = select.value;
     const sessions = await listSessionsFromFirestore();
     const nameMap = new Map();
@@ -1983,21 +1955,14 @@ async function buildStationSummary() {
     const stationInput = document.getElementById('stationSelect');
     const startInput = document.getElementById('summaryStart');
     const endInput = document.getElementById('summaryEnd');
-
+ 
      const station = stationInput?.value.trim() || '';
      const start = startInput?.value;
      const end = endInput?.value;
-
+ 
      console.log('Selected station:', station);
      console.log('Selected start:', start, 'end:', end);
-
-    const uid = firebase.auth()?.currentUser?.uid;
-    const contractorId = localStorage.getItem('contractor_id');
-    if (!uid || !contractorId || !start || !end) {
-        console.warn('buildStationSummary: state or filters missing');
-        return;
-    }
-
+ 
     const allSessions = await listSessionsFromFirestore();
 
     // Normalize station names for comparison
@@ -2419,13 +2384,9 @@ async function listSessionsFromFirestore() {
         return [];
     }
 
-    const ready = await waitForState(() => firebase.auth().currentUser && localStorage.getItem('contractor_id'));
-    if (!ready) return [];
-
     const contractorId = localStorage.getItem('contractor_id');
-    const uid = firebase.auth().currentUser && firebase.auth().currentUser.uid;
-    if (!uid || !contractorId) {
-        console.warn('listSessionsFromFirestore: state not ready');
+    if (!contractorId) {
+        console.error('Missing contractor_id');
         return [];
     }
 
@@ -2465,9 +2426,8 @@ async function loadSessionFromFirestore(id) {
     }
 
     const contractorId = localStorage.getItem('contractor_id');
-    const uid = firebase.auth().currentUser && firebase.auth().currentUser.uid;
-    if (!uid || !contractorId) {
-        console.warn('loadSessionFromFirestore: state not ready');
+    if (!contractorId) {
+        console.error('Missing contractor_id');
         return null;
     }
 
