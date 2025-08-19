@@ -855,7 +855,7 @@ button {
   filter: saturate(110%);
 }
 
-#sync-status-banner {
+#syncStatusBanner {
   position: fixed;
   bottom: 10px;
   right: 10px;

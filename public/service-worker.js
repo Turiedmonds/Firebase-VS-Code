@@ -1,5 +1,5 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v5';
+const CACHE_NAME = 'sheariq-pwa-v6';
 
 const FILES_TO_CACHE = [
   // HTML entry points (include the start_url from manifest)
@@ -43,24 +43,33 @@ self.addEventListener('activate', event => {
   self.clients.claim(); // control pages immediately
 });
 
-// Fetch: network-first for navigations, cache-first for others
+// Fetch: handle only same-origin static GETs
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  // Skip cross-origin and Firestore/WebChannel requests
+  if (url.origin !== self.location.origin ||
+      url.hostname.endsWith('googleapis.com') ||
+      url.hostname.endsWith('gstatic.com') ||
+      url.pathname.includes('/google.firestore.v1.Firestore/Listen/channel')) {
+    return; // Let the browser handle it
+  }
+
+  if (event.request.method !== 'GET') return;
+
   if (event.request.mode === 'navigate') {
     event.respondWith(
       (async () => {
         try {
-          // Try network for HTML navigations
           const fresh = await fetch(event.request);
           return fresh;
         } catch (err) {
-          // Fallback to cached dashboard if offline
           const cached = await caches.match('dashboard.html');
           return cached || Response.error();
         }
       })()
     );
   } else {
-    // Static files: cache-first
     event.respondWith(
       caches.match(event.request).then(resp => resp || fetch(event.request))
     );
