@@ -8,7 +8,7 @@
     appId: "1:201669876235:web:379fc4035da99f4b09450e"
   };
 
-  if (typeof firebase !== 'undefined' && (!firebase.apps || !firebase.apps.length)) {
+  if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
   }
 })();
