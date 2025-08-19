@@ -1,4 +1,4 @@
-// Firebase is initialized in firebase-init.js
+// Firebase is initialized via firebase-core.js
 
 function formatHoursWorked(decimal) {
   if (isNaN(decimal)) return "";

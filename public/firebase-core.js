@@ -13,7 +13,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-functions.js";
 
-// ⬇️ PASTE your existing values from public/firebase-init.js
+// ⬇️ PASTE your existing Firebase config values here
 const firebaseConfig = {
   apiKey: "AIzaSyD529f2jn9mb8OAip4x6l3IQb7KOaPNxaM",
   authDomain: "sheariq-tally-app.firebaseapp.com",
