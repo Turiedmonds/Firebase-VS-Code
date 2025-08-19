@@ -710,7 +710,6 @@ function initTop5ShedStaffWidget() {
       const max = Math.max(1, ...top5.map(r => r.total));
       listEl.innerHTML = top5.map((r, idx) => {
         const pct = Math.round((r.total / max) * 100);
-        const dayLabel = `${r.days} day${r.days===1?'':'s'}`;
         return `
       <div class="siq-lb-row">
         <div class="siq-lb-rank">${idx + 1}</div>
@@ -718,7 +717,7 @@ function initTop5ShedStaffWidget() {
           <div class="siq-lb-fill" style="width:${pct}%;"></div>
           <div class="siq-lb-name" title="${r.name}">${r.name}</div>
         </div>
-        <div class="siq-lb-value">${r.total.toFixed(2)} h <small>• ${dayLabel}</small></div>
+        <div class="siq-lb-value">${r.total.toFixed(2)} h</div>
       </div>
     `;
       }).join('');
