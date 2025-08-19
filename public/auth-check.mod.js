@@ -13,7 +13,7 @@ const setContractorId = (id) => {
 };
 
 async function resolveRoleAndRedirect(user) {
-  // Try contractor: contractors/{uid}
+  // Contractor check: contractors/{uid}
   const contractorRef = doc(db, "contractors", user.uid);
   const contractorSnap = await getDoc(contractorRef);
   if (contractorSnap.exists()) {
@@ -22,10 +22,10 @@ async function resolveRoleAndRedirect(user) {
     return;
   }
 
-  // Try staff by uid in collectionGroup('staff')
+  // Staff check via collectionGroup('staff')
   let contractorId = null;
 
-  // 1) Prefer uid match (fast + exact)
+  // Prefer uid match if present on staff docs
   const qByUid = query(
     collectionGroup(db, "staff"),
     where("uid", "==", user.uid),
@@ -34,25 +34,20 @@ async function resolveRoleAndRedirect(user) {
   let cgSnap = await getDocs(qByUid);
   if (!cgSnap.empty) {
     const snap = cgSnap.docs[0];
-    // Path: contractors/{contractorId}/staff/{staffId}
-    const segments = snap.ref.path.split("/");
-    // ["contractors", "{id}", "staff", "{staffId}"]
+    const segments = snap.ref.path.split("/"); // contractors/{id}/staff/{staffId}
     contractorId = segments[1];
-  } else {
-    // 2) Fallback to email match if older docs don’t store uid
-    // (Optional but preserves legacy behavior)
-    if (user.email) {
-      const qByEmail = query(
-        collectionGroup(db, "staff"),
-        where("email", "==", user.email),
-        limit(1)
-      );
-      cgSnap = await getDocs(qByEmail);
-      if (!cgSnap.empty) {
-        const snap = cgSnap.docs[0];
-        const segments = snap.ref.path.split("/");
-        contractorId = segments[1];
-      }
+  } else if (user.email) {
+    // Fallback to email for legacy docs
+    const qByEmail = query(
+      collectionGroup(db, "staff"),
+      where("email", "==", user.email),
+      limit(1)
+    );
+    cgSnap = await getDocs(qByEmail);
+    if (!cgSnap.empty) {
+      const snap = cgSnap.docs[0];
+      const segments = snap.ref.path.split("/");
+      contractorId = segments[1];
     }
   }
 
@@ -62,7 +57,7 @@ async function resolveRoleAndRedirect(user) {
     return;
   }
 
-  // No role doc found → send back to login
+  // No role found
   redirect("/login.html");
 }
 
