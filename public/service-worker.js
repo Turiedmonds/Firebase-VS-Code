@@ -1,7 +1,7 @@
 // public/service-worker.js
 // SHEΔR iQ PWA — role-safe, auth-check fallback for navigations
 // Bump this when deploying
-const CACHE_VERSION = 'sheariq-v11';
+const CACHE_VERSION = 'sheariq-v12';
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 
@@ -51,7 +51,9 @@ self.addEventListener('activate', (event) => {
 async function putRuntime(request, response) {
   try {
     const cache = await caches.open(RUNTIME_CACHE);
-    await cache.put(request, response.clone());
+    const url = new URL(request.url);
+    const cacheKey = url.origin + url.pathname;
+    await cache.put(cacheKey, response.clone());
   } catch (_) { /* ignore quota errors */ }
   return response;
 }
@@ -94,11 +96,12 @@ self.addEventListener('fetch', (event) => {
   // For other GET requests:
   // Static assets → cache-first
   const url = new URL(req.url);
+  const cacheKey = url.origin + url.pathname;
   const isCore = CORE_ASSETS.includes(url.pathname);
 
   if (isCore) {
     event.respondWith((async () => {
-      const cached = await caches.match(req);
+      const cached = await caches.match(cacheKey);
       if (cached) return cached;
       try {
         const net = await fetch(req);
@@ -113,10 +116,10 @@ self.addEventListener('fetch', (event) => {
   // Everything else → stale-while-revalidate
   event.respondWith((async () => {
     const cache = await caches.open(RUNTIME_CACHE);
-    const cached = await cache.match(req);
+    const cached = await cache.match(cacheKey);
     const fetchPromise = fetch(req)
       .then((net) => {
-        if (net && net.status === 200) cache.put(req, net.clone());
+        if (net && net.status === 200) cache.put(cacheKey, net.clone());
         return net;
       })
       .catch(() => null);
