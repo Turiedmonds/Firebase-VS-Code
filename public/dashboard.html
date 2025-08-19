@@ -185,6 +185,53 @@
           </div>
         </div>
         <!-- END: Top 5 Shearers Widget -->
+        <!-- BEGIN: Top 5 Shed Staff Widget -->
+        <section id="top5-shedstaff" class="dash-card top5-widget">
+          <header class="dash-card__header">
+            <h2 class="dash-card__title">Top 5 Shed Staff — Hours Worked</h2>
+            <div class="dash-card__controls">
+              <div class="view-select">
+                <label for="shedstaff-view">View</label>
+                <select id="shedstaff-view">
+                  <option value="12m" selected>12M Rolling</option>
+                  <option value="all">All‑Time</option>
+                </select>
+                <select id="shedstaff-year" class="year-select" aria-label="Specific year" hidden></select>
+              </div>
+              <button type="button" id="shedstaff-viewall" class="siq-link-button">View Full List</button>
+            </div>
+          </header>
+
+          <div id="top5-shedstaff-list" class="siq-leaderboard">
+            <!-- JS renders 5 rows with bars -->
+          </div>
+        </section>
+        <!-- Full list modal -->
+        <div id="shedstaff-modal" class="siq-modal" aria-hidden="true">
+          <div class="siq-modal__backdrop" data-close-modal></div>
+          <div class="siq-modal__panel">
+            <header class="siq-modal__header">
+              <h3>All Shed Staff — Rankings</h3>
+              <button class="siq-modal__close" data-close-modal aria-label="Close">&times;</button>
+            </header>
+            <div class="siq-modal__body">
+              <div class="siq-table-scroll">
+                <table class="siq-rank-table" id="shedstaff-full-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Hours</th>
+                      <th>Days Worked</th>
+                    </tr>
+                  </thead>
+                  <tbody><!-- JS fills --></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END: Top 5 Shed Staff Widget -->
         <section class="dashboard-buttons">
           <button id="btnManageStaff" class="tab-button">Manage Staff</button>
           <button id="farm-summary-btn" class="dashboard-button">Farm Summary</button>
@@ -214,6 +261,7 @@
       <p>This dashboard lets you manage your shearing operation quickly and safely. Here’s a quick overview, and you can run a guided tour anytime from the Help button.</p>
       <ul class="dw-list">
         <li><strong>Top 5 Shearers</strong>: See leaders; open “View Full List”.</li>
+        <li><strong>Top 5 Shed Staff</strong>: Track hours worked; open “View Full List”.</li>
         <li><strong>Manage Staff</strong>: Add/remove staff; see online/last seen.</li>
         <li><strong>Farm Summary</strong>: Totals and comparisons by farm.</li>
         <li><strong>Saved Sessions</strong>: Reopen past days.</li>
