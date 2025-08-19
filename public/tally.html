@@ -253,7 +253,8 @@
 </datalist>
 
 <script src="xlsx.full.min.js"></script>
-<script type="module" src="/tally.mod.js"></script>
+<script type="module" src="auth.js"></script>
+ <script type="module" src="/tally.mod.js"></script>
 <script src="export.js"></script>
 <script src="serviceworker.js"></script>
 
@@ -373,6 +374,14 @@
   </div>
 </div>
 <script>
+firebase.auth().onAuthStateChanged(function(user) {
+  if (user) {
+    document.getElementById("userEmail").textContent = user.email;
+  } else {
+    document.getElementById("userEmail").textContent = "Not logged in";
+  }
+});
+
 document.addEventListener('DOMContentLoaded', function () {
   ['setupShearers', 'setupRuns', 'setupStaff'].forEach(function(id) {
     var select = document.getElementById(id);
