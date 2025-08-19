@@ -736,6 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cbDont?.checked) localStorage.setItem('dashboard_welcome_done','true');
     if (lastFocused && lastFocused.focus) lastFocused.focus();
   }
+  window.closeWelcome = closeWelcome; // expose for external use
 
   btnOK?.addEventListener('click', closeWelcome);
   btnX?.addEventListener('click', closeWelcome);
@@ -971,10 +972,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // SAVE buttons
   btnSaveM?.addEventListener('click', () => {
     persistFromModal({lockDone:true}); // lock “Don’t show again” if ticked
-    // Optional: close modal after saving
-    if (overlay) {
+    if (typeof window.closeWelcome === 'function') {
+      window.closeWelcome();
+    } else if (overlay) {
       overlay.style.display = 'none';
       overlay.setAttribute('aria-hidden','true');
+      document.getElementById('help-btn')?.focus();
     }
   });
   btnSaveH?.addEventListener('click', () => {
