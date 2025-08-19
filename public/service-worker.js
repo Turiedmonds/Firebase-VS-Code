@@ -1,5 +1,5 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v5';
+const CACHE_NAME = 'sheariq-pwa-v6';
 
 const FILES_TO_CACHE = [
   // HTML entry points (include the start_url from manifest)
@@ -8,6 +8,7 @@ const FILES_TO_CACHE = [
   'tally.html',
   'farm-summary.html',
   'login.html',
+  'offline.html',
 
   // App assets (keep existing names; do NOT rename)
   'styles.css',
@@ -53,8 +54,10 @@ self.addEventListener('fetch', event => {
           const fresh = await fetch(event.request);
           return fresh;
         } catch (err) {
-          // Fallback to cached dashboard if offline
-          const cached = await caches.match('dashboard.html');
+          // Fallback to cached auth check page or offline page if offline
+          const cached =
+            (await caches.match('auth-check.html')) ||
+            (await caches.match('offline.html'));
           return cached || Response.error();
         }
       })()
