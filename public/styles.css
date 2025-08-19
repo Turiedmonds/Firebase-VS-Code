@@ -1121,3 +1121,5 @@ button {
   background: #1e1e1e; color: #fff; padding: 6px 10px; border-radius: 8px; cursor: pointer;
 }
 .siq-tour-btn.primary { background: #2a6df4; border-color: #2a6df4; }
+
+.tooltip, .help-tooltip, .help-bubble { display: none !important; }
