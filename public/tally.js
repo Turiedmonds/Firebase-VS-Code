@@ -343,37 +343,54 @@ let autosaveHideTimer = null;
 
 let syncBannerHideTimer = null;
 let syncBannerRemoveTimer = null;
+function getPending() {
+    try {
+        const arr = JSON.parse(localStorage.getItem('pending_cloud_sessions') || '[]');
+        return Array.isArray(arr) ? arr : [];
+    } catch {
+        return [];
+    }
+}
+
+function setPending(arr) {
+    localStorage.setItem('pending_cloud_sessions', JSON.stringify(arr));
+}
+
+function queueSession(item) {
+    const arr = getPending();
+    arr.push(item);
+    setPending(arr);
+}
+
+function dequeueById(id) {
+    const arr = getPending().filter(it => it.id !== id);
+    setPending(arr);
+}
 
 function updateSyncStatusBanner() {
-    const banner = document.getElementById('sync-status-banner');
+    const banner = document.getElementById('syncStatusBanner');
     if (!banner) return;
 
-    if (syncBannerHideTimer) {
-        clearTimeout(syncBannerHideTimer);
-        syncBannerHideTimer = null;
-    }
-    if (syncBannerRemoveTimer) {
-        clearTimeout(syncBannerRemoveTimer);
-        syncBannerRemoveTimer = null;
-    }
+    if (syncBannerHideTimer) { clearTimeout(syncBannerHideTimer); syncBannerHideTimer = null; }
+    if (syncBannerRemoveTimer) { clearTimeout(syncBannerRemoveTimer); syncBannerRemoveTimer = null; }
 
-    let pending = [];
-    try {
-        pending = JSON.parse(localStorage.getItem('pending_cloud_sessions') || '[]');
-    } catch {}
-    const count = Array.isArray(pending) ? pending.length : 0;
+    const count = getPending().length;
 
-    if (!navigator.onLine || count > 0) {
-        const msg = count > 0
+    let msg = '';
+    if (!navigator.onLine) {
+        msg = count > 0
             ? `🔁 ${count} session${count !== 1 ? 's' : ''} pending sync`
             : '🔁 Offline';
-        banner.textContent = msg;
-        banner.style.display = 'block';
-        banner.style.opacity = '1';
     } else {
-        banner.textContent = '✅ All sessions synced';
-        banner.style.display = 'block';
-        banner.style.opacity = '1';
+        msg = count > 0
+            ? `🔁 ${count} session${count !== 1 ? 's' : ''} pending sync`
+            : '✅ All sessions synced';
+    }
+    banner.textContent = msg;
+    banner.style.display = 'block';
+    banner.style.opacity = '1';
+
+    if (navigator.onLine && count === 0) {
         syncBannerHideTimer = setTimeout(() => {
             banner.style.opacity = '0';
             syncBannerRemoveTimer = setTimeout(() => {
@@ -382,6 +399,47 @@ function updateSyncStatusBanner() {
         }, 4000);
     }
 }
+
+async function tryFlushQueue() {
+    if (!navigator.onLine || typeof firebase === 'undefined' || !firebase.firestore || !firebase.auth) return;
+    const contractorId = localStorage.getItem('contractor_id');
+    if (!contractorId) return;
+    const pending = getPending();
+    for (const item of pending) {
+        try {
+            await firebase.firestore()
+                .collection('contractors')
+                .doc(contractorId)
+                .collection('sessions')
+                .doc(item.id)
+                .set({
+                    ...item.session,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                });
+            dequeueById(item.id);
+        } catch (err) {
+            console.error('Failed to flush queued session', item.id, err);
+        }
+    }
+    updateSyncStatusBanner();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!document.getElementById('syncStatusBanner')) {
+        const b = document.createElement('div');
+        b.id = 'syncStatusBanner';
+        document.body.appendChild(b);
+    }
+    updateSyncStatusBanner();
+    if (navigator.onLine) tryFlushQueue();
+});
+
+window.addEventListener('online', () => {
+    updateSyncStatusBanner();
+    tryFlushQueue();
+});
+
+window.addEventListener('offline', updateSyncStatusBanner);
 
 function updateAutosaveIndicator() {
     const el = document.getElementById('autosaveInfo');
@@ -410,7 +468,6 @@ function scheduleAutosave() {
         if (json === lastSavedJson) return;
         const now = Date.now();
         let saved = false;
-        let cloudPromise = Promise.resolve();
 
         // Always save to localStorage if 10s passed
         if (now - lastLocalSave >= 10000) {
@@ -422,7 +479,7 @@ function scheduleAutosave() {
         // Only save to Firestore if station, date, and leader are all filled in
         const hasAllKeys = data.stationName && data.date && data.teamLeader;
         if (hasAllKeys && now - lastCloudSave >= 10000) {
-            cloudPromise = saveSessionToFirestore(false);
+            saveSessionToFirestore(false);
             lastCloudSave = now;
             saved = true;
         }
@@ -431,8 +488,6 @@ function scheduleAutosave() {
             lastSavedJson = json;
             updateAutosaveIndicator();
         }
-
-        cloudPromise.finally(updateSyncStatusBanner);
     }, 3000);
 }
 
@@ -2358,11 +2413,15 @@ async function saveSessionToFirestore(showStatus = false) {
         ...data,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       });
-
+    dequeueById(firestoreSessionId);
     if (showStatus) {
       alert('✅ Session saved to the cloud!');
       showAutosaveStatus('\u2601\ufe0f Saved to cloud');
     }
+  } catch (err) {
+    console.error('Failed to save session to Firestore:', err);
+    queueSession({ id: firestoreSessionId, session: data });
+    if (showStatus) showAutosaveStatus('⚠️ Saved locally');
   } finally {
     updateSyncStatusBanner();
   }
