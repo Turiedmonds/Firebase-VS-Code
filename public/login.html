@@ -38,11 +38,6 @@
       height: auto;
     }
   </style>
-  <script src="firebase-app-compat.js"></script>
-  <script src="firebase-auth-compat.js"></script>
-  <script src="firebase-firestore-compat.js"></script>
-  <script src="firebase-init.js"></script>
-  <script src="login.js"></script>
 </head>
 <body>
   <form id="loginForm">
@@ -64,5 +59,7 @@
     <div class="circle-spinner"></div>
     <div>Starting your shed session…</div>
   </div>
+<script type="module" src="/firebase-core.js"></script>
+<script type="module" src="/login.mod.js"></script>
 </body>
 </html>
