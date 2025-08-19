@@ -647,6 +647,14 @@ function initTop5ShedStaffWidget() {
       return 0;
     }
 
+    function formatDecimalHoursToHM(value) {
+      const n = Number(value || 0);
+      const totalMin = Math.round(n * 60);
+      const h = Math.floor(totalMin / 60);
+      const m = totalMin % 60;
+      return `${h}h ${m}m`;
+    }
+
     function normalizeName(name) {
       if (!name) return '';
       const t = String(name).trim().replace(/\s+/g, ' ');
@@ -717,7 +725,7 @@ function initTop5ShedStaffWidget() {
           <div class="siq-lb-fill" style="width:${pct}%;"></div>
           <div class="siq-lb-name" title="${r.name}">${r.name}</div>
         </div>
-        <div class="siq-lb-value">${r.total.toFixed(2)} h</div>
+        <div class="siq-lb-value">${formatDecimalHoursToHM(r.total)}</div>
       </div>
     `;
       }).join('');
@@ -728,7 +736,7 @@ function initTop5ShedStaffWidget() {
       <tr>
         <td>${idx + 1}</td>
         <td>${r.name}</td>
-        <td>${r.total.toFixed(2)}</td>
+        <td data-sort="${r.total}">${formatDecimalHoursToHM(r.total)}</td>
         <td>${r.days}</td>
       </tr>
     `).join('');
