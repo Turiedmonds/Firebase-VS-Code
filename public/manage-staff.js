@@ -19,22 +19,6 @@ const functions = getFunctions(app);
 const STAFF_LIMIT = 10;
 const DELETED_STAFF_STATE_KEY = 'deletedStaffSectionState';
 
-SessionState.ready().then(state => {
-  if (state.user_role !== 'contractor') {
-    window.location.replace('auth-check.html');
-  }
-});
-
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    SessionState.ready().then(s => {
-      if (s.user_role !== 'contractor') {
-        window.location.replace('auth-check.html');
-      }
-    });
-  }
-});
-
 let actionOverlay, actionOverlayText, confirmModal, confirmMessage, confirmYesBtn, confirmCancelBtn;
 
 function showActionOverlay(message) {
@@ -182,7 +166,7 @@ async function deleteStaff(btn) {
   const { uid, name } = btn.dataset;
   const confirmed = await showConfirm(`Are you sure you want to delete ${name || 'this staff user'}?`);
   if (!confirmed) return;
-  const contractorId = SessionState.get().contractor_id;
+  const contractorId = localStorage.getItem('contractor_id');
   if (!contractorId) {
     alert('Missing contractor id');
     return;
@@ -206,7 +190,7 @@ async function restoreStaff(btn) {
   const { logid, name } = btn.dataset;
   const confirmed = await showConfirm(`Are you sure you want to restore ${name || 'this staff user'}?`);
   if (!confirmed) return;
-  const contractorId = SessionState.get().contractor_id;
+  const contractorId = localStorage.getItem('contractor_id');
   if (!contractorId) {
     alert('Missing contractor id');
     return;
@@ -282,7 +266,7 @@ async function restoreStaff(btn) {
       }
 
       const contractorUid = user.uid;
-      SessionState.set('contractor', contractorUid);
+      localStorage.setItem('contractor_id', contractorUid);
       await loadStaffList(contractorUid);
 
       const deletedSearchInput = document.getElementById('deletedStaffSearch');

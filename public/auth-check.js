@@ -1,7 +1,7 @@
 // === FAST PATH: bootstrap redirect from localStorage (works offline) ===
 (function fastRoleBootstrap(){
   try {
-    const role = SessionState.get().user_role;
+    const role = localStorage.getItem('user_role');
     if (role === 'contractor') {
       // Contractors always land on the dashboard
       window.location.replace('dashboard.html');
@@ -22,7 +22,7 @@
 // Watchdog: if auth checks take too long but we do have a saved role, go anyway.
 (function watchdogRedirect(){
   try {
-    const savedRole = SessionState.get().user_role;
+    const savedRole = localStorage.getItem('user_role');
     if (!savedRole) return; // nothing to do
 
     setTimeout(() => {
@@ -55,7 +55,8 @@ firebase.auth().onAuthStateChanged(async function (user) {
 
   if (contractorSnap.exists && contractorSnap.data().role === "contractor") {
     console.log("[auth-check] \u2705 User is a contractor");
-    SessionState.set('contractor', userUid);
+    localStorage.setItem("contractor_id", userUid);
+    localStorage.setItem('user_role', 'contractor'); // NEW
     console.log('[auth-check] role=contractor saved');
     window.location.href = "dashboard.html";
     window.__authCheckRedirected = true;
@@ -83,12 +84,13 @@ firebase.auth().onAuthStateChanged(async function (user) {
 
         if (contractorId) {
           try {
-            SessionState.set('staff', contractorId);
+            localStorage.setItem("contractor_id", contractorId);
+            localStorage.setItem('user_role', 'staff'); // NEW
             console.log('[auth-check] role=staff saved');
             window.location.href = "tally.html";
             window.__authCheckRedirected = true;
           } catch (e) {
-            console.error("\u274c Failed to set contractor_id:", e);
+            console.error("\u274c Failed to set contractor_id in localStorage:", e);
             await firebase.auth().signOut();
             window.location.href = "login.html";
           }

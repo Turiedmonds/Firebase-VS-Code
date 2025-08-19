@@ -34,7 +34,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="firebase-init.js"></script>
-  <script src="session-state.js"></script>
   <script type="module" src="auth.js"></script>
   <!-- PWA manifest -->
   <link rel="manifest" href="/manifest.json">
@@ -65,7 +64,7 @@
       }
 
       var cold = navIsCold();
-      var role = (SessionState.get().user_role || '').toLowerCase();
+      var role = (localStorage.getItem('user_role') || '').toLowerCase();
       var pref = (localStorage.getItem('preferred_start') || '').toLowerCase();
 
       var want = role === 'contractor' ? 'dashboard'
@@ -251,6 +250,7 @@
   <script src="app-launch-guard.js" defer></script>
   <script>
     try {
+      localStorage.setItem('user_role', 'contractor');
       localStorage.setItem('preferred_start', 'dashboard');
     } catch(e) {}
   </script>

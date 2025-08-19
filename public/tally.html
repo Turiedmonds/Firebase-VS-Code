@@ -36,7 +36,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="firebase-init.js"></script>
-  <script src="session-state.js"></script>
   <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json" />
 
@@ -151,7 +150,7 @@
     }
 
     var cold = navIsCold();
-    var role = (SessionState.get().user_role || '').toLowerCase();
+    var role = (localStorage.getItem('user_role') || '').toLowerCase();
     var pref = (localStorage.getItem('preferred_start') || '').toLowerCase();
 
     var want = role === 'contractor' ? 'dashboard'
@@ -842,6 +841,9 @@ document.addEventListener('DOMContentLoaded', () => {
   <script src="app-launch-guard.js" defer></script>
   <script>
     try {
+      if (!localStorage.getItem('user_role')) {
+        localStorage.setItem('user_role', 'staff');
+      }
       localStorage.setItem('preferred_start', 'tally');
     } catch(e) {}
   </script>
