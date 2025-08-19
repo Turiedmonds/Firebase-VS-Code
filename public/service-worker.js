@@ -1,5 +1,5 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v5';
+const CACHE_NAME = 'sheariq-pwa-v6';
 
 const FILES_TO_CACHE = [
   // HTML entry points (include the start_url from manifest)
@@ -16,6 +16,16 @@ const FILES_TO_CACHE = [
   'export.js',
   'login.js',
   'xlsx.full.min.js',
+
+  // Firebase libraries
+  'firebase-app-compat.js',
+  'firebase-auth-compat.js',
+  'firebase-firestore-compat.js',
+  'firebase-app.js',
+  'firebase-auth.js',
+  'firebase-firestore.js',
+  'firebase-functions.js',
+  'firebase-init.js',
 
   // PWA essentials
   'manifest.json',
