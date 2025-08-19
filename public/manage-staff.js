@@ -1,21 +1,8 @@
-import { initializeApp } from './firebase-app.js';
-import { getAuth, onAuthStateChanged } from './firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, getDocs, addDoc, deleteDoc, query, where } from './firebase-firestore.js';
-import { getFunctions, httpsCallable } from './firebase-functions.js';
-
-const firebaseConfig = {
-  apiKey: 'AIzaSyD529f2jn9mb8OAip4x6l3IQb7KOaPNxaM',
-  authDomain: 'sheariq-tally-app.firebaseapp.com',
-  projectId: 'sheariq-tally-app',
-  storageBucket: 'sheariq-tally-app.firebasestorage.app',
-  messagingSenderId: '201669876235',
-  appId: '1:201669876235:web:379fc4035da99f4b09450e'
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const functions = getFunctions(app);
+import {
+  auth, db, functions,
+  onAuthStateChanged,
+  collection, doc, getDoc, getDocs, setDoc, addDoc, query, where, serverTimestamp, httpsCallable
+} from './firebase-core.js';
 const STAFF_LIMIT = 10;
 const DELETED_STAFF_STATE_KEY = 'deletedStaffSectionState';
 

@@ -3,7 +3,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 
-// Your config (same as in firebase-init.js)
+// Your Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCuQh49AgKbrMvrxcuwsR8Svy86aP3Fg2Q",
   authDomain: "sheariq-tally-app.firebaseapp.com",
