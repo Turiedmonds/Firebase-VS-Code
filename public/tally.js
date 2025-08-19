@@ -28,6 +28,22 @@ function detectAgeCategory(sheepTypeName) {
   return 'unknown';
 }
 
+SessionState.ready().then(state => {
+  if (state.user_role !== 'staff') {
+    window.location.replace('auth-check.html');
+  }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    SessionState.ready().then(s => {
+      if (s.user_role !== 'staff') {
+        window.location.replace('auth-check.html');
+      }
+    });
+  }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   if (!document.getElementById('tt-root')) {
     const tt = document.createElement('div');
@@ -2297,7 +2313,7 @@ async function verifyContractorUser() {
   const contractorSnap = await db.collection('contractors').doc(user.uid).get();
   if (contractorSnap.exists) {
     console.log('[verifyContractorUser] User is a contractor');
-    localStorage.setItem('contractor_id', user.uid);
+    SessionState.set('contractor', user.uid);
     return 'contractor';
   }
 
@@ -2319,7 +2335,7 @@ async function verifyContractorUser() {
             .collection('staff')
             .doc(staffUid)
             .update({ lastActive: firebase.firestore.FieldValue.serverTimestamp() });
-    localStorage.setItem('contractor_id', contractorId);
+    SessionState.set('staff', contractorId);
     console.log('[verifyContractorUser] Found matching staff for contractor', contractorId);
     return 'staff';
   }
@@ -2351,9 +2367,9 @@ async function saveSessionToFirestore(showStatus = false) {
   }
 
   // ✅ Use contractorId from localStorage
-  const contractorId = localStorage.getItem('contractor_id');
+  const contractorId = SessionState.get().contractor_id;
   if (!contractorId) {
-    console.error('Missing contractor_id in localStorage');
+    console.error('Missing contractor_id');
     return;
   }
 
@@ -2383,7 +2399,7 @@ async function listSessionsFromFirestore() {
         return [];
     }
 
-    const contractorId = localStorage.getItem('contractor_id');
+    const contractorId = SessionState.get().contractor_id;
     if (!contractorId) {
         console.error('Missing contractor_id');
         return [];
@@ -2424,7 +2440,7 @@ async function loadSessionFromFirestore(id) {
         return null;
     }
 
-    const contractorId = localStorage.getItem('contractor_id');
+    const contractorId = SessionState.get().contractor_id;
     if (!contractorId) {
         console.error('Missing contractor_id');
         return null;

@@ -20,6 +20,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="firebase-init.js"></script>
+  <script src="session-state.js"></script>
 </head>
 <body>
 <!-- Tiny early guard (does NOT replace auth security; just avoids spinner stalls) -->
@@ -27,7 +28,7 @@
 try {
   // If we have a known role and user is already authenticated, bounce quickly.
   // The full auth-check.js will still run right after and re-verify.
-  var role = localStorage.getItem('user_role');
+  var role = SessionState.get().user_role;
   if (role === 'contractor') {
     // If someone opens auth-check directly and they’re a contractor, they expect dashboard
     if (!location.pathname.endsWith('dashboard.html')) location.replace('dashboard.html');
