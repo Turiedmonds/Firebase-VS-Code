@@ -1,7 +1,7 @@
 // public/service-worker.js
 // SHEΔR iQ PWA — role-safe, auth-check fallback for navigations
 // Bump this when deploying
-const CACHE_VERSION = 'sheariq-v12';
+const CACHE_VERSION = 'sheariq-v13';
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 
