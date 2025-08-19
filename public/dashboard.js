@@ -1007,3 +1007,40 @@ document.addEventListener('DOMContentLoaded', () => {
   // ensure your existing dw-ok handler calls:
   //   if (cbDont?.checked) setPrefs({ welcomeDone: true });
 })();
+
+// One-time backfill utility for adding savedAt to old session docs
+async function backfillSavedAtForSessions() {
+  const contractorId = localStorage.getItem('contractor_id');
+  if (!contractorId) {
+    console.warn('[backfillSavedAtForSessions] Missing contractor_id');
+    return;
+  }
+  const db = firebase.firestore();
+  const colRef = db.collection('contractors').doc(contractorId).collection('sessions');
+  const snap = await colRef.limit(500).get();
+  let batch = db.batch();
+  let ops = 0;
+  let updated = 0;
+  for (const doc of snap.docs) {
+    const data = doc.data() || {};
+    if (data.savedAt) continue;
+    let ts;
+    if (data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+      ts = firebase.firestore.Timestamp.fromDate(new Date(`${data.date}T12:00:00Z`));
+    } else {
+      ts = firebase.firestore.FieldValue.serverTimestamp();
+    }
+    batch.set(doc.ref, { savedAt: ts }, { merge: true });
+    ops++;
+    updated++;
+    if (ops >= 400) {
+      await batch.commit();
+      batch = db.batch();
+      ops = 0;
+    }
+  }
+  if (ops > 0) await batch.commit();
+  console.log(`[backfillSavedAtForSessions] Updated ${updated} session(s)`);
+}
+window.backfillSavedAtForSessions = backfillSavedAtForSessions;
+console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSavedAtForSessions()');

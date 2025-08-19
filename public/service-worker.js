@@ -1,5 +1,5 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v6';
+const CACHE_NAME = 'sheariq-pwa-v7';
 
 const FILES_TO_CACHE = [
   // HTML entry points (include the start_url from manifest)
