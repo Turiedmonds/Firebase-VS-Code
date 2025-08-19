@@ -888,7 +888,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const overlay   = document.getElementById('dashboard-welcome-overlay');
   const modal     = document.getElementById('dashboard-welcome-modal');
   const cbDont    = document.getElementById('dw-dont-show');
-  const cbWelM    = document.getElementById('dw-enable-welcome');
   const cbTourM   = document.getElementById('dw-enable-tour');
   const btnSaveM  = document.getElementById('dw-save');
   const btnStartM = document.getElementById('dw-start');
@@ -926,7 +925,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- View sync ---
   function syncModalFromPrefs(){
     const p = getPrefs();
-    if (cbWelM)  cbWelM.checked  = p.welcomeEnabled;
     if (cbTourM) cbTourM.checked = p.tourEnabled;
     if (cbDont)  cbDont.checked  = p.welcomeDone;
   }
@@ -942,7 +940,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Persist from UI (Modal) ---
   function persistFromModal({lockDone=false} = {}){
     const next = {};
-    if (cbWelM)  next.welcomeEnabled = !!cbWelM.checked;
     if (cbTourM) next.tourEnabled    = !!cbTourM.checked;
     if (lockDone && cbDont) next.welcomeDone = !!cbDont.checked;
     setPrefs(next);
@@ -961,7 +958,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // AUTOSAVE on checkbox changes (both places), so choices “stick” even if user closes without pressing Save
-  cbWelM?.addEventListener('change', () => persistFromModal());
   cbTourM?.addEventListener('change', () => persistFromModal());
   cbDont?.addEventListener('change', () => persistFromModal({lockDone:true}));
 
