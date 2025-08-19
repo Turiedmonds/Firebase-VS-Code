@@ -66,6 +66,10 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET
   if (req.method !== 'GET') return;
 
+  // Skip cross-origin requests (e.g., Firebase scripts)
+  const reqUrl = new URL(req.url);
+  if (reqUrl.origin !== self.location.origin) return;
+
   // Navigation requests → network-first + fallback
   if (req.mode === 'navigate') {
     event.respondWith((async () => {

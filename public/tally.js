@@ -1723,20 +1723,43 @@ function handleSaveOption(option) {
     manualSave = false;
 }
  
- function showView(id) {
-     if (!id) return;
-     document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-     const view = document.getElementById(id);
-     if (view) view.style.display = 'block';
-     document.querySelectorAll('.tab-button[data-view]').forEach(btn => {
-         btn.classList.toggle('active', btn.dataset.view === id);
-     });
-     if (id === 'summaryView') buildSummary();
-     if (id === 'stationSummaryView') {
-         populateStationDropdown();
-         buildStationSummary();
-     }
- }
+let currentView = null;
+let farmSummaryUnsubs = [];
+
+function clearFarmSummaryListeners() {
+    farmSummaryUnsubs.forEach(unsub => {
+        try { if (typeof unsub === 'function') unsub(); } catch (e) { console.warn('Failed to unsubscribe', e); }
+    });
+    farmSummaryUnsubs = [];
+}
+
+function showView(id) {
+    if (!id) return;
+
+    // Leaving Farm Summary? clear any active listeners
+    if (currentView === 'stationSummaryView' && id !== 'stationSummaryView') {
+        clearFarmSummaryListeners();
+    }
+    currentView = id;
+
+    document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+    const view = document.getElementById(id);
+    if (view) view.style.display = 'block';
+    document.querySelectorAll('.tab-button[data-view]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === id);
+    });
+    if (id === 'summaryView') buildSummary();
+    if (id === 'stationSummaryView') {
+        const user = firebase.auth?.currentUser;
+        const contractorId = localStorage.getItem('contractor_id');
+        if (user && contractorId) {
+            populateStationDropdown();
+            buildStationSummary();
+        } else {
+            console.warn('Skipping Farm Summary — auth/contractor not ready');
+        }
+    }
+}
  
  function buildSummary() {
      const headerRow = document.getElementById('headerRow');
@@ -2380,7 +2403,8 @@ async function saveSessionToFirestore(showStatus = false) {
 async function listSessionsFromFirestore() {
     if (typeof firebase === 'undefined' ||
         !firebase.firestore ||
-        !firebase.auth) {
+        !firebase.auth ||
+        !firebase.auth().currentUser) {
         return [];
     }
 
