@@ -1,6 +1,21 @@
-const auth = firebase.auth();
-const db = firebase.firestore();
-const functions = firebase.functions();
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, getDocs, addDoc, deleteDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyD529f2jn9mb8OAip4x6l3IQb7KOaPNxaM',
+  authDomain: 'sheariq-tally-app.firebaseapp.com',
+  projectId: 'sheariq-tally-app',
+  storageBucket: 'sheariq-tally-app.firebasestorage.app',
+  messagingSenderId: '201669876235',
+  appId: '1:201669876235:web:379fc4035da99f4b09450e'
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const functions = getFunctions(app);
 const STAFF_LIMIT = 10;
 const DELETED_STAFF_STATE_KEY = 'deletedStaffSectionState';
 
@@ -46,11 +61,7 @@ async function loadStaffList(contractorId) {
   const summaryEl = document.getElementById('staffSummary');
   tbody.innerHTML = '';
 
-  const snapshot = await db
-    .collection('contractors')
-    .doc(contractorId)
-    .collection('staff')
-    .get();
+  const snapshot = await getDocs(collection(db, 'contractors', contractorId, 'staff'));
   const docs = snapshot.docs;
   docs.forEach((docSnap, index) => {
     const data = docSnap.data();
@@ -110,12 +121,8 @@ async function loadDeletedStaff(contractorId) {
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  const snapshot = await db
-    .collection('contractors')
-    .doc(contractorId)
-    .collection('logs')
-    .where('type', '==', 'staff_deleted')
-    .get();
+  const q = query(collection(db, 'contractors', contractorId, 'logs'), where('type', '==', 'staff_deleted'));
+  const snapshot = await getDocs(q);
 
   snapshot.forEach(docSnap => {
     const data = docSnap.data();
@@ -167,7 +174,7 @@ async function deleteStaff(btn) {
   try {
     btn.disabled = true;
     showActionOverlay('Deleting staff…');
-    const fn = functions.httpsCallable('deleteStaffUser');
+    const fn = httpsCallable(functions, 'deleteStaffUser');
     await fn({ uid, contractorId });
     await loadStaffList(contractorId);
   } catch (err) {
@@ -191,7 +198,7 @@ async function restoreStaff(btn) {
   try {
     btn.disabled = true;
     showActionOverlay('Restoring staff…');
-    const fn = functions.httpsCallable('restoreStaffUser');
+    const fn = httpsCallable(functions, 'restoreStaffUser');
     await fn({ logId: logid, contractorId });
     await loadStaffList(contractorId);
   } catch (err) {
@@ -229,14 +236,14 @@ async function restoreStaff(btn) {
       });
     }
     if (overlay) overlay.style.display = 'flex';
-    auth.onAuthStateChanged(async user => {
+    onAuthStateChanged(auth, async user => {
       if (!user) {
         window.location.replace('login.html');
         return;
       }
       try {
-        const docRef = db.collection('contractors').doc(user.uid);
-        const snap = await docRef.get();
+        const docRef = doc(collection(db, 'contractors'), user.uid);
+        const snap = await getDoc(docRef);
         const data = snap.exists() ? snap.data() : {};
         if (data.role !== 'contractor') {
           window.location.replace('login.html');
@@ -306,22 +313,18 @@ async function restoreStaff(btn) {
 
         try {
           if (createOverlay) createOverlay.style.display = 'flex';
-          const createStaffUser = functions.httpsCallable('createStaffUser');
+          const createStaffUser = httpsCallable(functions, 'createStaffUser');
           const result = await createStaffUser({ email, password });
           const uid = result.data.uid;
           console.log('Created staff user UID:', uid);
 
-        const staffRef = db
-          .collection('contractors')
-          .doc(contractorUid)
-          .collection('staff')
-          .doc(uid);
-        await staffRef.set({
+        const staffRef = doc(db, 'contractors', contractorUid, 'staff', uid);
+        await setDoc(staffRef, {
           name: staffName,
           email,
           role,
           contractorId: contractorUid,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          createdAt: serverTimestamp()
         });
 
         console.log('\u2705 Reached sendStaffCredentials function');
@@ -329,7 +332,7 @@ async function restoreStaff(btn) {
         console.log('staffName:', staffName, 'staffEmail:', email, 'password:', password);
 
         try {
-          const sendStaffCredentials = functions.httpsCallable('sendStaffCredentials');
+          const sendStaffCredentials = httpsCallable(functions, 'sendStaffCredentials');
           const response = await sendStaffCredentials({
             staffName,
             staffEmail: email,
