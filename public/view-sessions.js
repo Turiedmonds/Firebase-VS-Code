@@ -11,22 +11,6 @@ function formatNZDate(iso) {
   return `${day}/${month}/${year}`;
 }
 
-SessionState.ready().then(state => {
-  if (state.user_role !== 'contractor') {
-    window.location.replace('auth-check.html');
-  }
-});
-
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {
-    SessionState.ready().then(s => {
-      if (s.user_role !== 'contractor') {
-        window.location.replace('auth-check.html');
-      }
-    });
-  }
-});
-
 async function fetchSessions(contractorId) {
   const listEl = document.getElementById('sessionList');
   if (!listEl) return;
@@ -137,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       const contractorId = doc.id;
-      SessionState.set('contractor', contractorId);
+      localStorage.setItem('contractor_id', contractorId);
       await fetchSessions(contractorId);
 
       const page = document.getElementById('page-content');

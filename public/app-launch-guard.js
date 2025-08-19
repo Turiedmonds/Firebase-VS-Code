@@ -23,7 +23,7 @@
 
   if (!coldEntry()) return;
 
-  const role = (SessionState.get().user_role || '').toLowerCase();
+  const role = (localStorage.getItem('user_role') || '').toLowerCase();
 
   if (role === 'contractor') {
     if (!pageIs('dashboard.html')) redirect('dashboard.html');
