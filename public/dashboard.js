@@ -531,6 +531,328 @@ function initTop5ShearersWidget() {
   })();
 }
 
+function initTop5ShedStaffWidget() {
+  (function () {
+    const flag = localStorage.getItem('dash_top5_shedstaff_enabled');
+    const rootEl = document.getElementById('top5-shedstaff');
+    if (flag === 'false' || !rootEl) {
+      if (rootEl) rootEl.remove();
+      return;
+    }
+
+    let contractorId = localStorage.getItem('contractor_id');
+    if (!contractorId && firebase?.auth?.currentUser?.uid) {
+      contractorId = firebase.auth().currentUser.uid;
+      try { localStorage.setItem('contractor_id', contractorId); } catch {}
+      console.debug('[Top5ShedStaff] contractor_id recovered from auth');
+    }
+    if (!contractorId) {
+      console.warn('[Top5ShedStaff] Missing contractor_id');
+      const listEl = document.getElementById('top5-shedstaff-list');
+      if (listEl) listEl.innerHTML = `<div class="lb-row"><div class="lb-rank"></div><div class="lb-bar"><div class="lb-name">Data unavailable</div></div><div class="lb-value"></div></div>`;
+      return;
+    }
+
+    const listEl = rootEl.querySelector('#top5-shedstaff-list');
+    const viewSel = rootEl.querySelector('#shedstaff-view');
+    const yearSel = rootEl.querySelector('#shedstaff-year');
+    const viewAllBtn = rootEl.querySelector('#shedstaff-viewall');
+    const modal = document.getElementById('shedstaff-modal');
+    const modalBodyTbody = document.querySelector('#shedstaff-full-table tbody');
+    if (!listEl || !viewSel || !yearSel || !viewAllBtn || !modal || !modalBodyTbody) {
+      console.warn('[Top5ShedStaff] Missing elements');
+      return;
+    }
+
+    (function labelRollingWithYear(sel) {
+      if (!sel) return;
+      const opt = [...sel.options].find(o => o.value === '12m');
+      if (!opt) return;
+      const y = new Date().getFullYear();
+      opt.textContent = String(y);
+      function refresh() {
+        const yy = new Date().getFullYear();
+        const o = [...sel.options].find(v => v.value === '12m');
+        if (o) o.textContent = String(yy);
+      }
+      const msToMidnight = (() => {
+        const now = new Date();
+        const next = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1,0,0,0);
+        return next - now;
+      })();
+      setTimeout(() => { refresh(); setInterval(refresh, 24*60*60*1000); }, msToMidnight);
+    })(viewSel);
+
+    try {
+      const saved = JSON.parse(localStorage.getItem('dash_top5_shedstaff_scope') || '{}');
+      if (saved.view) viewSel.value = saved.view;
+      if (saved.view === 'year') { yearSel.value = saved.year || ''; yearSel.hidden = false; }
+    } catch {}
+
+    function saveScope() {
+      try {
+        localStorage.setItem('dash_top5_shedstaff_scope', JSON.stringify({ view: viewSel.value, year: yearSel.value }));
+      } catch {}
+    }
+
+    function getDateRange(mode, year) {
+      const today = new Date();
+      if (mode === '12m') {
+        const end = today;
+        const start = new Date();
+        start.setDate(start.getDate() - 365);
+        return { start, end };
+      }
+      if (mode === 'year' && year) {
+        const start = new Date(Number(year),0,1,0,0,0);
+        const end = new Date(Number(year),11,31,23,59,59);
+        return { start, end };
+      }
+      return { start: null, end: null };
+    }
+
+    function sessionDateToJS(d) {
+      if (!d) return null;
+      if (typeof d === 'object' && d.toDate) return d.toDate();
+      const dt = new Date(d);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+
+    function parseHoursToDecimal(v) {
+      if (v == null) return 0;
+      if (typeof v === 'number') {
+        if (!isFinite(v)) return 0;
+        if (v > 24) return v / 60; // assume minutes
+        return v; // assume hours
+      }
+      const s = String(v).trim().toLowerCase();
+      if (!s) return 0;
+      const hm = s.match(/^([0-9]+)h\s*([0-9]+)m$/);
+      if (hm) {
+        return Number(hm[1]) + Number(hm[2])/60;
+      }
+      const colon = s.match(/^([0-9]+):([0-9]+)$/);
+      if (colon) {
+        return Number(colon[1]) + Number(colon[2])/60;
+      }
+      const minutes = s.match(/^([0-9]+)m$/);
+      if (minutes) {
+        return Number(minutes[1]) / 60;
+      }
+      const n = Number(s);
+      if (!isNaN(n)) {
+        if (n > 24) return n / 60;
+        return n;
+      }
+      return 0;
+    }
+
+    function normalizeName(name) {
+      if (!name) return '';
+      const t = String(name).trim().replace(/\s+/g, ' ');
+      const parts = t.split(' ');
+      return parts.map(p => p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : '').join(' ');
+    }
+
+    function sessionDateString(s) {
+      const dt = sessionDateToJS(s.date || s.sessionDate || s.createdAt || s.timestamp || s.savedAt);
+      return dt ? dt.toISOString().slice(0,10) : null;
+    }
+
+    function* iterateStaffFromSession(sessionDoc) {
+      const s = sessionDoc.data ? sessionDoc.data() : sessionDoc;
+      const date = sessionDateString(s);
+      let arr = [];
+      if (Array.isArray(s.shedStaff)) arr = s.shedStaff;
+      else if (Array.isArray(s.shedstaff)) arr = s.shedstaff;
+      else if (Array.isArray(s.staff)) arr = s.staff;
+      else if (Array.isArray(s.staffHours)) arr = s.staffHours;
+      else if (Array.isArray(s.staffhours)) arr = s.staffhours;
+      else if (s.staffHours && typeof s.staffHours === 'object') {
+        for (const [name, hrs] of Object.entries(s.staffHours)) {
+          arr.push({ name, hoursWorked: hrs });
+        }
+      }
+      for (const entry of arr) {
+        if (!entry) continue;
+        const name = normalizeName(entry.name || entry.staffName || entry.displayName || entry.id || entry[0]);
+        const hours = parseHoursToDecimal(entry.hoursWorked ?? entry.hours ?? entry.total ?? entry.time ?? entry[1]);
+        if (!name || !hours) continue;
+        yield { name, hours, date };
+      }
+    }
+
+    function aggregateStaff(sessions, mode, year) {
+      const { start, end } = getDateRange(mode, year);
+      const totals = new Map();
+      const days = new Map();
+      for (const doc of sessions) {
+        for (const st of iterateStaffFromSession(doc)) {
+          if (mode !== 'all') {
+            if (!st.date) continue;
+            const dt = new Date(st.date);
+            if (start && dt < start) continue;
+            if (end && dt > end) continue;
+          }
+          const prev = totals.get(st.name) || 0;
+          totals.set(st.name, prev + st.hours);
+          if (!days.has(st.name)) days.set(st.name, new Set());
+          if (st.date && st.hours > 0) days.get(st.name).add(st.date);
+        }
+      }
+      return Array.from(totals.entries())
+        .map(([name, total]) => ({ name, total, days: days.get(name)?.size || 0 }))
+        .sort((a,b) => b.total - a.total);
+    }
+
+    function renderTop5ShedStaff(rows) {
+      const top5 = rows.slice(0,5);
+      const max = Math.max(1, ...top5.map(r => r.total));
+      listEl.innerHTML = top5.map((r, idx) => {
+        const pct = Math.round((r.total / max) * 100);
+        const dayLabel = `${r.days} day${r.days===1?'':'s'}`;
+        return `
+      <div class="siq-lb-row">
+        <div class="siq-lb-rank">${idx + 1}</div>
+        <div class="siq-lb-bar">
+          <div class="siq-lb-fill" style="width:${pct}%;"></div>
+          <div class="siq-lb-name" title="${r.name}">${r.name}</div>
+        </div>
+        <div class="siq-lb-value">${r.total.toFixed(2)} h <small>• ${dayLabel}</small></div>
+      </div>
+    `;
+      }).join('');
+    }
+
+    function renderFullShedStaff(rows, tableBody) {
+      tableBody.innerHTML = rows.map((r, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${r.name}</td>
+        <td>${r.total.toFixed(2)}</td>
+        <td>${r.days}</td>
+      </tr>
+    `).join('');
+    }
+
+    function deriveYearsFromSessions(sessions) {
+      const years = new Set();
+      for (const doc of sessions) {
+        const s = doc.data ? doc.data() : doc;
+        const dt = sessionDateToJS(s.date || s.sessionDate || s.createdAt || s.timestamp || s.savedAt);
+        if (dt) years.add(dt.getFullYear());
+      }
+      const arr = Array.from(years).sort((a,b) => b - a);
+      const current = (new Date()).getFullYear();
+      if (!arr.includes(current)) arr.unshift(current);
+      return arr;
+    }
+
+    let modalKeyHandler = null;
+    let lastFocused = null;
+    function trapFocus(e) {
+      if (e.key === 'Escape') { closeModal('shedstaff-modal'); return; }
+      if (e.key !== 'Tab') return;
+      const focusable = modal.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+    function openModal(id) {
+      const m = document.getElementById(id); if (!m) return; lastFocused = document.activeElement; m.setAttribute('aria-hidden','false'); modalKeyHandler = trapFocus; m.addEventListener('keydown', modalKeyHandler); const focusable = m.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'); if (focusable.length) focusable[0].focus();
+    }
+    function closeModal(id) {
+      const m = document.getElementById(id); if (!m) return; m.setAttribute('aria-hidden','true'); if (modalKeyHandler) { m.removeEventListener('keydown', modalKeyHandler); modalKeyHandler = null; } if (lastFocused) lastFocused.focus();
+    }
+
+    let staffUnsub = null;
+    let colRef = null;
+    let cachedSessions = [];
+    let renderPending = false;
+
+    function renderFromCache() {
+      if (!cachedSessions.length) {
+        listEl.innerHTML = '';
+        modalBodyTbody.innerHTML = '';
+        return;
+      }
+      const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
+      const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
+      const rows = aggregateStaff(cachedSessions, mode, year);
+      renderTop5ShedStaff(rows);
+      renderFullShedStaff(rows, modalBodyTbody);
+    }
+
+    function scheduleRender() {
+      if (renderPending) return;
+      renderPending = true;
+      requestAnimationFrame(() => {
+        renderPending = false;
+        renderFromCache();
+      });
+    }
+
+    viewSel.addEventListener('change', () => {
+      const v = viewSel.value;
+      if (v === 'all' || v === '12m') yearSel.hidden = true;
+      saveScope();
+      scheduleRender();
+    });
+    yearSel.addEventListener('change', () => { saveScope(); scheduleRender(); });
+    yearSel.addEventListener('focus', () => {
+      if (viewSel.value !== 'year') {
+        if (![...viewSel.options].some(o => o.value === 'year')) {
+          const opt = document.createElement('option');
+          opt.value = 'year';
+          opt.textContent = 'Specific Year';
+          viewSel.appendChild(opt);
+        }
+        viewSel.value = 'year';
+        yearSel.hidden = false;
+        saveScope();
+      }
+    });
+
+    viewAllBtn.addEventListener('click', () => { openModal('shedstaff-modal'); });
+    modal.addEventListener('click', e => { if (e.target.matches('[data-close-modal], .siq-modal__backdrop')) closeModal('shedstaff-modal'); });
+
+    const onSnap = snap => {
+      const sessions = [];
+      snap.forEach(doc => sessions.push(doc));
+      cachedSessions = sessions;
+      const years = deriveYearsFromSessions(sessions);
+      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      if (viewSel.value !== 'year') yearSel.hidden = true;
+      scheduleRender();
+    };
+    const onError = err => {
+      console.error('[Top5ShedStaff] listener error:', err);
+      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
+    };
+
+    try {
+      const db = firebase.firestore ? firebase.firestore() : (typeof getFirestore === 'function' ? getFirestore() : null);
+      if (!db) throw new Error('Firestore not initialized');
+      colRef = db.collection('contractors').doc(contractorId).collection('sessions');
+      staffUnsub = colRef.onSnapshot(onSnap, onError);
+    } catch (err) {
+      console.error('[Top5ShedStaff] init failed:', err);
+      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (staffUnsub) { staffUnsub(); staffUnsub = null; }
+      } else if (!staffUnsub && colRef) {
+        staffUnsub = colRef.onSnapshot(onSnap, onError);
+      }
+    });
+    window.addEventListener('beforeunload', () => { if (staffUnsub) staffUnsub(); });
+  })();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
@@ -627,6 +949,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // After setting contractor_id and after showing the page content:
       if (typeof initTop5ShearersWidget === 'function') {
         try { initTop5ShearersWidget(); } catch (e) { console.error('[Dashboard] initTop5ShearersWidget failed:', e); }
+      }
+      if (typeof initTop5ShedStaffWidget === 'function') {
+        try { initTop5ShedStaffWidget(); } catch (e) { console.error('[Dashboard] initTop5ShedStaffWidget failed:', e); }
       }
     } catch (err) {
       console.error('Failed to fetch contractor profile', err);
@@ -772,6 +1097,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const steps = [
     { sel: '#top5-shearers', text: 'Top 5 Shearers — tap “View Full List” to see rankings.' },
+    { sel: '#top5-shedstaff', text: 'Top 5 Shed Staff — see hours worked and days on site.' },
     { sel: '#btnManageStaff', text: 'Manage Staff — add/remove users and see online status.' },
     { sel: '#farm-summary-btn', text: 'Farm Summary — compare farm totals and visits.' },
     { sel: '#btnViewSavedSessions', text: 'Saved Sessions — reopen previous tally days.' },
