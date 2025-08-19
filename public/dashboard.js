@@ -11,7 +11,7 @@ function shouldShowDashboardWelcomeOnce(){
     if (enabled === 'false') return false;
 
     // Role guard (optional but nice): only contractors see this dashboard intro
-    var role = (localStorage.getItem('user_role') || '').toLowerCase();
+    var role = (SessionState.get().user_role || '').toLowerCase();
     if (role && role !== 'contractor') return false;
 
     return true;
@@ -47,7 +47,6 @@ function markDashboardWelcomeSeen(){
 document.addEventListener('DOMContentLoaded', function(){
   try {
     // Contractor default role/pref (as you already do elsewhere)
-    localStorage.setItem('user_role','contractor');
     localStorage.setItem('preferred_start','dashboard');
   } catch(e){}
 
@@ -87,11 +86,26 @@ window.resetDashboardWelcomeOnce = function(){
 };
 
 try {
-  localStorage.setItem('user_role', 'contractor');
   localStorage.setItem('preferred_start', 'dashboard');
 } catch(e) {}
 
 import { handleLogout } from './auth.js';
+
+SessionState.ready().then(state => {
+  if (state.user_role !== 'contractor') {
+    window.location.replace('auth-check.html');
+  }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    SessionState.ready().then(s => {
+      if (s.user_role !== 'contractor') {
+        window.location.replace('auth-check.html');
+      }
+    });
+  }
+});
 
 function initTop5ShearersWidget() {
   (function () {
@@ -102,10 +116,10 @@ function initTop5ShearersWidget() {
       return;
     }
     // Prefer stored scope; fall back to current auth user
-    let contractorId = localStorage.getItem('contractor_id');
+    let contractorId = SessionState.get().contractor_id;
     if (!contractorId && firebase?.auth?.currentUser?.uid) {
       contractorId = firebase.auth().currentUser.uid;
-      try { localStorage.setItem('contractor_id', contractorId); } catch {}
+      SessionState.set(SessionState.get().user_role, contractorId);
       console.debug('[Top5Shearers] contractor_id recovered from auth');
     }
     if (!contractorId) {
@@ -551,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       // Persist contractor scope for dashboard widgets
       try {
-        localStorage.setItem('contractor_id', user.uid);
+        SessionState.set('contractor', user.uid);
         console.debug('[Dashboard] contractor_id set to', user.uid);
       } catch (e) {
         console.warn('[Dashboard] Could not set contractor_id:', e);

@@ -3,13 +3,13 @@ if ('serviceWorker' in navigator) {
     .catch(console.error);
 }
 
-firebase.auth().onAuthStateChanged(user => {
-  if (!user) {
+SessionState.ready().then(state => {
+  if (!state.uid) {
     window.location.href = 'login.html';
   }
 });
 
-export function handleLogout() {
+export async function handleLogout() {
   const confirmed = confirm(
     'Warning: You won’t be able to log back in without internet access. Are you sure you want to log out?'
   );
@@ -20,17 +20,16 @@ export function handleLogout() {
   if (overlay) {
     overlay.style.display = 'flex';
   }
-  firebase.auth().signOut().finally(() => {
+  try {
+    await firebase.auth().signOut();
+  } finally {
     if (overlay) {
       overlay.style.display = 'none';
     }
-    try {
-      localStorage.removeItem('user_role');
-      localStorage.removeItem('contractor_id');
-    } catch (_) {}
+    SessionState.clear();
     sessionStorage.clear();
     window.location.replace('login.html');
-  });
+  }
 }
 
 document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
