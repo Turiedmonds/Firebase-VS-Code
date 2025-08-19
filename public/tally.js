@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === HELP MENU GLOBALS ===
+if (localStorage.getItem('tooltips_enabled') == null) localStorage.setItem('tooltips_enabled','true');
 if (localStorage.getItem('tally_guide_enabled') == null) localStorage.setItem('tally_guide_enabled','true');
 if (localStorage.getItem('setup_modal_enabled') == null){
   localStorage.setItem('setup_modal_enabled', 'true');
@@ -49,7 +50,7 @@ if (localStorage.getItem('hours_modal_enabled') == null) localStorage.setItem('h
 
 // ===== Help/Tour global runtime state (safe default) =====
 window.TT_STATE = window.TT_STATE || {
-  tooltipsEnabled: false,
+  tooltipsEnabled: (localStorage.getItem('tooltips_enabled') ?? 'true') === 'true',
   guideEnabled:    (localStorage.getItem('tally_guide_enabled') ?? 'true') === 'true',
 };
 
@@ -70,6 +71,9 @@ window.renderHelpMenu = function () {
       <strong>Help</strong><button id="ttx" style="padding:6px 10px;">✕</button>
     </div>
     <label style="display:block;margin:8px 0;">
+      <input id="tips" type="checkbox"> Enable tooltips
+    </label>
+    <label style="display:block;margin:8px 0;">
       <input id="tour" type="checkbox"> Enable guided tour
     </label>
     <label style="display:block;margin:8px 0;">
@@ -79,6 +83,7 @@ window.renderHelpMenu = function () {
   `;
   const gb = k => (localStorage.getItem(k) ?? 'true') === 'true';
   const sb = (k,v) => localStorage.setItem(k, v ? 'true' : 'false');
+  const tips = m.querySelector('#tips');
   const tour = m.querySelector('#tour');
   const hoursModalToggle = m.querySelector('#hoursModalToggle');
   const start = m.querySelector('#start');
@@ -97,8 +102,10 @@ window.renderHelpMenu = function () {
       setSetupModalEnabled(toggleSetupBox.checked);
     });
   }
+  tips.checked = gb('tooltips_enabled');
   tour.checked  = gb('tally_guide_enabled');
   if (hoursModalToggle) hoursModalToggle.checked = gb('hours_modal_enabled');
+  tips.onchange = () => window.setTipsEnabled(tips.checked);
   tour.onchange = () => window.setGuideEnabled(tour.checked);
   if (hoursModalToggle) hoursModalToggle.onchange = () => sb('hours_modal_enabled', hoursModalToggle.checked);
   start.onclick  = () => { if (tour.checked && typeof window.startGuide === 'function') window.startGuide(); };
@@ -3109,7 +3116,7 @@ function initTallyTooltips() {
   }
 
   function showTooltip(target, text) {
-    if (!isGuidedActive()) return;
+    if (!window.TT_STATE.tooltipsEnabled) return;
     if (!text || !String(text).trim()) { hideTooltip(); return; }
     const tt = document.getElementById('tt-root');
     if (isGuidedActive()) {
@@ -3126,7 +3133,6 @@ function initTallyTooltips() {
   }
 
   function hideTooltip() {
-    if (!isGuidedActive()) return;
     const tt = document.getElementById('tt-root');
     tt.setAttribute('aria-hidden', 'true');
     tt.classList.remove('tt-show');
@@ -3206,8 +3212,8 @@ function initTallyTooltips() {
   function endGuided() {
     guidedMode = false;
     tt.classList.remove('guided');
-    hideTooltip();
     window.__tt_guidedActive = false;
+    hideTooltip();
     clearHighlight();
   }
 
@@ -3227,6 +3233,48 @@ function initTallyTooltips() {
     showGuidedStep();
   }
 
+  // Show on first entry into a qualifying element
+  document.addEventListener('mouseover', (e) => {
+    if (!window.TT_STATE.tooltipsEnabled || isGuidedActive()) return;
+    const t = findTipTarget(e.target);
+    if (!t || t === currentTipTarget) return;
+
+    // New target: show tip and set up a one-off stable leave handler on the element itself
+    currentTipTarget = t;
+    showTooltip(t, getHelpText(t));
+
+    // Clean up any prior leave handler
+    if (currentLeaveHandler) {
+      try { currentTipTarget.removeEventListener('mouseleave', currentLeaveHandler, true); } catch {}
+    }
+    currentLeaveHandler = () => {
+      if (shouldSuppressAutoHide()) return;
+      hideTooltip();
+      currentTipTarget?.removeEventListener('mouseleave', currentLeaveHandler, true);
+      currentTipTarget = null;
+      currentLeaveHandler = null;
+    };
+    t.addEventListener('mouseleave', currentLeaveHandler, true);
+  }, true);
+
+  // We no longer use document-level mouseout for hiding (prevents flicker)
+
+  // Keyboard: show on focus, hide on blur
+  document.addEventListener('focusin', (e) => {
+    if (!window.TT_STATE.tooltipsEnabled || isGuidedActive()) return;
+    const t = findTipTarget(e.target);
+    if (!t) return;
+    currentTipTarget = t;
+    showTooltip(t, getHelpText(t));
+  }, true);
+
+  document.addEventListener('focusout', (e) => {
+    if (!window.TT_STATE.tooltipsEnabled) return;
+    if (shouldSuppressAutoHide()) return;
+    if (currentTipTarget && !currentTipTarget.contains(e.relatedTarget)) {
+      hideTooltip(); currentTipTarget = null; currentLeaveHandler = null;
+    }
+  }, true);
   function showGuideDisabledToast() {
     let toast = document.getElementById('tt-disabled-toast');
     if (!toast) {
@@ -3241,6 +3289,14 @@ function initTallyTooltips() {
   }
 
   // ===== Public setters: keep storage AND runtime in sync, then notify =====
+  window.setTipsEnabled = function setTipsEnabled(enabled) {
+    const v = !!enabled;
+    localStorage.setItem('tooltips_enabled', v ? 'true' : 'false');
+    window.TT_STATE.tooltipsEnabled = v;
+    if (!v) hideTooltip();
+    document.dispatchEvent(new CustomEvent('help-flags-changed', { detail: { tooltips: v, guide: window.TT_STATE.guideEnabled }}));
+  };
+
   window.setGuideEnabled = function setGuideEnabled(enabled) {
     const v = !!enabled;
     localStorage.setItem('tally_guide_enabled', v ? 'true' : 'false');
@@ -3285,11 +3341,47 @@ function initTallyTooltips() {
     });
   }
 
+  let touchTimer = null;
+  document.addEventListener('touchstart', (e) => {
+    if (!window.TT_STATE.tooltipsEnabled || isGuidedActive()) return;
+    const t = findTipTarget(e.target);
+    if (!t) { if (!shouldSuppressAutoHide()) hideTooltip(); return; }
+    touchTimer = setTimeout(() => { showTooltip(t, getHelpText(t)); }, 500);
+  }, { passive: true });
+  function clearTouch() { if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; } }
+  document.addEventListener('touchend', () => {
+    clearTouch();
+    if (!window.TT_STATE.tooltipsEnabled || Date.now() - guidedStartTs < 500 || shouldSuppressAutoHide()) return;
+    setTimeout(() => {
+      if (!window.TT_STATE.tooltipsEnabled || shouldSuppressAutoHide()) return;
+      hideTooltip();
+      currentTipTarget = null;
+      currentLeaveHandler = null;
+    }, 1000);
+  }, { passive: true });
+  document.addEventListener('touchcancel', () => {
+    clearTouch();
+    if (!window.TT_STATE.tooltipsEnabled || shouldSuppressAutoHide()) return;
+    hideTooltip();
+  }, { passive: true });
+
+  window.addEventListener('scroll', () => {
+    if (shouldSuppressAutoHide()) {
+      if (currentTarget) positionTooltip(currentTarget);
+    } else if (window.TT_STATE.tooltipsEnabled) {
+      hideTooltip();
+    }
+  }, { capture: true, passive: true });
+  window.addEventListener('resize', () => { if (isGuidedActive() && currentTarget) positionTooltip(currentTarget); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (shouldSuppressAutoHide() || !window.TT_STATE.tooltipsEnabled) return; hideTooltip(); } });
+  document.addEventListener('keydown', e => {
+    if (!window.TT_STATE.tooltipsEnabled || shouldSuppressAutoHide()) return;
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) hideTooltip();
+  }, true);
+
   window.showTooltip = showTooltip;
   window.hideTooltip = hideTooltip;
   window.startGuide = startGuide;
-
-  if (false) return;
 }
 
 window.initTallyTooltips = initTallyTooltips;

@@ -742,10 +742,11 @@ document.addEventListener('DOMContentLoaded', () => {
 <div id="tally-onboard-overlay" role="dialog" aria-modal="true" aria-labelledby="tally-onboard-title" aria-hidden="true">
   <div id="tally-onboard-dialog">
     <h2 id="tally-onboard-title">Welcome to the SHEΔR iQ Tally Tour</h2>
-    <p>This quick tour will show you the key parts of the tally page and how to use them. You can skip it anytime and revisit the guided tour later from the Help menu.</p>
-    <p>You can enable or disable the guided tour anytime from the Help menu (the “?” button).</p>
+    <p>This quick tour will show you the key parts of the tally page and how to use them. You can skip it anytime — you’ll still be able to hover or long-press fields for tips later.</p>
+    <p>You can also enable or disable tooltips and the guided tour. These settings can be changed anytime from the Help menu (the “?” button).</p>
 
     <form id="tally-onboard-form">
+      <label><input type="checkbox" id="onboard-tooltips"> Enable tooltips</label>
       <label><input type="checkbox" id="onboard-tour"> Enable guided tour</label>
       <div class="form-row" style="margin-top:12px">
         <label>
@@ -768,6 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <script>
 (function(){
   const overlay = document.getElementById('tally-onboard-overlay');
+  const tips = document.getElementById('onboard-tooltips');
   const tour = document.getElementById('onboard-tour');
   const disableSetup = document.getElementById('disableSetupModalChk');
   const saveStart = document.getElementById('onboard-save-start');
@@ -776,9 +778,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const skip = document.getElementById('onboard-skip');
 
   const gb = k => (localStorage.getItem(k) ?? 'true') === 'true';
+  const sb = (k,v) => localStorage.setItem(k, v ? 'true' : 'false');
 
   function openModal(){
     if (localStorage.getItem('tally_onboard_seen') === 'true') return;
+    tips.checked = gb('tooltips_enabled');
     tour.checked = gb('tally_guide_enabled');
     if (disableSetup) disableSetup.checked = (isSetupModalEnabled() === false);
     overlay.classList.add('show');
@@ -796,9 +800,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function saveChoices(){
     // persist to storage
+    localStorage.setItem('tooltips_enabled', tips.checked ? 'true' : 'false');
     localStorage.setItem('tally_guide_enabled', tour.checked ? 'true' : 'false');
 
-    // NEW: update runtime flag immediately (safe if function doesn’t exist)
+    // NEW: update runtime flags immediately (safe if functions don’t exist)
+    try { if (typeof window.setTipsEnabled  === 'function') window.setTipsEnabled(!!tips.checked); } catch(e){}
     try { if (typeof window.setGuideEnabled === 'function') window.setGuideEnabled(!!tour.checked); } catch(e){}
 
     if (disableSetup) setSetupModalEnabled(!disableSetup.checked);
