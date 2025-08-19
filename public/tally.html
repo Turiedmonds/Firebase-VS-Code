@@ -747,6 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     <form id="tally-onboard-form">
       <label><input type="checkbox" id="onboard-tour"> Enable guided tour</label>
+      <label><input type="checkbox" id="onboard-hide"> Don't show again</label>
     </form>
 
     <div id="tally-onboard-actions">
@@ -766,12 +767,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveOnly = document.getElementById('onboard-save');
   const openHelp = document.getElementById('onboard-help');
   const skip = document.getElementById('onboard-skip');
+  const dontShow = document.getElementById('onboard-hide');
 
   const gb = k => (localStorage.getItem(k) ?? 'true') === 'true';
 
   function openModal(){
     if (localStorage.getItem('tally_onboard_seen') === 'true') return;
     tour.checked = gb('tally_guide_enabled');
+    dontShow.checked = false;
     overlay.classList.add('show');
     overlay.removeAttribute('aria-hidden');
     document.body.style.overflow = 'hidden';
@@ -792,8 +795,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // NEW: update runtime flag immediately (safe if function doesn’t exist)
     try { if (typeof window.setGuideEnabled === 'function') window.setGuideEnabled(!!tour.checked); } catch(e){}
 
-    // mark onboarding as seen
-    localStorage.setItem('tally_onboard_seen','true');
+    // mark onboarding as seen only if user opts out
+    if (dontShow.checked) localStorage.setItem('tally_onboard_seen','true');
+    else localStorage.removeItem('tally_onboard_seen');
   }
 
   saveStart.addEventListener('click', () => {
@@ -804,7 +808,8 @@ document.addEventListener('DOMContentLoaded', () => {
   saveOnly.addEventListener('click', () => { saveChoices(); closeModal(); });
   openHelp.addEventListener('click', () => { saveChoices(); closeModal(); if (typeof window.openHelpMenu === 'function') window.openHelpMenu(); });
   skip.addEventListener('click', () => {
-    localStorage.setItem('tally_onboard_seen','true');
+    if (dontShow.checked) localStorage.setItem('tally_onboard_seen','true');
+    else localStorage.removeItem('tally_onboard_seen');
     closeModal();
   });
 
