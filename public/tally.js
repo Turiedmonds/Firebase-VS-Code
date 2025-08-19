@@ -1724,14 +1724,15 @@ function handleSaveOption(option) {
 }
  
  function showView(id) {
+     if (!id) return;
      document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
      const view = document.getElementById(id);
      if (view) view.style.display = 'block';
-     document.querySelectorAll('.tab-button').forEach(btn => {
+     document.querySelectorAll('.tab-button[data-view]').forEach(btn => {
          btn.classList.toggle('active', btn.dataset.view === id);
      });
      if (id === 'summaryView') buildSummary();
-      if (id === 'stationSummaryView') {
+     if (id === 'stationSummaryView') {
          populateStationDropdown();
          buildStationSummary();
      }
@@ -2704,10 +2705,10 @@ document.addEventListener('DOMContentLoaded', () => {
         resetForNewDay();
     }
 
-    const storedRole = sessionStorage.getItem('userRole');
-    if (storedRole) updateUIForRole(storedRole);
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.addEventListener('click', () => showView(btn.dataset.view));
+    document.querySelectorAll('.tab-button[data-view]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.dataset.view) showView(btn.dataset.view);
+        });
     });
     if (showFarmSummary) {
         showView('stationSummaryView');
@@ -3398,11 +3399,16 @@ async function setup() {
   if (overlay) overlay.style.display = 'flex';
   try {
     const role = await verifyContractorUser();
+    if (role) {
+      sessionStorage.setItem('userRole', role);
+      updateUIForRole(role);
+    }
     if (role === 'contractor') {
       const btn = document.getElementById('back-to-dashboard-btn');
       if (btn) {
         btn.style.display = 'inline-block';
         btn.addEventListener('click', () => {
+          sessionStorage.removeItem('launch_override');
           window.location.href = 'dashboard.html';
         });
       }
