@@ -209,7 +209,11 @@
 <label class="meta-label">Team Leader:</label><br/>
   <input id="teamLeader" class="small-input" type="text" data-help="Enter the team leader's name."/><br/><br/>
 <label class="meta-label">Comb Type:</label><br/>
-  <input id="combType" class="small-input" type="text" data-help="Enter the comb type used.">
+  <input id="combType" class="small-input" type="text" list="combTypeOptions" data-help="Enter the comb type used.">
+  <datalist id="combTypeOptions">
+    <option value="Flat"></option>
+    <option value="Cover"></option>
+  </datalist>
 <div style="margin-top: 14px;">
 <div style="display: flex; gap: 14px; margin-bottom: 16px;">
 <div style="flex: 1;">
