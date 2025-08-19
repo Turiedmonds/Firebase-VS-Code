@@ -415,7 +415,8 @@ async function tryFlushQueue() {
                 .set({
                     ...item.session,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                });
+                    savedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                }, { merge: true });
             dequeueById(item.id);
         } catch (err) {
             console.error('Failed to flush queued session', item.id, err);
@@ -2412,7 +2413,8 @@ async function saveSessionToFirestore(showStatus = false) {
       .set({
         ...data,
         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-      });
+        savedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
     dequeueById(firestoreSessionId);
     if (showStatus) {
       alert('✅ Session saved to the cloud!');
