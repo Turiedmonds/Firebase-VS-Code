@@ -18,6 +18,16 @@ const FILES_TO_CACHE = [
   'login.js',
   'xlsx.full.min.js',
 
+  // Firebase libraries
+  'firebase-app-compat.js',
+  'firebase-auth-compat.js',
+  'firebase-firestore-compat.js',
+  'firebase-app.js',
+  'firebase-auth.js',
+  'firebase-firestore.js',
+  'firebase-functions.js',
+  'firebase-init.js',
+
   // PWA essentials
   'manifest.json',
   'icon-192.png',
