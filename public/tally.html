@@ -747,13 +747,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     <form id="tally-onboard-form">
       <label><input type="checkbox" id="onboard-tour"> Enable guided tour</label>
-      <div class="form-row" style="margin-top:12px">
-        <label>
-          <input type="checkbox" id="disableSetupModalChk">
-          Don’t show the Setup Day popup automatically
-        </label>
-        <small class="field-hint">You can turn this back on anytime from the Help menu.</small>
-      </div>
     </form>
 
     <div id="tally-onboard-actions">
@@ -769,19 +762,16 @@ document.addEventListener('DOMContentLoaded', () => {
 (function(){
   const overlay = document.getElementById('tally-onboard-overlay');
   const tour = document.getElementById('onboard-tour');
-  const disableSetup = document.getElementById('disableSetupModalChk');
   const saveStart = document.getElementById('onboard-save-start');
   const saveOnly = document.getElementById('onboard-save');
   const openHelp = document.getElementById('onboard-help');
   const skip = document.getElementById('onboard-skip');
 
   const gb = k => (localStorage.getItem(k) ?? 'true') === 'true';
-  const sb = (k,v) => localStorage.setItem(k, v ? 'true' : 'false');
 
   function openModal(){
     if (localStorage.getItem('tally_onboard_seen') === 'true') return;
     tour.checked = gb('tally_guide_enabled');
-    if (disableSetup) disableSetup.checked = (isSetupModalEnabled() === false);
     overlay.classList.add('show');
     overlay.removeAttribute('aria-hidden');
     document.body.style.overflow = 'hidden';
@@ -802,8 +792,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // NEW: update runtime flag immediately (safe if function doesn’t exist)
     try { if (typeof window.setGuideEnabled === 'function') window.setGuideEnabled(!!tour.checked); } catch(e){}
 
-    if (disableSetup) setSetupModalEnabled(!disableSetup.checked);
-
     // mark onboarding as seen
     localStorage.setItem('tally_onboard_seen','true');
   }
@@ -816,7 +804,6 @@ document.addEventListener('DOMContentLoaded', () => {
   saveOnly.addEventListener('click', () => { saveChoices(); closeModal(); });
   openHelp.addEventListener('click', () => { saveChoices(); closeModal(); if (typeof window.openHelpMenu === 'function') window.openHelpMenu(); });
   skip.addEventListener('click', () => {
-    if (disableSetup) setSetupModalEnabled(!disableSetup.checked);
     localStorage.setItem('tally_onboard_seen','true');
     closeModal();
   });
