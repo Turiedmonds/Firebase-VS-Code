@@ -747,32 +747,58 @@ function initTop5ShedStaffWidget() {
       return isNaN(dt.getTime()) ? null : dt;
     }
 
-    function parseHoursToDecimal(v) {
-      if (v == null) return 0;
-      if (typeof v === 'number') {
-        if (!isFinite(v)) return 0;
-        if (v > 24) return v / 60; // assume minutes
-        return v; // assume hours
+    function parseHoursToDecimal(input) {
+      if (input == null) return 0;
+      if (typeof input === 'number') {
+        if (!isFinite(input)) return 0;
+        // If someone stored minutes as a big number (e.g. 390), treat >24 as minutes
+        return input > 24 ? input / 60 : input;
       }
-      const s = String(v).trim().toLowerCase();
+      const s = String(input).trim().toLowerCase();
       if (!s) return 0;
-      const hm = s.match(/^([0-9]+)h\s*([0-9]+)m$/);
-      if (hm) {
-        return Number(hm[1]) + Number(hm[2])/60;
+
+      // 1) Plain number: "6", "6.5"
+      if (/^\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+
+      // 2) H:MM -> "6:30"
+      const hmColon = s.match(/^(\d+):(\d{1,2})$/);
+      if (hmColon) {
+        const h = parseInt(hmColon[1], 10);
+        const m = parseInt(hmColon[2], 10);
+        if (m >= 0 && m < 60) return h + m / 60;
       }
-      const colon = s.match(/^([0-9]+):([0-9]+)$/);
-      if (colon) {
-        return Number(colon[1]) + Number(colon[2])/60;
+
+      // Normalise common words to h/m
+      let norm = s
+        .replace(/\s+/g, ' ')
+        .replace(/hours?|hrs?/g, 'h')
+        .replace(/minutes?|mins?|min\b/g, 'm');
+
+      // 3) "Nh Nm" -> "6h 30m" (also works for "6 hours 30 minutes")
+      const h_m = norm.match(/^(\d+)\s*h(?:\s*(\d+)\s*m)?$/); // 6h or 6h 30m
+      if (h_m) {
+        const h = parseInt(h_m[1], 10);
+        const m = h_m[2] ? parseInt(h_m[2], 10) : 0;
+        if (!Number.isNaN(h) && !Number.isNaN(m)) return h + m / 60;
       }
-      const minutes = s.match(/^([0-9]+)m$/);
-      if (minutes) {
-        return Number(minutes[1]) / 60;
+
+      // 4) Compact "NhM" -> "6h30"
+      const hCompact = norm.match(/^(\d+)\s*h\s*(\d{1,2})$/); // 6h30
+      if (hCompact) {
+        const h = parseInt(hCompact[1], 10);
+        const m = parseInt(hCompact[2], 10);
+        if (m >= 0 && m < 60) return h + m / 60;
       }
-      const n = Number(s);
-      if (!isNaN(n)) {
-        if (n > 24) return n / 60;
-        return n;
-      }
+
+      // 5) Minutes-only -> "390m", "90m", "90 min", "90 minutes"
+      const mOnly = norm.match(/^(\d+)\s*m$/);
+      if (mOnly) return parseInt(mOnly[1], 10) / 60;
+
+      // 6) Hours-only with suffix -> "8h", "8 hr", "8 hrs"
+      const hOnly = norm.match(/^(\d+)\s*h$/);
+      if (hOnly) return parseInt(hOnly[1], 10);
+
+      // If nothing matched, treat as 0
       return 0;
     }
 
@@ -978,6 +1004,9 @@ function initTop5ShedStaffWidget() {
 
     viewAllBtn.addEventListener('click', () => { openModal('shedstaff-modal'); });
     modal.addEventListener('click', e => { if (e.target.matches('[data-close-modal], .siq-modal__backdrop')) closeModal('shedstaff-modal'); });
+
+    // Ensure a redraw with the improved parser:
+    if (typeof scheduleRender === 'function') scheduleRender();
 
       // session data handled via SessionStore
       })();
