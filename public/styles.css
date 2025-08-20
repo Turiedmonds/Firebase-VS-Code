@@ -512,7 +512,7 @@ button {
 }
 
 /* === Top 5 Shearers Widget === */
-#top5-shearers , #top5-shedstaff {
+#top5-shearers , #top5-shedstaff , #top5-farms {
   background: #0f1115;
   border: 1px solid #1c1f27;
   border-radius: 16px;
@@ -520,25 +520,25 @@ button {
   margin-bottom: 16px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.25);
 }
-#top5-shearers .dash-card__header , #top5-shedstaff .dash-card__header {
+#top5-shearers .dash-card__header , #top5-shedstaff .dash-card__header , #top5-farms .dash-card__header {
   display: flex;
   gap: 12px;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
 }
-#top5-shearers .dash-card__title , #top5-shedstaff .dash-card__title {
+#top5-shearers .dash-card__title , #top5-shedstaff .dash-card__title , #top5-farms .dash-card__title {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
 }
-#top5-shearers .dash-card__controls , #top5-shedstaff .dash-card__controls {
+#top5-shearers .dash-card__controls , #top5-shedstaff .dash-card__controls , #top5-farms .dash-card__controls {
   display: flex;
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
 }
-#top5-shearers .siq-link-button , #top5-shedstaff .siq-link-button {
+#top5-shearers .siq-link-button , #top5-shedstaff .siq-link-button , #top5-farms .siq-link-button {
   background: transparent;
   border: none;
   color: #b9c2d0;
@@ -547,14 +547,14 @@ button {
 }
 
 /* Segmented control */
-#top5-shearers .siq-segmented , #top5-shedstaff .siq-segmented {
+#top5-shearers .siq-segmented , #top5-shedstaff .siq-segmented , #top5-farms .siq-segmented {
   display: inline-flex;
   background: #12151b;
   border: 1px solid #222633;
   border-radius: 999px;
   padding: 2px;
 }
-#top5-shearers .siq-segmented__btn , #top5-shedstaff .siq-segmented__btn {
+#top5-shearers .siq-segmented__btn , #top5-shedstaff .siq-segmented__btn , #top5-farms .siq-segmented__btn {
   appearance: none;
   border: none;
   background: transparent;
@@ -563,18 +563,18 @@ button {
   border-radius: 999px;
   cursor: pointer;
 }
-#top5-shearers .siq-segmented__btn.is-active , #top5-shedstaff .siq-segmented__btn.is-active {
+#top5-shearers .siq-segmented__btn.is-active , #top5-shedstaff .siq-segmented__btn.is-active , #top5-farms .siq-segmented__btn.is-active {
   background: linear-gradient(180deg,#3a3f51,#2a2f40);
   color: #fff;
 }
 
 /* View / Year selectors */
-#top5-shearers .view-select , #top5-shedstaff .view-select {
+#top5-shearers .view-select , #top5-shedstaff .view-select , #top5-farms .view-select {
   display: inline-flex;
   gap: 8px;
   align-items: center;
 }
-#top5-shearers .view-select select , #top5-shedstaff .view-select select {
+#top5-shearers .view-select select , #top5-shedstaff .view-select select , #top5-farms .view-select select {
   background: #12151b;
   color: #dfe6f1;
   border: 1px solid #222633;
@@ -582,26 +582,26 @@ button {
   padding: 6px 10px;
   outline: none;
 }
-#top5-shearers .year-select[hidden] , #top5-shedstaff .year-select[hidden] { display: none; }
+#top5-shearers .year-select[hidden] , #top5-shedstaff .year-select[hidden] , #top5-farms .year-select[hidden] { display: none; }
 
 /* Leaderboard */
-#top5-shearers .siq-leaderboard , #top5-shedstaff .siq-leaderboard {
+#top5-shearers .siq-leaderboard , #top5-shedstaff .siq-leaderboard , #top5-farms .siq-leaderboard {
   display: grid;
   gap: 10px;
   margin-top: 12px;
 }
-#top5-shearers .siq-lb-row , #top5-shedstaff .siq-lb-row {
+#top5-shearers .siq-lb-row , #top5-shedstaff .siq-lb-row , #top5-farms .siq-lb-row {
   display: grid;
   grid-template-columns: 40px 1fr 90px;
   align-items: center;
   gap: 10px;
 }
-#top5-shearers .siq-lb-rank , #top5-shedstaff .siq-lb-rank {
+#top5-shearers .siq-lb-rank , #top5-shedstaff .siq-lb-rank , #top5-farms .siq-lb-rank {
   color: #8c94a7;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-#top5-shearers .siq-lb-bar , #top5-shedstaff .siq-lb-bar {
+#top5-shearers .siq-lb-bar , #top5-shedstaff .siq-lb-bar , #top5-farms .siq-lb-bar {
   position: relative;
   height: 14px;
   background: #141824;
@@ -609,7 +609,7 @@ button {
   overflow: hidden;
   border: 1px solid #1e2330;
 }
-#top5-shearers .siq-lb-fill , #top5-shedstaff .siq-lb-fill {
+#top5-shearers .siq-lb-fill , #top5-shedstaff .siq-lb-fill , #top5-farms .siq-lb-fill {
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 0%;
@@ -617,7 +617,7 @@ button {
   box-shadow: inset 0 0 8px rgba(255,255,255,0.08);
   transition: width 420ms ease;
 }
-#top5-shearers .siq-lb-name , #top5-shedstaff .siq-lb-name {
+#top5-shearers .siq-lb-name , #top5-shedstaff .siq-lb-name , #top5-farms .siq-lb-name {
   position: absolute;
   left: 8px; top: 50%;
   transform: translateY(-50%);
@@ -627,53 +627,53 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-#top5-shearers .siq-lb-value , #top5-shedstaff .siq-lb-value {
+#top5-shearers .siq-lb-value , #top5-shedstaff .siq-lb-value , #top5-farms .siq-lb-value {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-#top5-shearers .siq-inline-error , #top5-shedstaff .siq-inline-error {
+#top5-shearers .siq-inline-error , #top5-shedstaff .siq-inline-error , #top5-farms .siq-inline-error {
   color: #b9c2d0;
   font-size: 0.9rem;
 }
 
 /* Modal */
-#shearers-modal.siq-modal , #shedstaff-modal.siq-modal {
+#shearers-modal.siq-modal , #shedstaff-modal.siq-modal , #farms-full-modal.siq-modal {
   position: fixed;
   inset: 0;
   display: none;
   z-index: 1000;
 }
-#shearers-modal[aria-hidden="false"] , #shedstaff-modal[aria-hidden="false"] { display: block; }
-#shearers-modal .siq-modal__backdrop , #shedstaff-modal .siq-modal__backdrop {
+#shearers-modal[aria-hidden="false"] , #shedstaff-modal[aria-hidden="false"] , #farms-full-modal[aria-hidden="false"] { display: block; }
+#shearers-modal .siq-modal__backdrop , #shedstaff-modal .siq-modal__backdrop , #farms-full-modal .siq-modal__backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.55);
 }
-#shearers-modal .siq-modal__panel , #shedstaff-modal .siq-modal__panel {
+#shearers-modal .siq-modal__panel , #shedstaff-modal .siq-modal__panel , #farms-full-modal .siq-modal__panel {
   position: absolute;
   right: 24px; left: 24px; top: 10vh;
   margin: 0 auto; max-width: 860px;
   background: #0f1115; border: 1px solid #21283a; border-radius: 14px;
   box-shadow: 0 18px 48px rgba(0,0,0,0.45);
 }
-#shearers-modal .siq-modal__header , #shedstaff-modal .siq-modal__header {
+#shearers-modal .siq-modal__header , #shedstaff-modal .siq-modal__header , #farms-full-modal .siq-modal__header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 16px; border-bottom: 1px solid #1b2130;
 }
-#shearers-modal .siq-modal__body , #shedstaff-modal .siq-modal__body { padding: 12px 16px 18px; }
-#shearers-modal .siq-modal__close , #shedstaff-modal .siq-modal__close {
+#shearers-modal .siq-modal__body , #shedstaff-modal .siq-modal__body , #farms-full-modal .siq-modal__body { padding: 12px 16px 18px; }
+#shearers-modal .siq-modal__close , #shedstaff-modal .siq-modal__close , #farms-full-modal .siq-modal__close {
   background: transparent; border: none; color: #c8d0e0; font-size: 22px; cursor: pointer;
 }
-#shearers-modal .siq-table-scroll , #shedstaff-modal .siq-table-scroll { overflow: auto; max-height: 60vh; }
-#shearers-modal .siq-rank-table , #shedstaff-modal .siq-rank-table { width: 100%; border-collapse: collapse; }
-#shearers-modal .siq-rank-table th, #shedstaff-modal .siq-rank-table th, #shearers-modal .siq-rank-table td , #shedstaff-modal .siq-rank-table td {
+#shearers-modal .siq-table-scroll , #shedstaff-modal .siq-table-scroll , #farms-full-modal .siq-table-scroll { overflow: auto; max-height: 60vh; }
+#shearers-modal .siq-rank-table , #shedstaff-modal .siq-rank-table , #farms-full-modal .siq-rank-table { width: 100%; border-collapse: collapse; }
+#shearers-modal .siq-rank-table th, #shedstaff-modal .siq-rank-table th, #farms-full-modal .siq-rank-table th, #shearers-modal .siq-rank-table td , #shedstaff-modal .siq-rank-table td , #farms-full-modal .siq-rank-table td {
   padding: 8px 10px; border-bottom: 1px solid #1b2130; text-align: left;
 }
-#shearers-modal .siq-rank-table th , #shedstaff-modal .siq-rank-table th { color: #9aa3b6; font-weight: 600; }
-#shearers-modal .siq-rank-table td , #shedstaff-modal .siq-rank-table td { color: #dfe6f1; }
-#shearers-modal .siq-rank-table td:nth-child(1), #shedstaff-modal .siq-rank-table td:nth-child(1),
-#shearers-modal .siq-rank-table td:nth-child(3), #shedstaff-modal .siq-rank-table td:nth-child(3),
-#shearers-modal .siq-rank-table td:nth-child(4) , #shedstaff-modal .siq-rank-table td:nth-child(4) {
+#shearers-modal .siq-rank-table th , #shedstaff-modal .siq-rank-table th , #farms-full-modal .siq-rank-table th { color: #9aa3b6; font-weight: 600; }
+#shearers-modal .siq-rank-table td , #shedstaff-modal .siq-rank-table td , #farms-full-modal .siq-rank-table td { color: #dfe6f1; }
+#shearers-modal .siq-rank-table td:nth-child(1), #shedstaff-modal .siq-rank-table td:nth-child(1), #farms-full-modal .siq-rank-table td:nth-child(1),
+#shearers-modal .siq-rank-table td:nth-child(3), #shedstaff-modal .siq-rank-table td:nth-child(3), #farms-full-modal .siq-rank-table td:nth-child(3),
+#shearers-modal .siq-rank-table td:nth-child(4) , #shedstaff-modal .siq-rank-table td:nth-child(4) , #farms-full-modal .siq-rank-table td:nth-child(4) {
   text-align: right; font-variant-numeric: tabular-nums;
 }
 
@@ -686,73 +686,73 @@ button {
 }
 
 /* Compact card */
-#top5-shearers.dash-card , #top5-shedstaff.dash-card {
+#top5-shearers.dash-card , #top5-shedstaff.dash-card , #top5-farms.dash-card {
   padding: 12px;
   border-radius: 12px;
   margin-bottom: 12px;
 }
 
 /* Header & controls condensed */
-#top5-shearers .dash-card__header , #top5-shedstaff .dash-card__header {
+#top5-shearers .dash-card__header , #top5-shedstaff .dash-card__header , #top5-farms .dash-card__header {
   gap: 8px;
 }
-#top5-shearers .dash-card__title , #top5-shedstaff .dash-card__title {
+#top5-shearers .dash-card__title , #top5-shedstaff .dash-card__title , #top5-farms .dash-card__title {
   font-size: 0.95rem;
 }
-#top5-shearers .dash-card__controls , #top5-shedstaff .dash-card__controls {
+#top5-shearers .dash-card__controls , #top5-shedstaff .dash-card__controls , #top5-farms .dash-card__controls {
   gap: 6px;
 }
-#top5-shearers .siq-segmented , #top5-shedstaff .siq-segmented {
+#top5-shearers .siq-segmented , #top5-shedstaff .siq-segmented , #top5-farms .siq-segmented {
   padding: 1px;
 }
-#top5-shearers .siq-segmented__btn , #top5-shedstaff .siq-segmented__btn {
+#top5-shearers .siq-segmented__btn , #top5-shedstaff .siq-segmented__btn , #top5-farms .siq-segmented__btn {
   padding: 4px 8px;
   font-size: 0.85rem;
 }
-#top5-shearers .view-select select , #top5-shedstaff .view-select select {
+#top5-shearers .view-select select , #top5-shedstaff .view-select select , #top5-farms .view-select select {
   padding: 4px 8px;
   font-size: 0.85rem;
 }
-#top5-shearers .siq-link-button , #top5-shedstaff .siq-link-button {
+#top5-shearers .siq-link-button , #top5-shedstaff .siq-link-button , #top5-farms .siq-link-button {
   font-size: 0.85rem;
 }
 
 /* Leaderboard condensed */
-#top5-shearers .siq-leaderboard , #top5-shedstaff .siq-leaderboard {
+#top5-shearers .siq-leaderboard , #top5-shedstaff .siq-leaderboard , #top5-farms .siq-leaderboard {
   gap: 8px;
   margin-top: 8px;
 }
-#top5-shearers .siq-lb-row , #top5-shedstaff .siq-lb-row {
+#top5-shearers .siq-lb-row , #top5-shedstaff .siq-lb-row , #top5-farms .siq-lb-row {
   grid-template-columns: 28px 1fr 64px;
   gap: 8px;
 }
-#top5-shearers .siq-lb-rank , #top5-shedstaff .siq-lb-rank {
+#top5-shearers .siq-lb-rank , #top5-shedstaff .siq-lb-rank , #top5-farms .siq-lb-rank {
   font-size: 0.85rem;
 }
-#top5-shearers .siq-lb-bar , #top5-shedstaff .siq-lb-bar {
+#top5-shearers .siq-lb-bar , #top5-shedstaff .siq-lb-bar , #top5-farms .siq-lb-bar {
   height: 10px;
   border-radius: 999px;
 }
-#top5-shearers .siq-lb-fill , #top5-shedstaff .siq-lb-fill {
+#top5-shearers .siq-lb-fill , #top5-shedstaff .siq-lb-fill , #top5-farms .siq-lb-fill {
   transition: width 320ms ease;
 }
-#top5-shearers .siq-lb-name , #top5-shedstaff .siq-lb-name {
+#top5-shearers .siq-lb-name , #top5-shedstaff .siq-lb-name , #top5-farms .siq-lb-name {
   font-size: 0.8rem;
   left: 6px;
 }
-#top5-shearers .siq-lb-value , #top5-shedstaff .siq-lb-value {
+#top5-shearers .siq-lb-value , #top5-shedstaff .siq-lb-value , #top5-farms .siq-lb-value {
   font-size: 0.85rem;
 }
 
 /* Modal compact */
-#shearers-modal .siq-modal__panel , #shedstaff-modal .siq-modal__panel {
+#shearers-modal .siq-modal__panel , #shedstaff-modal .siq-modal__panel , #farms-full-modal .siq-modal__panel {
   max-width: 720px;
 }
-#shearers-modal .siq-modal__body , #shedstaff-modal .siq-modal__body {
+#shearers-modal .siq-modal__body , #shedstaff-modal .siq-modal__body , #farms-full-modal .siq-modal__body {
   padding: 10px 14px 14px;
 }
-#shearers-modal .siq-rank-table th, #shedstaff-modal .siq-rank-table th,
-#shearers-modal .siq-rank-table td , #shedstaff-modal .siq-rank-table td {
+#shearers-modal .siq-rank-table th, #shedstaff-modal .siq-rank-table th, #farms-full-modal .siq-rank-table th,
+#shearers-modal .siq-rank-table td , #shedstaff-modal .siq-rank-table td , #farms-full-modal .siq-rank-table td {
   padding: 6px 8px;
   font-size: 0.92rem;
 }
@@ -760,46 +760,46 @@ button {
 /* Mobile: single column naturally via grid; no extra rules needed */
 
 /* === Top 5 Shearers: 75% scale === */
-#top5-shearers.dash-card , #top5-shedstaff.dash-card {
+#top5-shearers.dash-card , #top5-shedstaff.dash-card , #top5-farms.dash-card {
   padding: 9px;                    /* was ~12–16px */
   border-radius: 10px;
 }
 
-#top5-shearers .dash-card__title , #top5-shedstaff .dash-card__title {
+#top5-shearers .dash-card__title , #top5-shedstaff .dash-card__title , #top5-farms .dash-card__title {
   font-size: 0.85rem;              /* was ~0.95–1.1rem */
 }
 
-#top5-shearers .dash-card__controls , #top5-shedstaff .dash-card__controls {
+#top5-shearers .dash-card__controls , #top5-shedstaff .dash-card__controls , #top5-farms .dash-card__controls {
   gap: 6px;
 }
 
-#top5-shearers .siq-segmented__btn, #top5-shedstaff .siq-segmented__btn,
-#top5-shearers .view-select select, #top5-shedstaff .view-select select,
-#top5-shearers .siq-link-button , #top5-shedstaff .siq-link-button {
+#top5-shearers .siq-segmented__btn, #top5-shedstaff .siq-segmented__btn, #top5-farms .siq-segmented__btn,
+#top5-shearers .view-select select, #top5-shedstaff .view-select select, #top5-farms .view-select select,
+#top5-shearers .siq-link-button , #top5-shedstaff .siq-link-button , #top5-farms .siq-link-button {
   font-size: 0.78rem;              /* tighter controls */
   padding: 3px 7px;
 }
 
-#top5-shearers .siq-leaderboard , #top5-shedstaff .siq-leaderboard {
+#top5-shearers .siq-leaderboard , #top5-shedstaff .siq-leaderboard , #top5-farms .siq-leaderboard {
   gap: 6px;
   margin-top: 6px;
 }
 
-#top5-shearers .siq-lb-row , #top5-shedstaff .siq-lb-row {
+#top5-shearers .siq-lb-row , #top5-shedstaff .siq-lb-row , #top5-farms .siq-lb-row {
   grid-template-columns: 24px 1fr 56px; /* narrower rank/value columns */
   gap: 6px;
 }
 
-#top5-shearers .siq-lb-rank, #top5-shedstaff .siq-lb-rank,
-#top5-shearers .siq-lb-value , #top5-shedstaff .siq-lb-value {
+#top5-shearers .siq-lb-rank, #top5-shedstaff .siq-lb-rank, #top5-farms .siq-lb-rank,
+#top5-shearers .siq-lb-value , #top5-shedstaff .siq-lb-value , #top5-farms .siq-lb-value {
   font-size: 0.82rem;
 }
 
-#top5-shearers .siq-lb-bar , #top5-shedstaff .siq-lb-bar {
+#top5-shearers .siq-lb-bar , #top5-shedstaff .siq-lb-bar , #top5-farms .siq-lb-bar {
   height: 8px;                     /* was 10–14px */
 }
 
-#top5-shearers .siq-lb-name , #top5-shedstaff .siq-lb-name {
+#top5-shearers .siq-lb-name , #top5-shedstaff .siq-lb-name , #top5-farms .siq-lb-name {
   font-size: 0.74rem;
   left: 5px;
 }
@@ -817,12 +817,12 @@ button {
 
 
 /* === Top 5 Shearers — final readability rules (siq classes) === */
-#top5-shearers .siq-lb-bar , #top5-shedstaff .siq-lb-bar {
+#top5-shearers .siq-lb-bar , #top5-shedstaff .siq-lb-bar , #top5-farms .siq-lb-bar {
   position: relative;
   overflow: visible; /* allow name pill to sit above the bar */
 }
 
-#top5-shearers .siq-lb-name , #top5-shedstaff .siq-lb-name {
+#top5-shearers .siq-lb-name , #top5-shedstaff .siq-lb-name , #top5-farms .siq-lb-name {
   position: absolute;
   top: 50%;
   left: 6px;
@@ -838,7 +838,7 @@ button {
   z-index: 2;
 }
 
-#top5-shearers .siq-lb-value , #top5-shedstaff .siq-lb-value {
+#top5-shearers .siq-lb-value , #top5-shedstaff .siq-lb-value , #top5-farms .siq-lb-value {
   color: #ffffff;
   font-weight: 800;
   font-size: 1.02rem;
@@ -846,12 +846,12 @@ button {
   min-width: 3.8ch;
 }
 
-#top5-shearers .siq-lb-rank , #top5-shedstaff .siq-lb-rank {
+#top5-shearers .siq-lb-rank , #top5-shedstaff .siq-lb-rank , #top5-farms .siq-lb-rank {
   color: #e6ecff;
   font-weight: 700;
 }
 
-#top5-shearers .siq-lb-fill , #top5-shedstaff .siq-lb-fill {
+#top5-shearers .siq-lb-fill , #top5-shedstaff .siq-lb-fill , #top5-farms .siq-lb-fill {
   filter: saturate(110%);
 }
 

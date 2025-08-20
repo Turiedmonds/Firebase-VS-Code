@@ -93,6 +93,65 @@ try {
 
 import { handleLogout } from './auth.js';
 
+// --- Shared helpers for dashboard widgets ---
+function formatInt(n) {
+  return (n || 0).toLocaleString();
+}
+
+function toYMDFromSavedAt(ts) {
+  try {
+    if (!ts) return null;
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    if (!d || isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 10);
+  } catch { return null; }
+}
+
+function pickFarmName(session) {
+  const names = [session?.stationName, session?.farmName, session?.farm, session?.propertyName];
+  for (const n of names) {
+    if (n && String(n).trim()) {
+      return String(n).trim().replace(/\s+/g, ' ');
+    }
+  }
+  return 'Unknown';
+}
+
+function getSessionDateYMD(session) {
+  const d = session?.date;
+  if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+  return toYMDFromSavedAt(session?.savedAt);
+}
+
+function sumSheep(session) {
+  let total = 0;
+  if (Array.isArray(session?.shearerCounts)) {
+    for (const sc of session.shearerCounts) {
+      const n = Number(sc?.total);
+      if (Number.isFinite(n)) total += n;
+    }
+  } else if (Array.isArray(session?.tallies)) {
+    for (const t of session.tallies) {
+      const n = Number(t?.total ?? t?.count ?? t?.tally);
+      if (Number.isFinite(n)) total += n;
+    }
+  } else if (Array.isArray(session?.shearerTallies)) {
+    for (const t of session.shearerTallies) {
+      const n = Number(t?.total ?? t?.count ?? t?.tally);
+      if (Number.isFinite(n)) total += n;
+    }
+  } else if (Array.isArray(session?.shearers)) {
+    for (const sh of session.shearers) {
+      if (!Array.isArray(sh?.runs)) continue;
+      for (const run of sh.runs) {
+        const n = Number(run?.tally ?? run?.count ?? run?.total);
+        if (Number.isFinite(n)) total += n;
+      }
+    }
+  }
+  return total;
+}
+
 function initTop5ShearersWidget() {
   (function () {
     const flag = localStorage.getItem('dash_top5_shearers_enabled');
@@ -860,6 +919,284 @@ function initTop5ShedStaffWidget() {
   })();
 }
 
+function initTop5FarmsWidget() {
+  (function () {
+    const flag = localStorage.getItem('dash_top5_farms_enabled');
+    const rootEl = document.getElementById('top5-farms');
+    if (flag === 'false' || !rootEl) {
+      if (rootEl) rootEl.remove();
+      return;
+    }
+
+    let contractorId = localStorage.getItem('contractor_id');
+    if (!contractorId && firebase?.auth?.currentUser?.uid) {
+      contractorId = firebase.auth().currentUser.uid;
+      try { localStorage.setItem('contractor_id', contractorId); } catch {}
+      console.debug('[Top5Farms] contractor_id recovered from auth');
+    }
+    if (!contractorId) {
+      console.warn('[Top5Farms] Missing contractor_id');
+      const listEl = document.getElementById('top5-farms-list');
+      if (listEl) listEl.innerHTML = `<div class="lb-row"><div class="lb-rank"></div><div class="lb-bar"><div class="lb-name">Data unavailable</div></div><div class="lb-value"></div></div>`;
+      return;
+    }
+
+    const listEl = rootEl.querySelector('#top5-farms-list');
+    const viewSel = rootEl.querySelector('#farms-view');
+    const yearSel = rootEl.querySelector('#farms-year');
+    const viewAllBtn = rootEl.querySelector('#farms-viewall');
+    const modal = document.getElementById('farms-full-modal');
+    const modalBodyTbody = document.querySelector('#farms-full-table tbody');
+    if (!listEl || !viewSel || !yearSel || !viewAllBtn || !modal || !modalBodyTbody) {
+      console.warn('[Top5Farms] Missing elements');
+      return;
+    }
+
+    (function labelRollingWithYear(sel) {
+      if (!sel) return;
+      const opt = [...sel.options].find(o => o.value === '12m');
+      if (!opt) return;
+      const y = new Date().getFullYear();
+      opt.textContent = String(y);
+      function refresh() {
+        const yy = new Date().getFullYear();
+        const o = [...sel.options].find(v => v.value === '12m');
+        if (o) o.textContent = String(yy);
+      }
+      const msToMidnight = (() => {
+        const now = new Date();
+        const next = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1,0,0,0);
+        return next - now;
+      })();
+      setTimeout(() => { refresh(); setInterval(refresh, 24*60*60*1000); }, msToMidnight);
+    })(viewSel);
+
+    try {
+      const saved = JSON.parse(localStorage.getItem('dash_top5_farms_scope') || '{}');
+      if (saved.view) viewSel.value = saved.view;
+      if (saved.view === 'year') { yearSel.value = saved.year || ''; yearSel.hidden = false; }
+    } catch {}
+
+    function saveScope() {
+      try {
+        localStorage.setItem('dash_top5_farms_scope', JSON.stringify({ view: viewSel.value, year: yearSel.value }));
+      } catch {}
+    }
+
+    function getDateRange(mode, year) {
+      const today = new Date();
+      if (mode === '12m') {
+        const end = today;
+        const start = new Date();
+        start.setDate(start.getDate() - 365);
+        return { start, end };
+      }
+      if (mode === 'year' && year) {
+        const start = new Date(Number(year),0,1,0,0,0);
+        const end = new Date(Number(year),11,31,23,59,59);
+        return { start, end };
+      }
+      return { start: null, end: null };
+    }
+
+    function sessionDateToJS(d) {
+      if (!d) return null;
+      const dt = new Date(d);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+
+    function aggregateFarms(sessions, mode, year) {
+      const { start, end } = getDateRange(mode, year);
+      const totals = new Map();
+      const visits = new Map();
+      const lastDate = new Map();
+      for (const doc of sessions) {
+        const s = doc.data ? doc.data() : doc;
+        const sheep = sumSheep(s);
+        const farm = pickFarmName(s);
+        if (!sheep || !farm || farm === 'Unknown') continue;
+        const date = getSessionDateYMD(s);
+        if (mode !== 'all') {
+          const dt = sessionDateToJS(date);
+          if (!dt) continue;
+          if (start && dt < start) continue;
+          if (end && dt > end) continue;
+        }
+        totals.set(farm, (totals.get(farm) || 0) + sheep);
+        if (!visits.has(farm)) visits.set(farm, new Set());
+        if (date) visits.get(farm).add(date);
+        if (date) {
+          const prev = lastDate.get(farm);
+          if (!prev || date > prev) lastDate.set(farm, date);
+        }
+      }
+      return Array.from(totals.entries())
+        .map(([name, sheep]) => {
+          const v = visits.get(name)?.size || 0;
+          return { name, sheep, visits: v, avg: v ? sheep / v : 0, last: lastDate.get(name) || '' };
+        })
+        .sort((a,b) => b.sheep - a.sheep);
+    }
+
+    function renderTop5Farms(rows) {
+      const top5 = rows.slice(0,5);
+      const max = Math.max(1, ...top5.map(r => r.sheep));
+      listEl.innerHTML = top5.map((r, idx) => {
+        const pct = Math.round((r.sheep / max) * 100);
+        return `
+      <div class="siq-lb-row">
+        <div class="siq-lb-rank">${idx + 1}</div>
+        <div class="siq-lb-bar">
+          <div class="siq-lb-fill" style="width:${pct}%;"></div>
+          <div class="siq-lb-name" title="${r.name}">${r.name}</div>
+        </div>
+        <div class="siq-lb-value">${formatInt(r.sheep)}</div>
+      </div>
+    `;
+      }).join('');
+    }
+
+    function renderFullFarms(rows, tableBody) {
+      tableBody.innerHTML = rows.map((r, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${r.name}</td>
+        <td data-sort="${r.sheep}">${formatInt(r.sheep)}</td>
+        <td>${r.visits}</td>
+        <td>${r.visits ? formatInt(Math.round(r.avg)) : '0'}</td>
+        <td>${r.last}</td>
+      </tr>
+    `).join('');
+    }
+
+    function deriveYearsFromSessions(sessions) {
+      const years = new Set();
+      for (const doc of sessions) {
+        const s = doc.data ? doc.data() : doc;
+        const ymd = getSessionDateYMD(s);
+        if (ymd) years.add(Number(ymd.slice(0,4)));
+      }
+      const arr = Array.from(years).sort((a,b) => b - a);
+      const current = (new Date()).getFullYear();
+      if (!arr.includes(current)) arr.unshift(current);
+      return arr;
+    }
+
+    let modalKeyHandler = null;
+    let lastFocused = null;
+    function trapFocus(e) {
+      const m = modal;
+      if (!m || e.key !== 'Tab') return;
+      const focusable = m.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+
+    function openModal(id) {
+      const m = document.getElementById(id); if (!m) return;
+      lastFocused = document.activeElement;
+      m.setAttribute('aria-hidden','false');
+      modalKeyHandler = trapFocus;
+      m.addEventListener('keydown', modalKeyHandler);
+      const focusable = m.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');
+      if (focusable.length) focusable[0].focus();
+    }
+
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      if (!m) return;
+      m.setAttribute('aria-hidden','true');
+      if (modalKeyHandler) { m.removeEventListener('keydown', modalKeyHandler); modalKeyHandler = null; }
+      if (lastFocused) lastFocused.focus();
+    }
+
+    let farmsUnsub = null;
+    let colRef = null;
+    let cachedSessions = [];
+    let renderPending = false;
+
+    function renderFromCache() {
+      if (!cachedSessions.length) {
+        listEl.innerHTML = '';
+        modalBodyTbody.innerHTML = '';
+        return;
+      }
+      const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
+      const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
+      const rows = aggregateFarms(cachedSessions, mode, year);
+      renderTop5Farms(rows);
+      renderFullFarms(rows, modalBodyTbody);
+    }
+
+    function scheduleRender() {
+      if (renderPending) return;
+      renderPending = true;
+      requestAnimationFrame(() => { renderPending = false; renderFromCache(); });
+    }
+
+    viewSel.addEventListener('change', () => {
+      const v = viewSel.value;
+      if (v === 'all' || v === '12m') yearSel.hidden = true;
+      saveScope();
+      scheduleRender();
+    });
+
+    yearSel.addEventListener('change', () => { saveScope(); scheduleRender(); });
+
+    yearSel.addEventListener('focus', () => {
+      if (viewSel.value !== 'year') {
+        if (![...viewSel.options].some(o => o.value === 'year')) {
+          const opt = document.createElement('option');
+          opt.value = 'year';
+          opt.textContent = 'Specific Year';
+          viewSel.appendChild(opt);
+        }
+        viewSel.value = 'year';
+        yearSel.hidden = false;
+      }
+    });
+
+    viewAllBtn.addEventListener('click', () => { openModal('farms-full-modal'); });
+    modal.addEventListener('click', e => { if (e.target.matches('[data-close-modal], .siq-modal__backdrop')) closeModal('farms-full-modal'); });
+
+    const onSnap = snap => {
+      const sessions = [];
+      snap.forEach(doc => sessions.push(doc));
+      cachedSessions = sessions;
+      const years = deriveYearsFromSessions(sessions);
+      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      if (viewSel.value !== 'year') yearSel.hidden = true;
+      scheduleRender();
+    };
+    const onError = err => {
+      console.error('[Top5Farms] listener error:', err);
+      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
+    };
+
+    try {
+      const db = firebase.firestore ? firebase.firestore() : (typeof getFirestore === 'function' ? getFirestore() : null);
+      if (!db) throw new Error('Firestore not initialized');
+      colRef = db.collection('contractors').doc(contractorId).collection('sessions');
+      farmsUnsub = colRef.onSnapshot(onSnap, onError);
+    } catch (err) {
+      console.error('[Top5Farms] init failed:', err);
+      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (farmsUnsub) { farmsUnsub(); farmsUnsub = null; }
+      } else if (!farmsUnsub && colRef) {
+        farmsUnsub = colRef.onSnapshot(onSnap, onError);
+      }
+    });
+    window.addEventListener('beforeunload', () => { if (farmsUnsub) farmsUnsub(); });
+  })();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
@@ -959,6 +1296,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (typeof initTop5ShedStaffWidget === 'function') {
         try { initTop5ShedStaffWidget(); } catch (e) { console.error('[Dashboard] initTop5ShedStaffWidget failed:', e); }
+      }
+      if (typeof initTop5FarmsWidget === 'function') {
+        try { initTop5FarmsWidget(); } catch (e) { console.error('[Dashboard] initTop5FarmsWidget failed:', e); }
       }
     } catch (err) {
       console.error('Failed to fetch contractor profile', err);
