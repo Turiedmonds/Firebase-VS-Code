@@ -1,12 +1,12 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v8';
+const CACHE_NAME = 'sheariq-pwa-v9';
+const FIREBASE_CDN_CACHE = 'firebase-cdn-v1';
 
 const FILES_TO_CACHE = [
   // HTML entry points (include the start_url from manifest)
   'auth-check.html',
   'dashboard.html',
   'tally.html',
-  'farm-summary.html',
   'login.html',
 
   // App assets (keep existing names; do NOT rename)
@@ -43,11 +43,27 @@ self.addEventListener('activate', event => {
   self.clients.claim(); // control pages immediately
 });
 
-// Fetch: handle only same-origin static GETs
+// Fetch: handle GETs and runtime caching
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Skip cross-origin and Firestore/WebChannel requests
+  // Runtime cache for Firebase CDN scripts
+  if (url.hostname === 'www.gstatic.com' &&
+      url.pathname.includes('/firebasejs/') &&
+      /(firebase-app-compat|firebase-auth-compat|firebase-firestore-compat)\.js$/.test(url.pathname)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(FIREBASE_CDN_CACHE);
+      const cached = await cache.match(event.request);
+      const fetchPromise = fetch(event.request).then(resp => {
+        cache.put(event.request, resp.clone());
+        return resp;
+      }).catch(() => cached);
+      return cached || fetchPromise;
+    })());
+    return;
+  }
+
+  // Skip other cross-origin and Firestore/WebChannel requests
   if (url.origin !== self.location.origin ||
       url.hostname.endsWith('googleapis.com') ||
       url.hostname.endsWith('gstatic.com') ||
@@ -58,17 +74,15 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      (async () => {
-        try {
-          const fresh = await fetch(event.request);
-          return fresh;
-        } catch (err) {
-          const cachedPage = await caches.match(event.request);
-          return cachedPage || await caches.match('dashboard.html') || Response.error();
-        }
-      })()
-    );
+    event.respondWith((async () => {
+      const cachedPage = await caches.match(event.request);
+      if (cachedPage) return cachedPage;
+      try {
+        return await fetch(event.request);
+      } catch (err) {
+        return await caches.match('dashboard.html') || Response.error();
+      }
+    })());
   } else {
     event.respondWith(
       caches.match(event.request).then(resp => resp || fetch(event.request))
