@@ -1121,3 +1121,28 @@ button {
   background: #1e1e1e; color: #fff; padding: 6px 10px; border-radius: 8px; cursor: pointer;
 }
 .siq-tour-btn.primary { background: #2a6df4; border-color: #2a6df4; }
+
+/* Shed Staff widget: keep hours on one line and size sanely on all screens */
+#top5-shedstaff .lb-value {
+  white-space: nowrap;                 /* never wrap */
+  line-height: 1.1;                    /* compact line box */
+  font-size: clamp(0.78rem, 1.8vw, 0.95rem);  /* scales down on small screens */
+}
+
+/* Extra-small screens: nudge a bit smaller */
+@media (max-width: 400px) {
+  #top5-shedstaff .lb-value { font-size: 0.85rem; }
+}
+
+/* Ultra-small screens (very narrow phones): smallest safe size */
+@media (max-width: 340px) {
+  #top5-shedstaff .lb-value { font-size: 0.80rem; }
+}
+
+/* Ensure the number column never squishes into two lines */
+#top5-shedstaff .lb-value {
+  flex-shrink: 0;           /* don’t let the number column shrink */
+  min-width: 56px;          /* enough room for “12h 59m” */
+  text-align: right;        /* keep it flush-right like the shearers widget */
+}
+
