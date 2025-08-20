@@ -192,8 +192,8 @@
 
    <div id="tabNav" class="tabs">
   <button class="tab-button active" data-view="tallySheetView">Tally Sheet</button>
-  <button class="tab-button" data-view="summaryView">Daily Summary</button>
-  <button class="tab-button" data-view="stationSummaryView">Farm Summary</button>
+  <button class="tab-button" data-view="summaryView" data-help="View totals for the current day.">Daily Summary</button>
+  <button class="tab-button" data-view="stationSummaryView" data-help="Summarize a farm across dates or all time.">Farm Summary</button>
   <button id="back-to-dashboard-btn" class="tab-button" style="display: none;" data-help="Go back to the Contractor Dashboard.">Return to Dashboard</button>
   </div>
 <div id="tallySheetView" class="view">
@@ -351,7 +351,7 @@
       <h2>Tally Processor</h2>
   </div>
   <h3 id="summaryTitle" style="margin-top: 10px;"></h3>
-  <table id="summaryTable">
+  <table id="summaryTable" data-help="Totals per shearer for this day.">
     <thead>
       <tr></tr>
     </thead>
@@ -363,7 +363,7 @@
       <thead>
         <tr><th>Name</th><th>Hours Worked</th></tr>
       </thead>
-      <tbody id="summaryShedStaff"></tbody>
+      <tbody id="summaryShedStaff" data-help="Hours worked by shed staff for this day."></tbody>
     </table>
   </div>
 </div>
@@ -375,48 +375,48 @@
   </div>
   <div class="filters">
   <label for="stationSelect">Farm:</label>
-  <select id="stationSelect" class="small-input"></select>
+  <select id="stationSelect" class="small-input" data-help="Choose a farm to summarize."></select>
 
   <label for="summaryStart">Start Date:</label>
-  <input id="summaryStart" type="date" />
+  <input id="summaryStart" type="date" data-help="Start date for the farm summary." />
 
   <label for="summaryEnd">End Date:</label>
-  <input id="summaryEnd" type="date" />
+  <input id="summaryEnd" type="date" data-help="End date for the farm summary." />
 
-  <label style="display:inline-flex;align-items:center;gap:6px;margin-left:10px;">
+  <label style="display:inline-flex;align-items:center;gap:6px;margin-left:10px;" data-help="Include all records for this farm.">
     <input type="checkbox" id="summaryAllTime" />
     All time for this farm
   </label>
 
-  <button id="stationSummaryApply">Apply</button>
-  <button id="stationSummaryReset" type="button">Reset</button>
+  <button id="stationSummaryApply" data-help="Apply the selected filters.">Apply</button>
+  <button id="stationSummaryReset" type="button" data-help="Clear the filters.">Reset</button>
 </div>
 
 <p id="stationNoData" class="message" style="margin-top:8px;">
   Select a farm and date range, or tick “All time for this farm”, then press Apply.
 </p>
   <h3>Shearer Summary</h3>
-  <table id="stationShearerTable">
+  <table id="stationShearerTable" data-help="Totals per shearer for the selected period.">
     <thead><tr></tr></thead>
     <tbody></tbody>
   </table>
   <h3>Shed Staff</h3>
-  <table id="stationStaffTable">
+  <table id="stationStaffTable" data-help="Hours worked by shed staff in this period.">
     <thead><tr><th>Name</th><th>Hours Worked</th></tr></thead>
     <tbody></tbody>
   </table>
   <h3>Team Leaders</h3>
-  <table id="stationLeaderTable">
+  <table id="stationLeaderTable" data-help="Tallies for each team leader.">
     <thead><tr><th>Name</th><th>Total Sheep</th><th>Dates Led</th></tr></thead>
     <tbody></tbody>
   </table>
   <h3>Comb Types</h3>
-  <table id="stationCombTable">
+  <table id="stationCombTable" data-help="Comb types used during the period.">
     <thead><tr><th>Comb Type</th><th>Dates Used</th></tr></thead>
     <tbody></tbody>
   </table>
   <h3>Totals</h3>
-  <table id="stationTotalTable">
+  <table id="stationTotalTable" data-help="Overall totals for the farm.">
     <thead><tr></tr></thead>
     <tbody></tbody>
   </table>
