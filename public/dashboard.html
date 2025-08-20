@@ -132,6 +132,7 @@
       </div>
       <div class="dashboard-main">
         <p id="dashboard-subheading"></p>
+        <div id="siq-widgets-grid">
         <!-- BEGIN: Top 5 Shearers Widget -->
         <section id="top5-shearers" class="dash-card top5-widget">
           <header class="dash-card__header">
@@ -159,6 +160,48 @@
             <!-- JS renders 5 rows with bars -->
           </div>
         </section>
+        <!-- BEGIN: Top 5 Shed Staff Widget -->
+        <section id="top5-shedstaff" class="dash-card top5-widget">
+          <header class="dash-card__header">
+            <h2 class="dash-card__title">Top 5 Shed Staff — Hours Worked</h2>
+            <div class="dash-card__controls">
+              <div class="view-select">
+                <label for="shedstaff-view">View</label>
+                <select id="shedstaff-view">
+                  <option value="12m" selected>12M Rolling</option>
+                  <option value="all">All‑Time</option>
+                </select>
+                <select id="shedstaff-year" class="year-select" aria-label="Specific year" hidden></select>
+              </div>
+              <button type="button" id="shedstaff-viewall" class="siq-link-button">View Full List</button>
+            </div>
+          </header>
+
+          <div id="top5-shedstaff-list" class="siq-leaderboard">
+            <!-- JS renders 5 rows with bars -->
+          </div>
+        </section>
+        <!-- BEGIN: Top 5 Farms Widget -->
+        <section id="top5-farms" class="dash-card top5-widget">
+          <header class="dash-card__header">
+            <h2 class="dash-card__title">Top 5 Farms</h2>
+            <div class="dash-card__controls">
+              <div class="view-select">
+                <label for="farms-view">View</label>
+                <select id="farms-view">
+                  <option value="12m" selected>12M Rolling</option>
+                  <option value="all">All‑Time</option>
+                </select>
+                <select id="farms-year" class="year-select" aria-label="Specific year" hidden></select>
+              </div>
+              <button type="button" id="farms-viewall" class="siq-link-button">View All</button>
+            </div>
+          </header>
+          <div id="top5-farms-list" class="siq-leaderboard">
+            <!-- JS renders 5 rows with bars -->
+          </div>
+        </section>
+        </div>
         <!-- Full list modal -->
         <div id="shearers-modal" class="siq-modal" aria-hidden="true">
           <div class="siq-modal__backdrop" data-close-modal></div>
@@ -185,27 +228,6 @@
           </div>
         </div>
         <!-- END: Top 5 Shearers Widget -->
-        <!-- BEGIN: Top 5 Shed Staff Widget -->
-        <section id="top5-shedstaff" class="dash-card top5-widget">
-          <header class="dash-card__header">
-            <h2 class="dash-card__title">Top 5 Shed Staff — Hours Worked</h2>
-            <div class="dash-card__controls">
-              <div class="view-select">
-                <label for="shedstaff-view">View</label>
-                <select id="shedstaff-view">
-                  <option value="12m" selected>12M Rolling</option>
-                  <option value="all">All‑Time</option>
-                </select>
-                <select id="shedstaff-year" class="year-select" aria-label="Specific year" hidden></select>
-              </div>
-              <button type="button" id="shedstaff-viewall" class="siq-link-button">View Full List</button>
-            </div>
-          </header>
-
-          <div id="top5-shedstaff-list" class="siq-leaderboard">
-            <!-- JS renders 5 rows with bars -->
-          </div>
-        </section>
         <!-- Full list modal -->
         <div id="shedstaff-modal" class="siq-modal" aria-hidden="true">
           <div class="siq-modal__backdrop" data-close-modal></div>
@@ -232,26 +254,6 @@
           </div>
         </div>
         <!-- END: Top 5 Shed Staff Widget -->
-        <!-- BEGIN: Top 5 Farms Widget -->
-        <section id="top5-farms" class="dash-card top5-widget">
-          <header class="dash-card__header">
-            <h2 class="dash-card__title">Top 5 Farms</h2>
-            <div class="dash-card__controls">
-              <div class="view-select">
-                <label for="farms-view">View</label>
-                <select id="farms-view">
-                  <option value="12m" selected>12M Rolling</option>
-                  <option value="all">All‑Time</option>
-                </select>
-                <select id="farms-year" class="year-select" aria-label="Specific year" hidden></select>
-              </div>
-              <button type="button" id="farms-viewall" class="siq-link-button">View All</button>
-            </div>
-          </header>
-          <div id="top5-farms-list" class="siq-leaderboard">
-            <!-- JS renders 5 rows with bars -->
-          </div>
-        </section>
         <!-- Full list modal -->
         <div id="farms-full-modal" class="siq-modal" aria-hidden="true">
           <div class="siq-modal__backdrop" data-close-modal></div>
