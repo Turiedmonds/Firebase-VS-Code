@@ -1,6 +1,6 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v9';
-const FIREBASE_CDN_CACHE = 'firebase-cdn-v1';
+const CACHE_NAME = 'sheariq-pwa-v10';
+const FIREBASE_CDN_CACHE = 'firebase-cdn';
 
 const FILES_TO_CACHE = [
   // HTML entry points (include the start_url from manifest)
@@ -12,9 +12,12 @@ const FILES_TO_CACHE = [
   // App assets (keep existing names; do NOT rename)
   'styles.css',
   'tally.js',
+  'dashboard.js',
   'auth.js',
   'export.js',
   'login.js',
+  'auth-check.js',
+  'firebase-init.js',
   'xlsx.full.min.js',
 
   // PWA essentials
@@ -48,9 +51,7 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
   // Runtime cache for Firebase CDN scripts
-  if (url.hostname === 'www.gstatic.com' &&
-      url.pathname.includes('/firebasejs/') &&
-      /(firebase-app-compat|firebase-auth-compat|firebase-firestore-compat)\.js$/.test(url.pathname)) {
+  if (url.href.startsWith('https://www.gstatic.com/firebasejs/')) {
     event.respondWith((async () => {
       const cache = await caches.open(FIREBASE_CDN_CACHE);
       const cached = await cache.match(event.request);
@@ -66,7 +67,6 @@ self.addEventListener('fetch', event => {
   // Skip other cross-origin and Firestore/WebChannel requests
   if (url.origin !== self.location.origin ||
       url.hostname.endsWith('googleapis.com') ||
-      url.hostname.endsWith('gstatic.com') ||
       url.pathname.includes('/google.firestore.v1.Firestore/Listen/channel')) {
     return; // Let the browser handle it
   }

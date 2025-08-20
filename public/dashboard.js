@@ -1280,6 +1280,11 @@ function initTop5FarmsWidget() {
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
+  if (!(window.firebase && typeof firebase.auth === 'function')) {
+    showOfflineNotice();
+    if (overlay) overlay.style.display = 'none';
+    return;
+  }
 
   firebase.auth().onAuthStateChanged(async user => {
     if (!user) {
