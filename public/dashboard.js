@@ -152,6 +152,74 @@ function sumSheep(session) {
   return total;
 }
 
+// Simple in-memory session store with one Firestore listener
+const SessionStore = (() => {
+  let cache = [];
+  let unsub = null;
+  let contractorId = null;
+  let started = false;
+  let loadedAllTime = false;
+  const listeners = new Set();
+
+  function notify() {
+    listeners.forEach(fn => {
+      try { fn(cache); } catch (e) { console.error(e); }
+    });
+  }
+
+  return {
+    start(id, { monthsLive = 12 } = {}) {
+      contractorId = id;
+      if (started || !id) return;
+      const db = firebase.firestore ? firebase.firestore() : (typeof getFirestore === 'function' ? getFirestore() : null);
+      if (!db) return;
+      const colRef = db.collection('contractors').doc(id).collection('sessions');
+      const cutoff = new Date();
+      cutoff.setMonth(cutoff.getMonth() - monthsLive);
+      const ts = firebase.firestore.Timestamp.fromDate(cutoff);
+      console.info('[SessionStore] start listener');
+      unsub = colRef.where('savedAt', '>=', ts).onSnapshot(snap => {
+        cache = snap.docs.slice();
+        notify();
+      }, err => console.error('[SessionStore] listener error:', err));
+      started = true;
+    },
+    stop() {
+      if (unsub) {
+        console.info('[SessionStore] stop listener');
+        unsub();
+      }
+      unsub = null;
+      started = false;
+    },
+    getAll() { return cache.slice(); },
+    onChange(fn) {
+      if (typeof fn !== 'function') return () => {};
+      listeners.add(fn);
+      return () => listeners.delete(fn);
+    },
+    loadAllTimeOnce() {
+      if (loadedAllTime || !contractorId) return;
+      const db = firebase.firestore ? firebase.firestore() : (typeof getFirestore === 'function' ? getFirestore() : null);
+      if (!db) return;
+      const colRef = db.collection('contractors').doc(contractorId).collection('sessions');
+      const cutoff = new Date();
+      cutoff.setMonth(cutoff.getMonth() - 12);
+      const ts = firebase.firestore.Timestamp.fromDate(cutoff);
+      colRef.where('savedAt', '<', ts).get().then(snap => {
+        const existing = new Set(cache.map(d => d.id));
+        snap.forEach(doc => { if (!existing.has(doc.id)) cache.push(doc); });
+        loadedAllTime = true;
+        notify();
+      }).catch(err => console.error('[SessionStore] loadAllTimeOnce error:', err));
+    }
+  };
+})();
+
+function shouldRerender(prev, next) {
+  return JSON.stringify(prev) !== JSON.stringify(next);
+}
+
 function initTop5ShearersWidget() {
   (function () {
     const flag = localStorage.getItem('dash_top5_shearers_enabled');
@@ -469,12 +537,22 @@ function initTop5ShearersWidget() {
       if (lastFocused) lastFocused.focus();
     }
 
-    let shearersUnsub = null;
-    let colRef = null;
-    let cachedSessions = [];
-    let cachedRows = [];
-    let cachedGrandTotal = 0;
-    let renderPending = false;
+      let cachedSessions = SessionStore.getAll();
+      let cachedRows = [];
+      let cachedGrandTotal = 0;
+      let renderPending = false;
+
+      SessionStore.onChange(() => {
+        cachedSessions = SessionStore.getAll();
+        const years = deriveYearsFromSessions(cachedSessions);
+        yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+        if (viewSel.value !== 'year') yearSel.hidden = true;
+        scheduleRender();
+      });
+
+      const years = deriveYearsFromSessions(cachedSessions);
+      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      if (viewSel.value !== 'year') yearSel.hidden = true;
 
     function renderFromCache() {
       if (!cachedSessions.length) {
@@ -485,12 +563,13 @@ function initTop5ShearersWidget() {
       const workType = tabs.querySelector('.siq-segmented__btn.is-active')?.dataset.worktype || 'shorn';
       const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
       const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
-      const { rows, grandTotal } = aggregateShearers(cachedSessions, mode, year, workType);
-      cachedRows = rows;
-      cachedGrandTotal = grandTotal;
-      renderTop5Shearers(rows, listEl);
-      renderFullShearers(rows, grandTotal, modalBodyTbody);
-    }
+        const { rows, grandTotal } = aggregateShearers(cachedSessions, mode, year, workType);
+        if (!shouldRerender(cachedRows, rows)) return;
+        cachedRows = rows;
+        cachedGrandTotal = grandTotal;
+        renderTop5Shearers(rows, listEl);
+        renderFullShearers(rows, grandTotal, modalBodyTbody);
+      }
 
     function scheduleRender() {
       if (renderPending) return;
@@ -510,14 +589,17 @@ function initTop5ShearersWidget() {
       scheduleRender();
     });
 
-    viewSel.addEventListener('change', () => {
-      if (!rootEl) return;
-      const v = viewSel.value;
-      if (v === 'all' || v === '12m') {
-        yearSel.hidden = true;
-      }
-      scheduleRender();
-    });
+      viewSel.addEventListener('change', () => {
+        if (!rootEl) return;
+        const v = viewSel.value;
+        if (v === 'all') {
+          yearSel.hidden = true;
+          SessionStore.loadAllTimeOnce();
+        } else if (v === '12m') {
+          yearSel.hidden = true;
+        }
+        scheduleRender();
+      });
 
     yearSel.addEventListener('change', () => {
       if (!rootEl) return;
@@ -550,44 +632,8 @@ function initTop5ShearersWidget() {
       }
     });
 
-    const onSnap = snap => {
-      const sessions = [];
-      snap.forEach(doc => sessions.push(doc));
-      cachedSessions = sessions;
-      const years = deriveYearsFromSessions(sessions);
-      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-      if (viewSel.value !== 'year') yearSel.hidden = true;
-      scheduleRender();
-    };
-    const onError = err => {
-      console.error('[Top5Shearers] listener error:', err);
-      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
-    };
-
-    try {
-      const db = firebase.firestore ? firebase.firestore() : (typeof getFirestore === 'function' ? getFirestore() : null);
-      if (!db) throw new Error('Firestore not initialized');
-      colRef = db.collection('contractors').doc(contractorId).collection('sessions');
-      shearersUnsub = colRef.onSnapshot(onSnap, onError);
-    } catch (err) {
-      console.error('[Top5Shearers] init failed:', err);
-      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
-    }
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        if (shearersUnsub) {
-          shearersUnsub();
-          shearersUnsub = null;
-        }
-      } else if (!shearersUnsub && colRef) {
-        shearersUnsub = colRef.onSnapshot(onSnap, onError);
-      }
-    });
-    window.addEventListener('beforeunload', () => {
-      if (shearersUnsub) shearersUnsub();
-    });
-  })();
+      // session data handled via SessionStore
+      })();
 }
 
 function initTop5ShedStaffWidget() {
@@ -833,10 +879,21 @@ function initTop5ShedStaffWidget() {
       const m = document.getElementById(id); if (!m) return; m.setAttribute('aria-hidden','true'); if (modalKeyHandler) { m.removeEventListener('keydown', modalKeyHandler); modalKeyHandler = null; } if (lastFocused) lastFocused.focus();
     }
 
-    let staffUnsub = null;
-    let colRef = null;
-    let cachedSessions = [];
-    let renderPending = false;
+      let cachedSessions = SessionStore.getAll();
+      let cachedRows = [];
+      let renderPending = false;
+
+      SessionStore.onChange(() => {
+        cachedSessions = SessionStore.getAll();
+        const years = deriveYearsFromSessions(cachedSessions);
+        yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+        if (viewSel.value !== 'year') yearSel.hidden = true;
+        scheduleRender();
+      });
+
+      const years = deriveYearsFromSessions(cachedSessions);
+      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      if (viewSel.value !== 'year') yearSel.hidden = true;
 
     function renderFromCache() {
       if (!cachedSessions.length) {
@@ -846,10 +903,12 @@ function initTop5ShedStaffWidget() {
       }
       const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
       const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
-      const rows = aggregateStaff(cachedSessions, mode, year);
-      renderTop5ShedStaff(rows);
-      renderFullShedStaff(rows, modalBodyTbody);
-    }
+        const rows = aggregateStaff(cachedSessions, mode, year);
+        if (!shouldRerender(cachedRows, rows)) return;
+        cachedRows = rows;
+        renderTop5ShedStaff(rows);
+        renderFullShedStaff(rows, modalBodyTbody);
+      }
 
     function scheduleRender() {
       if (renderPending) return;
@@ -860,12 +919,17 @@ function initTop5ShedStaffWidget() {
       });
     }
 
-    viewSel.addEventListener('change', () => {
-      const v = viewSel.value;
-      if (v === 'all' || v === '12m') yearSel.hidden = true;
-      saveScope();
-      scheduleRender();
-    });
+      viewSel.addEventListener('change', () => {
+        const v = viewSel.value;
+        if (v === 'all') {
+          yearSel.hidden = true;
+          SessionStore.loadAllTimeOnce();
+        } else if (v === '12m') {
+          yearSel.hidden = true;
+        }
+        saveScope();
+        scheduleRender();
+      });
     yearSel.addEventListener('change', () => { saveScope(); scheduleRender(); });
     yearSel.addEventListener('focus', () => {
       if (viewSel.value !== 'year') {
@@ -884,40 +948,9 @@ function initTop5ShedStaffWidget() {
     viewAllBtn.addEventListener('click', () => { openModal('shedstaff-modal'); });
     modal.addEventListener('click', e => { if (e.target.matches('[data-close-modal], .siq-modal__backdrop')) closeModal('shedstaff-modal'); });
 
-    const onSnap = snap => {
-      const sessions = [];
-      snap.forEach(doc => sessions.push(doc));
-      cachedSessions = sessions;
-      const years = deriveYearsFromSessions(sessions);
-      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-      if (viewSel.value !== 'year') yearSel.hidden = true;
-      scheduleRender();
-    };
-    const onError = err => {
-      console.error('[Top5ShedStaff] listener error:', err);
-      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
-    };
-
-    try {
-      const db = firebase.firestore ? firebase.firestore() : (typeof getFirestore === 'function' ? getFirestore() : null);
-      if (!db) throw new Error('Firestore not initialized');
-      colRef = db.collection('contractors').doc(contractorId).collection('sessions');
-      staffUnsub = colRef.onSnapshot(onSnap, onError);
-    } catch (err) {
-      console.error('[Top5ShedStaff] init failed:', err);
-      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
-    }
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        if (staffUnsub) { staffUnsub(); staffUnsub = null; }
-      } else if (!staffUnsub && colRef) {
-        staffUnsub = colRef.onSnapshot(onSnap, onError);
-      }
-    });
-    window.addEventListener('beforeunload', () => { if (staffUnsub) staffUnsub(); });
-  })();
-}
+      // session data handled via SessionStore
+      })();
+  }
 
 function initTop5FarmsWidget() {
   (function () {
@@ -1113,10 +1146,21 @@ function initTop5FarmsWidget() {
       if (lastFocused) lastFocused.focus();
     }
 
-    let farmsUnsub = null;
-    let colRef = null;
-    let cachedSessions = [];
-    let renderPending = false;
+      let cachedSessions = SessionStore.getAll();
+      let cachedRows = [];
+      let renderPending = false;
+
+      SessionStore.onChange(() => {
+        cachedSessions = SessionStore.getAll();
+        const years = deriveYearsFromSessions(cachedSessions);
+        yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+        if (viewSel.value !== 'year') yearSel.hidden = true;
+        scheduleRender();
+      });
+
+      const years = deriveYearsFromSessions(cachedSessions);
+      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+      if (viewSel.value !== 'year') yearSel.hidden = true;
 
     function renderFromCache() {
       if (!cachedSessions.length) {
@@ -1126,10 +1170,12 @@ function initTop5FarmsWidget() {
       }
       const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
       const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
-      const rows = aggregateFarms(cachedSessions, mode, year);
-      renderTop5Farms(rows);
-      renderFullFarms(rows, modalBodyTbody);
-    }
+        const rows = aggregateFarms(cachedSessions, mode, year);
+        if (!shouldRerender(cachedRows, rows)) return;
+        cachedRows = rows;
+        renderTop5Farms(rows);
+        renderFullFarms(rows, modalBodyTbody);
+      }
 
     function scheduleRender() {
       if (renderPending) return;
@@ -1137,12 +1183,17 @@ function initTop5FarmsWidget() {
       requestAnimationFrame(() => { renderPending = false; renderFromCache(); });
     }
 
-    viewSel.addEventListener('change', () => {
-      const v = viewSel.value;
-      if (v === 'all' || v === '12m') yearSel.hidden = true;
-      saveScope();
-      scheduleRender();
-    });
+      viewSel.addEventListener('change', () => {
+        const v = viewSel.value;
+        if (v === 'all') {
+          yearSel.hidden = true;
+          SessionStore.loadAllTimeOnce();
+        } else if (v === '12m') {
+          yearSel.hidden = true;
+        }
+        saveScope();
+        scheduleRender();
+      });
 
     yearSel.addEventListener('change', () => { saveScope(); scheduleRender(); });
 
@@ -1162,40 +1213,9 @@ function initTop5FarmsWidget() {
     viewAllBtn.addEventListener('click', () => { openModal('farms-full-modal'); });
     modal.addEventListener('click', e => { if (e.target.matches('[data-close-modal], .siq-modal__backdrop')) closeModal('farms-full-modal'); });
 
-    const onSnap = snap => {
-      const sessions = [];
-      snap.forEach(doc => sessions.push(doc));
-      cachedSessions = sessions;
-      const years = deriveYearsFromSessions(sessions);
-      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-      if (viewSel.value !== 'year') yearSel.hidden = true;
-      scheduleRender();
-    };
-    const onError = err => {
-      console.error('[Top5Farms] listener error:', err);
-      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
-    };
-
-    try {
-      const db = firebase.firestore ? firebase.firestore() : (typeof getFirestore === 'function' ? getFirestore() : null);
-      if (!db) throw new Error('Firestore not initialized');
-      colRef = db.collection('contractors').doc(contractorId).collection('sessions');
-      farmsUnsub = colRef.onSnapshot(onSnap, onError);
-    } catch (err) {
-      console.error('[Top5Farms] init failed:', err);
-      listEl.innerHTML = '<p class="siq-inline-error">Data unavailable</p>';
-    }
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        if (farmsUnsub) { farmsUnsub(); farmsUnsub = null; }
-      } else if (!farmsUnsub && colRef) {
-        farmsUnsub = colRef.onSnapshot(onSnap, onError);
-      }
-    });
-    window.addEventListener('beforeunload', () => { if (farmsUnsub) farmsUnsub(); });
-  })();
-}
+      // session data handled via SessionStore
+    })();
+  }
 
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('loading-overlay');
@@ -1284,13 +1304,23 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const btnChangePin = document.getElementById('btnChangePin');
-      if (btnChangePin) {
-        btnChangePin.addEventListener('click', () => {
-          window.location.href = 'change-pin.html';
-        });
-      }
+        if (btnChangePin) {
+          btnChangePin.addEventListener('click', () => {
+            window.location.href = 'change-pin.html';
+          });
+        }
 
-      // After setting contractor_id and after showing the page content:
+        SessionStore.start(user.uid, { monthsLive: 12 });
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            SessionStore.stop();
+          } else {
+            SessionStore.start(user.uid, { monthsLive: 12 });
+          }
+        });
+        window.addEventListener('beforeunload', () => { SessionStore.stop(); });
+
+        // After setting contractor_id and after showing the page content:
       if (typeof initTop5ShearersWidget === 'function') {
         try { initTop5ShearersWidget(); } catch (e) { console.error('[Dashboard] initTop5ShearersWidget failed:', e); }
       }
