@@ -1859,6 +1859,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const apply   = document.getElementById('stationSummaryApply');
   const reset   = document.getElementById('stationSummaryReset');
   const msgEl   = document.getElementById('stationNoData');
+  const lastNInput = document.getElementById('lastNDaysInput');
+  const lastNBtn   = document.getElementById('lastNDaysBtn');
 
   // Keep farm list fresh on load (no auto-build)
   if (farmSel && typeof populateStationDropdown === 'function') {
@@ -1873,6 +1875,32 @@ document.addEventListener('DOMContentLoaded', () => {
   function hideMsg() {
     if (!msgEl) return;
     msgEl.style.display = 'none';
+  }
+
+  if (lastNBtn) {
+    lastNBtn.addEventListener('click', () => {
+      const n = Math.max(1, parseInt(lastNInput?.value, 10) || 0);
+      const today = new Date();
+      const start = new Date();
+      start.setDate(today.getDate() - (n - 1));
+      const fmt = d => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+      if (startEl) startEl.value = fmt(start);
+      if (endEl) endEl.value = fmt(today);
+      if (allEl) allEl.checked = false;
+      const farm = (farmSel?.value || '').trim();
+      if (farm) {
+        hideMsg();
+        apply?.click();
+      } else {
+        if (typeof clearStationSummaryView === 'function') clearStationSummaryView();
+        showMsg('Select a farm and date range, or tick “All time for this farm”, then press Apply.');
+      }
+    });
   }
 
   if (apply) {
