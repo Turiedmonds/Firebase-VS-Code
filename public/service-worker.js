@@ -1,5 +1,5 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v7';
+const CACHE_NAME = 'sheariq-pwa-v8';
 
 const FILES_TO_CACHE = [
   // HTML entry points (include the start_url from manifest)
@@ -64,8 +64,8 @@ self.addEventListener('fetch', event => {
           const fresh = await fetch(event.request);
           return fresh;
         } catch (err) {
-          const cached = await caches.match('dashboard.html');
-          return cached || Response.error();
+          const cachedPage = await caches.match(event.request);
+          return cachedPage || await caches.match('dashboard.html') || Response.error();
         }
       })()
     );
