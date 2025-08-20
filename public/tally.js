@@ -1791,6 +1791,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const endEl   = document.getElementById('summaryEnd');
   const allEl   = document.getElementById('summaryAllTime');
   const apply   = document.getElementById('stationSummaryApply');
+  const reset   = document.getElementById('stationSummaryReset');
   const msgEl   = document.getElementById('stationNoData');
 
   // Keep farm list fresh on load (no auto-build)
@@ -1826,6 +1827,17 @@ document.addEventListener('DOMContentLoaded', () => {
       hideMsg();
       // Build summary now that inputs are valid
       if (typeof buildStationSummary === 'function') buildStationSummary();
+    });
+  }
+
+  if (reset) {
+    reset.addEventListener('click', () => {
+      if (farmSel) farmSel.value = '';
+      if (startEl) startEl.value = '';
+      if (endEl) endEl.value = '';
+      if (allEl) allEl.checked = false;
+      if (typeof clearStationSummaryView === 'function') clearStationSummaryView();
+      showMsg('Select a farm and date range, or tick “All time for this farm”, then press Apply.');
     });
   }
 });
