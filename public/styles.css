@@ -1280,3 +1280,29 @@ button {
   width: 100%;
   max-width: none !important;
 }
+/* --- Spacing between widgets + space below the row --- */
+#siq-widgets-grid{
+  /* bigger gaps between the three cards */
+  gap: 24px !important;             /* desktop */
+  /* guaranteed space under the row (not affected by margin collapse) */
+  padding-bottom: 48px !important;  /* desktop/tablet */
+  box-sizing: border-box;
+}
+
+/* tablets */
+@media (max-width: 1024px){
+  #siq-widgets-grid{ gap: 20px !important; }
+}
+
+/* phones */
+@media (max-width: 640px){
+  #siq-widgets-grid{
+    gap: 14px !important;
+    padding-bottom: 32px !important;
+  }
+}
+
+/* optional: tiny breathing room for the buttons block */
+.dashboard-buttons{
+  margin-top: 12px !important;
+}
