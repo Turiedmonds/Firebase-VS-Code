@@ -1860,7 +1860,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const reset   = document.getElementById('stationSummaryReset');
   const msgEl   = document.getElementById('stationNoData');
   const lastNInput = document.getElementById('lastNDaysInput');
-  const lastNBtn   = document.getElementById('lastNDaysBtn');
+  const lastNBtn   = document.getElementById('summaryApplyLastN');
 
   // Keep farm list fresh on load (no auto-build)
   if (farmSel && typeof populateStationDropdown === 'function') {
@@ -3316,6 +3316,7 @@ function initTallyTooltips() {
     '#newDayResetBtn': "Start a new day. Clears today's entries.",
     '#back-to-dashboard-btn': 'Go back to the Contractor Dashboard.',
     '#pin-lock-indicator': 'Past sessions open locked. Contractors can unlock with a PIN.',
+    '#summaryApplyLastN': 'Use Quick Range to instantly fill Start and End dates with the last N days. Adjust the number as needed, then click this button.',
     '#tallyTable': 'Enter tallies by run and stand. Add sheep type for each run.',
     '#sheepTypeTotalsTable': 'Totals by sheep type (auto).'
   };
