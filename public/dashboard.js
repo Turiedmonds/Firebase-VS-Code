@@ -921,7 +921,9 @@ function initTop5ShedStaffWidget() {
       const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
       const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
         const rows = aggregateStaff(cachedSessions, mode, year);
-        const sig = rows.slice(0,5).map(r => r.name + ':' + Math.round(r.total*60)).join('|');
+        const sig = rows
+          .map(r => `${r.name}:${Math.round(r.total * 60)}:${r.days}`)
+          .join('|');
         if (sig === cachedSig) return;
         cachedSig = sig;
         renderTop5ShedStaff(rows);
