@@ -1146,3 +1146,20 @@ button {
   text-align: right;        /* keep it flush-right like the shearers widget */
 }
 
+/* Shed Staff widget: keep hours on one line and size sanely on all screens */
+#top5-shedstaff .siq-lb-value {
+  white-space: nowrap;                       /* never wrap */
+  line-height: 1.1;                          /* compact line box */
+  font-size: clamp(0.80rem, 1.6vw, 0.92rem); /* a bit smaller than default */
+  text-align: right;                         /* align like shearers */
+}
+
+/* Give the number column more room so long labels don’t wrap */
+#top5-shedstaff .siq-lb-row {
+  grid-template-columns: 24px 1fr 70px;      /* widen value column */
+}
+
+/* Optional: extra protection for very narrow phones */
+@media (max-width: 340px){
+  #top5-shedstaff .siq-lb-value { font-size: 0.80rem; }
+}
