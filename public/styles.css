@@ -1280,6 +1280,24 @@ button {
   width: 100%;
   max-width: none !important;
 }
+
+/* Skeleton placeholders for Top 5 widgets */
+.siq-lb-row.siq-lb-skeleton {
+  pointer-events: none;
+}
+.siq-lb-row.siq-lb-skeleton .siq-lb-rank,
+.siq-lb-row.siq-lb-skeleton .siq-lb-name,
+.siq-lb-row.siq-lb-skeleton .siq-lb-value {
+  background: #eee;
+  color: transparent;
+}
+.siq-lb-row.siq-lb-skeleton .siq-lb-bar {
+  background: #eee;
+}
+.siq-lb-row.siq-lb-skeleton .siq-lb-fill {
+  width: 100%;
+  background: #ddd;
+}
 /* --- Spacing between widgets + space below the row --- */
 #siq-widgets-grid{
   /* bigger gaps between the three cards */

@@ -173,6 +173,9 @@ function saveDashCache(){
   catch{}
 }
 
+// Track which leaderboard widgets rendered from cache
+const dashCacheRendered = { shearers: false, shedstaff: false, farms: false };
+
 // Simple in-memory session store with one Firestore listener
 const SessionStore = (() => {
   let cache = [];
@@ -254,6 +257,119 @@ function shouldRerender(prev, next) {
   return JSON.stringify(prev) !== JSON.stringify(next);
 }
 
+function formatDecimalHoursToHM(value) {
+  const n = Number(value || 0);
+  const totalMin = Math.round(n * 60);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${h}h ${m}m`;
+}
+
+function renderTop5Shearers(rows, container) {
+  const top5 = rows.slice(0, 5);
+  const max = Math.max(1, ...top5.map(r => r.total));
+  container.innerHTML = top5.map((r, idx) => {
+    const pct = Math.round((r.total / max) * 100);
+    return `
+      <div class="siq-lb-row">
+        <div class="siq-lb-rank">${idx + 1}</div>
+        <div class="siq-lb-bar">
+          <div class="siq-lb-fill" style="width:${pct}%;"></div>
+          <div class="siq-lb-name" title="${r.name}">${r.name}</div>
+        </div>
+        <div class="siq-lb-value">${r.total.toLocaleString()}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTop5ShedStaff(rows, container) {
+  const top5 = rows.slice(0, 5);
+  const max = Math.max(1, ...top5.map(r => r.total));
+  container.innerHTML = top5.map((r, idx) => {
+    const pct = Math.round((r.total / max) * 100);
+    return `
+      <div class="siq-lb-row">
+        <div class="siq-lb-rank">${idx + 1}</div>
+        <div class="siq-lb-bar">
+          <div class="siq-lb-fill" style="width:${pct}%;"></div>
+          <div class="siq-lb-name" title="${r.name}">${r.name}</div>
+        </div>
+        <div class="siq-lb-value">${formatDecimalHoursToHM(r.total)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTop5Farms(rows, container) {
+  const top5 = rows.slice(0, 5);
+  const max = Math.max(1, ...top5.map(r => r.sheep));
+  container.innerHTML = top5.map((r, idx) => {
+    const pct = Math.round((r.sheep / max) * 100);
+    return `
+      <div class="siq-lb-row">
+        <div class="siq-lb-rank">${idx + 1}</div>
+        <div class="siq-lb-bar">
+          <div class="siq-lb-fill" style="width:${pct}%;"></div>
+          <div class="siq-lb-name" title="${r.name}">${r.name}</div>
+        </div>
+        <div class="siq-lb-value">${formatInt(r.sheep)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderSkeletonRows(el) {
+  if (!el) return;
+  const row = `
+    <div class="siq-lb-row siq-lb-skeleton">
+      <div class="siq-lb-rank">&nbsp;</div>
+      <div class="siq-lb-bar">
+        <div class="siq-lb-fill"></div>
+        <div class="siq-lb-name">&nbsp;</div>
+      </div>
+      <div class="siq-lb-value">&nbsp;</div>
+    </div>
+  `;
+  el.innerHTML = row.repeat(5);
+}
+
+function renderCachedTop5Widgets() {
+  const shearersEl = document.querySelector('#top5-shearers #top5-shearers-list');
+  if (shearersEl) {
+    if (dashCache.top5Shearers && dashCache.top5Shearers.length) {
+      renderTop5Shearers(dashCache.top5Shearers, shearersEl);
+      dashCacheRendered.shearers = true;
+    } else {
+      renderSkeletonRows(shearersEl);
+    }
+  }
+  const shedStaffEl = document.querySelector('#top5-shedstaff #top5-shedstaff-list');
+  if (shedStaffEl) {
+    if (dashCache.top5ShedStaff && dashCache.top5ShedStaff.length) {
+      renderTop5ShedStaff(dashCache.top5ShedStaff, shedStaffEl);
+      dashCacheRendered.shedstaff = true;
+    } else {
+      renderSkeletonRows(shedStaffEl);
+    }
+  }
+  const farmsEl = document.querySelector('#top5-farms #top5-farms-list');
+  if (farmsEl) {
+    if (dashCache.top5Farms && dashCache.top5Farms.length) {
+      renderTop5Farms(dashCache.top5Farms, farmsEl);
+      dashCacheRendered.farms = true;
+    } else {
+      renderSkeletonRows(farmsEl);
+    }
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', renderCachedTop5Widgets);
+} else {
+  renderCachedTop5Widgets();
+}
+
 function initTop5ShearersWidget() {
   (function () {
     const flag = localStorage.getItem('dash_top5_shearers_enabled');
@@ -310,10 +426,6 @@ function initTop5ShearersWidget() {
       return;
     }
 
-    // First paint: show cached rows instantly to avoid flash
-    if (dashCache.top5Shearers && dashCache.top5Shearers.length) {
-      renderTop5Shearers(dashCache.top5Shearers, listEl);
-    }
 
     function isCrutchedType(sheepType) {
       if (!sheepType) return false;
@@ -487,23 +599,6 @@ function initTop5ShearersWidget() {
       return { rows, grandTotal };
     }
 
-    function renderTop5Shearers(rows, container) {
-      const top5 = rows.slice(0, 5);
-      const max = Math.max(1, ...top5.map(r => r.total));
-      container.innerHTML = top5.map((r, idx) => {
-        const pct = Math.round((r.total / max) * 100);
-        return `
-      <div class="siq-lb-row">
-        <div class="siq-lb-rank">${idx + 1}</div>
-        <div class="siq-lb-bar">
-          <div class="siq-lb-fill" style="width:${pct}%;"></div>
-          <div class="siq-lb-name" title="${r.name}">${r.name}</div>
-        </div>
-        <div class="siq-lb-value">${r.total.toLocaleString()}</div>
-      </div>
-    `;
-      }).join('');
-    }
 
     function renderFullShearers(rows, grandTotal, tableBody) {
       tableBody.innerHTML = rows.map((r, idx) => {
@@ -577,7 +672,7 @@ function initTop5ShearersWidget() {
     }
 
       let cachedSessions = SessionStore.getAll();
-      let cachedRows = [];
+      let cachedRows = (dashCacheRendered.shearers && dashCache.top5Shearers) ? dashCache.top5Shearers.slice() : [];
       let cachedGrandTotal = 0;
       let renderPending = false;
 
@@ -596,7 +691,7 @@ function initTop5ShearersWidget() {
       function renderFromCache() {
         if (!cachedSessions.length) {
           if (!(dashCache.top5Shearers && dashCache.top5Shearers.length)) {
-            listEl.innerHTML = '';
+            // No cache yet: keep skeleton rows but clear modal contents
             modalBodyTbody.innerHTML = '';
           }
           return;
@@ -716,10 +811,6 @@ function initTop5ShedStaffWidget() {
       return;
     }
 
-    // First paint from cache to avoid empty flash
-    if (dashCache.top5ShedStaff && dashCache.top5ShedStaff.length) {
-      renderTop5ShedStaff(dashCache.top5ShedStaff);
-    }
 
     (function labelRollingWithYear(sel) {
       if (!sel) return;
@@ -830,13 +921,6 @@ function initTop5ShedStaffWidget() {
       return 0;
     }
 
-    function formatDecimalHoursToHM(value) {
-      const n = Number(value || 0);
-      const totalMin = Math.round(n * 60);
-      const h = Math.floor(totalMin / 60);
-      const m = totalMin % 60;
-      return `${h}h ${m}m`;
-    }
 
     function normalizeName(name) {
       if (!name) return '';
@@ -896,24 +980,6 @@ function initTop5ShedStaffWidget() {
         .sort((a,b) => b.total - a.total);
     }
 
-    function renderTop5ShedStaff(rows) {
-      const top5 = rows.slice(0,5);
-      const max = Math.max(1, ...top5.map(r => r.total));
-      listEl.innerHTML = top5.map((r, idx) => {
-        const pct = Math.round((r.total / max) * 100);
-        return `
-      <div class="siq-lb-row">
-        <div class="siq-lb-rank">${idx + 1}</div>
-        <div class="siq-lb-bar">
-          <div class="siq-lb-fill" style="width:${pct}%;"></div>
-          <div class="siq-lb-name" title="${r.name}">${r.name}</div>
-        </div>
-        <div class="siq-lb-value">${formatDecimalHoursToHM(r.total)}</div>
-      </div>
-    `;
-      }).join('');
-    }
-
     function renderFullShedStaff(rows, tableBody) {
       tableBody.innerHTML = rows.map((r, idx) => `
       <tr>
@@ -958,7 +1024,9 @@ function initTop5ShedStaffWidget() {
     }
 
       let cachedSessions = SessionStore.getAll();
-      let cachedSig = '';
+      let cachedSig = (dashCacheRendered.shedstaff && dashCache.top5ShedStaff)
+        ? dashCache.top5ShedStaff.map(r => `${r.name}:${Math.round(r.total * 60)}`).join('|')
+        : '';
       let renderPending = false;
 
       function updateYearOptions() {
@@ -979,7 +1047,7 @@ function initTop5ShedStaffWidget() {
     function renderFromCache() {
       if (!cachedSessions.length) {
         if (!(dashCache.top5ShedStaff && dashCache.top5ShedStaff.length)) {
-          listEl.innerHTML = '';
+          // No cache yet: leave skeleton rows in place but clear modal
           modalBodyTbody.innerHTML = '';
         }
         cachedSig = '';
@@ -989,11 +1057,11 @@ function initTop5ShedStaffWidget() {
       const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
         const rows = aggregateStaff(cachedSessions, mode, year);
         const sig = rows
-          .map(r => `${r.name}:${Math.round(r.total * 60)}:${r.days}`)
+          .map(r => `${r.name}:${Math.round(r.total * 60)}`)
           .join('|');
         if (sig === cachedSig) return;
         cachedSig = sig;
-        renderTop5ShedStaff(rows);
+        renderTop5ShedStaff(rows, listEl);
         renderFullShedStaff(rows, modalBodyTbody);
         // Save top rows for next load
         const top5Cache = rows.slice(0,5).map(r => ({ name: r.name, total: r.total }));
@@ -1081,10 +1149,6 @@ function initTop5FarmsWidget() {
       return;
     }
 
-    // Render cached farms immediately to avoid first-paint flash
-    if (dashCache.top5Farms && dashCache.top5Farms.length) {
-      renderTop5Farms(dashCache.top5Farms);
-    }
 
     (function labelRollingWithYear(sel) {
       if (!sel) return;
@@ -1172,24 +1236,6 @@ function initTop5FarmsWidget() {
         .sort((a,b) => b.sheep - a.sheep);
     }
 
-    function renderTop5Farms(rows) {
-      const top5 = rows.slice(0,5);
-      const max = Math.max(1, ...top5.map(r => r.sheep));
-      listEl.innerHTML = top5.map((r, idx) => {
-        const pct = Math.round((r.sheep / max) * 100);
-        return `
-      <div class="siq-lb-row">
-        <div class="siq-lb-rank">${idx + 1}</div>
-        <div class="siq-lb-bar">
-          <div class="siq-lb-fill" style="width:${pct}%;"></div>
-          <div class="siq-lb-name" title="${r.name}">${r.name}</div>
-        </div>
-        <div class="siq-lb-value">${formatInt(r.sheep)}</div>
-      </div>
-    `;
-      }).join('');
-    }
-
     function renderFullFarms(rows, tableBody) {
       tableBody.innerHTML = rows.map((r, idx) => `
       <tr>
@@ -1248,7 +1294,7 @@ function initTop5FarmsWidget() {
     }
 
       let cachedSessions = SessionStore.getAll();
-      let cachedRows = [];
+      let cachedRows = (dashCacheRendered.farms && dashCache.top5Farms) ? dashCache.top5Farms.slice() : [];
       let renderPending = false;
 
       SessionStore.onChange(() => {
@@ -1266,7 +1312,7 @@ function initTop5FarmsWidget() {
     function renderFromCache() {
       if (!cachedSessions.length) {
         if (!(dashCache.top5Farms && dashCache.top5Farms.length)) {
-          listEl.innerHTML = '';
+          // No cache yet: preserve skeleton rows but clear modal contents
           modalBodyTbody.innerHTML = '';
         }
         return;
@@ -1276,7 +1322,7 @@ function initTop5FarmsWidget() {
         const rows = aggregateFarms(cachedSessions, mode, year);
         if (!shouldRerender(cachedRows, rows)) return;
         cachedRows = rows;
-        renderTop5Farms(rows);
+        renderTop5Farms(rows, listEl);
         renderFullFarms(rows, modalBodyTbody);
         // Save top farms for fast future paint
         const top5Cache = rows.slice(0,5).map(r => ({ name: r.name, sheep: r.sheep }));
