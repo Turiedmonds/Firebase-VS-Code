@@ -374,15 +374,26 @@
       <h2>Farm Summary</h2>
   </div>
   <div class="filters">
-    <label for="stationSelect">Farm:</label>
-     <select id="stationSelect" class="small-input"></select>
-    <label for="summaryStart">Start Date:</label>
-    <input id="summaryStart" type="date" />
-    <label for="summaryEnd">End Date:</label>
-    <input id="summaryEnd" type="date" />
-    <button id="stationSummaryApply">Apply</button>
-  </div>
-   <p id="stationNoData" class="message" style="display:none;">No data found for the selected station and dates.</p>
+  <label for="stationSelect">Farm:</label>
+  <select id="stationSelect" class="small-input"></select>
+
+  <label for="summaryStart">Start Date:</label>
+  <input id="summaryStart" type="date" />
+
+  <label for="summaryEnd">End Date:</label>
+  <input id="summaryEnd" type="date" />
+
+  <label style="display:inline-flex;align-items:center;gap:6px;margin-left:10px;">
+    <input type="checkbox" id="summaryAllTime" />
+    All time for this farm
+  </label>
+
+  <button id="stationSummaryApply">Apply</button>
+</div>
+
+<p id="stationNoData" class="message" style="margin-top:8px;">
+  Select a farm and date range, or tick “All time for this farm”, then press Apply.
+</p>
   <h3>Shearer Summary</h3>
   <table id="stationShearerTable">
     <thead><tr></tr></thead>
@@ -623,21 +634,7 @@ document.addEventListener('DOMContentLoaded', function () {
   </div>
 </div>
 
-<script>
-window.clearStationSummaryView = clearStationSummaryView;
-
-document.addEventListener('DOMContentLoaded', () => {
-    const applyBtn = document.getElementById('stationSummaryApply');
-    if (applyBtn) {
-      applyBtn.addEventListener('click', () => {
-         alert('✅ Farm Summary complete.');
-        buildStationSummary();
-      });
-    }
-  });
-</script>
-
-<div id="autosaveStatus" style="display:none; position:fixed; bottom:10px; right:10px; background:#222; color:#fff; padding:4px 8px; border-radius:4px; font-size:14px;"></div>
+  <div id="autosaveStatus" style="display:none; position:fixed; bottom:10px; right:10px; background:#222; color:#fff; padding:4px 8px; border-radius:4px; font-size:14px;"></div>
 <div id="hours-modal" class="hours-modal" aria-hidden="true">
   <div class="hours-modal-content">
     <p>Hours Worked automatically fills from Start and Finish times.</p>

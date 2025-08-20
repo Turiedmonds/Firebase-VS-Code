@@ -1772,19 +1772,63 @@ function handleSaveOption(option) {
     manualSave = false;
 }
  
- function showView(id) {
+function showView(id) {
      document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
      const view = document.getElementById(id);
      if (view) view.style.display = 'block';
      document.querySelectorAll('.tab-button').forEach(btn => {
          btn.classList.toggle('active', btn.dataset.view === id);
      });
-     if (id === 'summaryView') buildSummary();
-      if (id === 'stationSummaryView') {
-         populateStationDropdown();
-         buildStationSummary();
-     }
- }
+    if (id === 'summaryView') buildSummary();
+    if (id === 'stationSummaryView') {
+        populateStationDropdown();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const farmSel = document.getElementById('stationSelect');
+  const startEl = document.getElementById('summaryStart');
+  const endEl   = document.getElementById('summaryEnd');
+  const allEl   = document.getElementById('summaryAllTime');
+  const apply   = document.getElementById('stationSummaryApply');
+  const msgEl   = document.getElementById('stationNoData');
+
+  // Keep farm list fresh on load (no auto-build)
+  if (farmSel && typeof populateStationDropdown === 'function') {
+    populateStationDropdown();
+  }
+
+  function showMsg(text) {
+    if (!msgEl) return;
+    msgEl.textContent = text;
+    msgEl.style.display = '';
+  }
+  function hideMsg() {
+    if (!msgEl) return;
+    msgEl.style.display = 'none';
+  }
+
+  if (apply) {
+    apply.addEventListener('click', () => {
+      const farm  = (farmSel?.value || '').trim();
+      const start = startEl?.value || '';
+      const end   = endEl?.value || '';
+      const all   = !!allEl?.checked;
+
+      if (!farm) {
+        showMsg('Please select a farm.');
+        return;
+      }
+      if (!all && (!start || !end)) {
+        showMsg('Please select both start and end dates, or tick “All time for this farm”.');
+        return;
+      }
+      hideMsg();
+      // Build summary now that inputs are valid
+      if (typeof buildStationSummary === 'function') buildStationSummary();
+    });
+  }
+});
  
  function buildSummary() {
      const headerRow = document.getElementById('headerRow');
@@ -2000,37 +2044,75 @@ function detectSheepCategory(sheepTypeName) {
 }
  
 async function buildStationSummary() {
-    const stationInput = document.getElementById('stationSelect');
-    const startInput = document.getElementById('summaryStart');
-    const endInput = document.getElementById('summaryEnd');
- 
-     const station = stationInput?.value.trim() || '';
-     const start = startInput?.value;
-     const end = endInput?.value;
- 
-     console.log('Selected station:', station);
-     console.log('Selected start:', start, 'end:', end);
- 
-    const allSessions = await listSessionsFromFirestore();
+  const farmSel = document.getElementById('stationSelect');
+  const startEl = document.getElementById('summaryStart');
+  const endEl   = document.getElementById('summaryEnd');
+  const allEl   = document.getElementById('summaryAllTime');
+  const msgEl   = document.getElementById('stationNoData');
 
-    // Normalize station names for comparison
-    const targetStation = station.toLowerCase();
-    const startDate = start ? new Date(start) : null;
-    const endDate = end ? new Date(end) : null;
-    const sessions = allSessions.filter(s => {
-        const storedStation = (s.stationName || '').trim().toLowerCase();
-        if (station && storedStation !== targetStation) return false;
-        const sessionDate = new Date(s.date);
-        if (startDate && sessionDate < startDate) return false;
-        if (endDate && sessionDate > endDate) return false;
-        return true;
+  const farm  = (farmSel?.value || '').trim();
+  const start = startEl?.value || '';
+  const end   = endEl?.value || '';
+  const all   = !!allEl?.checked;
+
+  function showMsg(text) {
+    if (!msgEl) return;
+    msgEl.textContent = text;
+    msgEl.style.display = '';
+  }
+  function clearTables() {
+    if (typeof clearStationSummaryView === 'function') {
+      clearStationSummaryView();
+      return;
+    }
+    // Fallback: clear headers (for dynamic columns) and bodies
+    ['stationShearerTable','stationStaffTable','stationLeaderTable','stationCombTable','stationTotalTable']
+      .forEach(id => {
+        const tb = document.querySelector(`#${id} tbody`);
+        if (tb) tb.innerHTML = '';
+      });
+    ['stationShearerTable','stationTotalTable'].forEach(id => {
+      const th = document.querySelector(`#${id} thead tr`);
+      if (th) th.innerHTML = '';
     });
-     
-     console.log('Filtered sessions:', sessions);
- 
-     const msg = document.getElementById('stationNoData');
-     if (msg) msg.style.display = sessions.length ? 'none' : 'block';
-     const { shearerData, staffData, leaders, combs, totalByType, grandTotal } = aggregateStationData(sessions);
+  }
+
+  // Hard validation: require farm + (dates or all-time)
+  if (!farm) { clearTables(); showMsg('Please select a farm.'); return; }
+  if (!all && (!start || !end)) { clearTables(); showMsg('Please select a start and end date, or tick “All time for this farm”.'); return; }
+
+  // Inclusive end of day for safe range
+  let startDate = start ? new Date(start) : null;
+  let endDate   = end ? new Date(end) : null;
+  if (!all && endDate) endDate.setHours(23,59,59,999);
+
+  // >>> leave the rest of buildStationSummary as-is;
+  // just make sure your session filtering below respects `all`
+  // (see Step 5).
+
+  const allSessions = await listSessionsFromFirestore();
+
+  // Normalize station names for comparison
+  const targetStation = farm.toLowerCase();
+  const sessions = allSessions.filter(s => {
+    const sameFarm = ((s.stationName || '').trim().toLowerCase() === targetStation);
+    if (!sameFarm) return false;
+
+    if (all) return true; // skip date filter entirely
+
+    const d = new Date(s.date);
+    return (!startDate || d >= startDate) && (!endDate || d <= endDate);
+  });
+
+  if (msgEl) {
+    if (sessions.length) {
+      msgEl.style.display = 'none';
+    } else {
+      showMsg('No data found for the selected station and dates.');
+    }
+  }
+
+  const { shearerData, staffData, leaders, combs, totalByType, grandTotal } = aggregateStationData(sessions);
  
      const adultFemales = [];
     const lambFemales = [];
