@@ -179,8 +179,21 @@ const SessionStore = (() => {
       const ts = firebase.firestore.Timestamp.fromDate(cutoff);
       console.info('[SessionStore] start listener');
       unsub = colRef.where('savedAt', '>=', ts).onSnapshot(snap => {
-        cache = snap.docs.slice();
-        notify();
+        let changed = false;
+        for (const change of snap.docChanges()) {
+          const idx = cache.findIndex(d => d.id === change.doc.id);
+          if (change.type === 'removed' && idx !== -1) {
+            cache.splice(idx, 1);
+            changed = true;
+          } else if (change.type === 'modified' && idx !== -1) {
+            cache[idx] = change.doc;
+            changed = true;
+          } else if (change.type === 'added' && idx === -1) {
+            cache.push(change.doc);
+            changed = true;
+          }
+        }
+        if (changed) notify();
       }, err => console.error('[SessionStore] listener error:', err));
       started = true;
     },
@@ -554,22 +567,22 @@ function initTop5ShearersWidget() {
       yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
       if (viewSel.value !== 'year') yearSel.hidden = true;
 
-    function renderFromCache() {
-      if (!cachedSessions.length) {
-        listEl.innerHTML = '';
-        modalBodyTbody.innerHTML = '';
-        return;
-      }
-      const workType = tabs.querySelector('.siq-segmented__btn.is-active')?.dataset.worktype || 'shorn';
-      const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
-      const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
-        const { rows, grandTotal } = aggregateShearers(cachedSessions, mode, year, workType);
-        if (!shouldRerender(cachedRows, rows)) return;
-        cachedRows = rows;
-        cachedGrandTotal = grandTotal;
-        renderTop5Shearers(rows, listEl);
-        renderFullShearers(rows, grandTotal, modalBodyTbody);
-      }
+      function renderFromCache() {
+        if (!cachedSessions.length) {
+          listEl.innerHTML = '';
+          modalBodyTbody.innerHTML = '';
+          return;
+        }
+        const workType = tabs.querySelector('.siq-segmented__btn.is-active')?.dataset.worktype || 'shorn';
+        const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
+        const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
+          const { rows, grandTotal } = aggregateShearers(cachedSessions, mode, year, workType);
+          if (!shouldRerender(cachedRows, rows)) return;
+          cachedRows = rows;
+          cachedGrandTotal = grandTotal;
+          renderTop5Shearers(rows, listEl);
+          renderFullShearers(rows, grandTotal, modalBodyTbody);
+        }
 
     function scheduleRender() {
       if (renderPending) return;
@@ -880,32 +893,37 @@ function initTop5ShedStaffWidget() {
     }
 
       let cachedSessions = SessionStore.getAll();
-      let cachedRows = [];
+      let cachedSig = '';
       let renderPending = false;
 
-      SessionStore.onChange(() => {
-        cachedSessions = SessionStore.getAll();
+      function updateYearOptions() {
         const years = deriveYearsFromSessions(cachedSessions);
         yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
         if (viewSel.value !== 'year') yearSel.hidden = true;
+      }
+
+      SessionStore.onChange(sessions => {
+        cachedSessions = sessions;
+        updateYearOptions();
         scheduleRender();
       });
 
-      const years = deriveYearsFromSessions(cachedSessions);
-      yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-      if (viewSel.value !== 'year') yearSel.hidden = true;
+      updateYearOptions();
+      scheduleRender();
 
     function renderFromCache() {
       if (!cachedSessions.length) {
         listEl.innerHTML = '';
         modalBodyTbody.innerHTML = '';
+        cachedSig = '';
         return;
       }
       const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
       const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
         const rows = aggregateStaff(cachedSessions, mode, year);
-        if (!shouldRerender(cachedRows, rows)) return;
-        cachedRows = rows;
+        const sig = rows.slice(0,5).map(r => r.name + ':' + Math.round(r.total*60)).join('|');
+        if (sig === cachedSig) return;
+        cachedSig = sig;
         renderTop5ShedStaff(rows);
         renderFullShedStaff(rows, modalBodyTbody);
       }
