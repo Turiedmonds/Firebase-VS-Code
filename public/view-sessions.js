@@ -48,7 +48,11 @@ function ensureYearSection(yearKey) {
     <div class="year-body" style="border:1px solid #333;border-top:none;padding:8px;"></div>
   `;
   const loadMoreBtn = document.getElementById('loadMoreBtn');
-  outer.insertBefore(sec, loadMoreBtn || null);
+  if (loadMoreBtn && loadMoreBtn.parentNode === outer) {
+    outer.insertBefore(sec, loadMoreBtn);
+  } else {
+    outer.appendChild(sec);
+  }
 
   // toggle collapse
   const header = sec.querySelector('.year-header');
@@ -285,6 +289,13 @@ document.addEventListener('DOMContentLoaded', () => {
         dashBtn.addEventListener('click', () => {
           window.location.href = 'dashboard.html';
         });
+      }
+
+      // Ensure "Load more" lives inside #sessionListOuter (auto-fix if needed)
+      const outer = document.getElementById('sessionListOuter');
+      const moreBtn = document.getElementById('loadMoreBtn');
+      if (outer && moreBtn && moreBtn.parentNode !== outer) {
+        outer.appendChild(moreBtn);
       }
 
       // Wire filters and controls
