@@ -30,9 +30,40 @@
     <div class="tabs">
       <button id="backToDashboard" class="tab-button" style="display: none;">Return to Dashboard</button>
     </div>
-    <div id="sessionList">
-      <!-- Sessions will be loaded here -->
+
+    <!-- Filters + controls -->
+    <div id="sessionFilters" style="display:flex;gap:8px;align-items:end;margin:10px 0;flex-wrap:wrap;">
+      <label>
+        <div style="font-size:12px;opacity:.8;">Search (Station)</div>
+        <input id="sfq" type="text" placeholder="Type to filter…" style="padding:6px;min-width:200px;">
+      </label>
+      <label>
+        <div style="font-size:12px;opacity:.8;">From</div>
+        <input id="sfrom" type="date" style="padding:6px;">
+      </label>
+      <label>
+        <div style="font-size:12px;opacity:.8;">To</div>
+        <input id="sto" type="date" style="padding:6px;">
+      </label>
+      <button id="sapply" class="tab-button" type="button">Apply</button>
+      <button id="sclear" class="tab-button" type="button">Clear</button>
     </div>
+
+    <!-- Expand/Collapse + meta -->
+    <div id="sessionControls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 12px;">
+      <button id="expandAll" class="tab-button" type="button">Expand all</button>
+      <button id="collapseAll" class="tab-button" type="button">Collapse all</button>
+      <div id="sessionListMeta" style="opacity:.8;font-size:0.9rem;"></div>
+    </div>
+
+    <!-- Grouped list container -->
+    <div id="sessionListOuter">
+      <!-- JS will create one <section data-year="YYYY"> per year -->
+      <div id="sessionList"><!-- fallback container; stays empty when grouping is used --></div>
+    </div>
+
+    <!-- Load more button -->
+    <button id="loadMoreBtn" class="tab-button" style="margin-top:8px; display:none;">Load more</button>
   </div>
 
   <script>
