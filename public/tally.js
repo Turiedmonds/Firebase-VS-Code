@@ -931,6 +931,33 @@ function confirmSetupModal() {
     setupDailyLayout(shearers, counts, staff);
 }
 
+function showDatesModal(list) {
+    const modal = document.getElementById('dateListModal');
+    const content = document.getElementById('dateListContent');
+    if (!modal || !content) return;
+    content.innerHTML = '';
+    const ul = document.createElement('ul');
+    list.forEach(d => {
+        const li = document.createElement('li');
+        li.textContent = d;
+        ul.appendChild(li);
+    });
+    content.appendChild(ul);
+    modal.style.display = 'flex';
+}
+
+function hideDatesModal() {
+    const modal = document.getElementById('dateListModal');
+    if (modal) modal.style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('dateListCloseBtn')?.addEventListener('click', hideDatesModal);
+    document.getElementById('dateListModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'dateListModal') hideDatesModal();
+    });
+});
+
  function adjustStandNameWidth(input) {
      const len = input.value.length || input.placeholder.length || 1;
      input.style.width = (len + 1) + 'ch';
@@ -1053,12 +1080,51 @@ function confirmSetupModal() {
      return `${hour12}:${String(m).padStart(2, '0')} ${suffix}`;
  }
  
- function formatDateNZ(dateStr) {
-     if (!dateStr) return '';
-     const parts = dateStr.split('-');
-     if (parts.length !== 3) return dateStr;
-     return `${parts[2]}/${parts[1]}/${parts[0]}`;
- }
+function formatDateNZ(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+function mergeDateRanges(dates) {
+    if (!dates || dates.length === 0) return [];
+    const sorted = dates.slice().sort();
+    const ranges = [];
+    let start = sorted[0];
+    let prev = sorted[0];
+    for (let i = 1; i < sorted.length; i++) {
+        const curr = sorted[i];
+        const prevDate = new Date(prev + 'T00:00:00');
+        const currDate = new Date(curr + 'T00:00:00');
+        const diff = (currDate - prevDate) / 86400000;
+        if (diff === 1) {
+            prev = curr;
+        } else {
+            ranges.push([start, prev]);
+            start = curr;
+            prev = curr;
+        }
+    }
+    ranges.push([start, prev]);
+    return ranges;
+}
+
+function formatDateRange(start, end) {
+    const s = formatDateNZ(start);
+    const e = formatDateNZ(end);
+    return start === end ? s : `${s}–${e}`;
+}
+
+function buildDatePreview(datesSet, limit = 3) {
+    const dates = Array.from(datesSet || []).sort();
+    const ranges = mergeDateRanges(dates);
+    const previewParts = ranges.slice(0, limit).map(([s, e]) => formatDateRange(s, e));
+    const remaining = Math.max(0, ranges.length - limit);
+    let preview = previewParts.join(', ');
+    if (remaining > 0) preview += ` (+${remaining} more)`;
+    return { preview, fullList: dates.map(formatDateNZ) };
+}
  
  function generateTimeOptions() {
      const startSelect = document.getElementById('startTime');
@@ -2225,18 +2291,29 @@ async function buildStationSummary() {
             const totalTd = document.createElement('td');
             totalTd.textContent = o.total;
             const datesTd = document.createElement('td');
-            datesTd.textContent = Array.from(o.dates).map(formatDateNZ).join(', ');
+            const { preview, fullList } = buildDatePreview(o.dates);
+            const previewSpan = document.createElement('span');
+            previewSpan.textContent = preview;
+            datesTd.appendChild(previewSpan);
+            if (fullList.length > 0) {
+                const btn = document.createElement('button');
+                btn.textContent = 'View all';
+                btn.className = 'view-dates-btn';
+                btn.addEventListener('click', ()=> showDatesModal(fullList));
+                datesTd.appendChild(document.createTextNode(' '));
+                datesTd.appendChild(btn);
+            }
             tr.appendChild(nameTd);
-             tr.appendChild(totalTd);
-             tr.appendChild(datesTd);
-             leaderBody.appendChild(tr);
-         });
-     }
- 
-      const combBody = document.querySelector('#stationCombTable tbody');
+            tr.appendChild(totalTd);
+            tr.appendChild(datesTd);
+            leaderBody.appendChild(tr);
+        });
+    }
+
+    const combBody = document.querySelector('#stationCombTable tbody');
     if (combBody) {
         combBody.innerHTML = '';
-         const rows = Object.entries(combs);
+        const rows = Object.entries(combs);
         rows.forEach(([c,set])=>{
             const trimmed = c?.trim() || '';
             if (!trimmed) return;
@@ -2244,7 +2321,18 @@ async function buildStationSummary() {
             const combTd = document.createElement('td');
             combTd.textContent = trimmed;
             const datesTd = document.createElement('td');
-            datesTd.textContent = Array.from(set).map(formatDateNZ).join(', ');
+            const { preview, fullList } = buildDatePreview(set);
+            const previewSpan = document.createElement('span');
+            previewSpan.textContent = preview;
+            datesTd.appendChild(previewSpan);
+            if (fullList.length > 0) {
+                const btn = document.createElement('button');
+                btn.textContent = 'View all';
+                btn.className = 'view-dates-btn';
+                btn.addEventListener('click', ()=> showDatesModal(fullList));
+                datesTd.appendChild(document.createTextNode(' '));
+                datesTd.appendChild(btn);
+            }
             tr.appendChild(combTd);
             tr.appendChild(datesTd);
             combBody.appendChild(tr);
