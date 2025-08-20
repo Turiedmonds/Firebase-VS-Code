@@ -163,6 +163,16 @@ function sumSheep(session) {
   return total;
 }
 
+// Persist last dashboard widget data to avoid first-paint flash
+const dashCache = (() => {
+  try { return JSON.parse(localStorage.getItem('dashboard_cache_v1') || '{}'); }
+  catch { return {}; }
+})();
+function saveDashCache(){
+  try { localStorage.setItem('dashboard_cache_v1', JSON.stringify(dashCache)); }
+  catch{}
+}
+
 // Simple in-memory session store with one Firestore listener
 const SessionStore = (() => {
   let cache = [];
@@ -298,6 +308,11 @@ function initTop5ShearersWidget() {
     if (!listEl || !viewSel || !yearSel || !viewAllBtn || !tabs || !modal || !modalBodyTbody) {
       console.warn('[Top5Shearers] Missing elements');
       return;
+    }
+
+    // First paint: show cached rows instantly to avoid flash
+    if (dashCache.top5Shearers && dashCache.top5Shearers.length) {
+      renderTop5Shearers(dashCache.top5Shearers, listEl);
     }
 
     function isCrutchedType(sheepType) {
@@ -580,8 +595,10 @@ function initTop5ShearersWidget() {
 
       function renderFromCache() {
         if (!cachedSessions.length) {
-          listEl.innerHTML = '';
-          modalBodyTbody.innerHTML = '';
+          if (!(dashCache.top5Shearers && dashCache.top5Shearers.length)) {
+            listEl.innerHTML = '';
+            modalBodyTbody.innerHTML = '';
+          }
           return;
         }
         const workType = tabs.querySelector('.siq-segmented__btn.is-active')?.dataset.worktype || 'shorn';
@@ -593,6 +610,12 @@ function initTop5ShearersWidget() {
           cachedGrandTotal = grandTotal;
           renderTop5Shearers(rows, listEl);
           renderFullShearers(rows, grandTotal, modalBodyTbody);
+          // Save latest top rows for instant next load
+          const top5Cache = rows.slice(0,5).map(r => ({ name: r.name, total: r.total }));
+          if (shouldRerender(dashCache.top5Shearers, top5Cache)) {
+            dashCache.top5Shearers = top5Cache;
+            saveDashCache();
+          }
         }
 
     function scheduleRender() {
@@ -691,6 +714,11 @@ function initTop5ShedStaffWidget() {
     if (!listEl || !viewSel || !yearSel || !viewAllBtn || !modal || !modalBodyTbody) {
       console.warn('[Top5ShedStaff] Missing elements');
       return;
+    }
+
+    // First paint from cache to avoid empty flash
+    if (dashCache.top5ShedStaff && dashCache.top5ShedStaff.length) {
+      renderTop5ShedStaff(dashCache.top5ShedStaff);
     }
 
     (function labelRollingWithYear(sel) {
@@ -950,8 +978,10 @@ function initTop5ShedStaffWidget() {
 
     function renderFromCache() {
       if (!cachedSessions.length) {
-        listEl.innerHTML = '';
-        modalBodyTbody.innerHTML = '';
+        if (!(dashCache.top5ShedStaff && dashCache.top5ShedStaff.length)) {
+          listEl.innerHTML = '';
+          modalBodyTbody.innerHTML = '';
+        }
         cachedSig = '';
         return;
       }
@@ -965,6 +995,12 @@ function initTop5ShedStaffWidget() {
         cachedSig = sig;
         renderTop5ShedStaff(rows);
         renderFullShedStaff(rows, modalBodyTbody);
+        // Save top rows for next load
+        const top5Cache = rows.slice(0,5).map(r => ({ name: r.name, total: r.total }));
+        if (shouldRerender(dashCache.top5ShedStaff, top5Cache)) {
+          dashCache.top5ShedStaff = top5Cache;
+          saveDashCache();
+        }
       }
 
     function scheduleRender() {
@@ -1043,6 +1079,11 @@ function initTop5FarmsWidget() {
     if (!listEl || !viewSel || !yearSel || !viewAllBtn || !modal || !modalBodyTbody) {
       console.warn('[Top5Farms] Missing elements');
       return;
+    }
+
+    // Render cached farms immediately to avoid first-paint flash
+    if (dashCache.top5Farms && dashCache.top5Farms.length) {
+      renderTop5Farms(dashCache.top5Farms);
     }
 
     (function labelRollingWithYear(sel) {
@@ -1224,8 +1265,10 @@ function initTop5FarmsWidget() {
 
     function renderFromCache() {
       if (!cachedSessions.length) {
-        listEl.innerHTML = '';
-        modalBodyTbody.innerHTML = '';
+        if (!(dashCache.top5Farms && dashCache.top5Farms.length)) {
+          listEl.innerHTML = '';
+          modalBodyTbody.innerHTML = '';
+        }
         return;
       }
       const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
@@ -1235,6 +1278,12 @@ function initTop5FarmsWidget() {
         cachedRows = rows;
         renderTop5Farms(rows);
         renderFullFarms(rows, modalBodyTbody);
+        // Save top farms for fast future paint
+        const top5Cache = rows.slice(0,5).map(r => ({ name: r.name, sheep: r.sheep }));
+        if (shouldRerender(dashCache.top5Farms, top5Cache)) {
+          dashCache.top5Farms = top5Cache;
+          saveDashCache();
+        }
       }
 
     function scheduleRender() {
@@ -1277,7 +1326,10 @@ function initTop5FarmsWidget() {
     })();
   }
 
+let dashboardInitRan = false;
 document.addEventListener('DOMContentLoaded', () => {
+  if (dashboardInitRan) return; // avoid duplicate init if script executed twice
+  dashboardInitRan = true;
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
   if (!(window.firebase && typeof firebase.auth === 'function')) {
