@@ -1225,3 +1225,58 @@ button {
 @media (max-width: 360px) {
   #siq-widgets-grid { gap: 12px; }
 }
+/* Dashboard polish – layout only */
+#siq-widgets-grid { margin-bottom: 20px; }
+
+#siq-widgets-grid .dash-card,
+#siq-widgets-grid .card,
+#siq-widgets-grid section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+#siq-widgets-grid .dash-card__body,
+#siq-widgets-grid .card-body,
+#siq-widgets-grid .siq-card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#top5-shearers .siq-lb-row,
+#top5-shedstaff .siq-lb-row,
+#top5-farms   .siq-lb-row {
+  display: grid;
+  grid-template-columns: 24px 1fr 72px; /* rank | name | value */
+  align-items: center;
+}
+#top5-shearers .siq-lb-value,
+#top5-shedstaff .siq-lb-value,
+#top5-farms   .siq-lb-value {
+  text-align: right;
+  white-space: nowrap;
+}
+
+#top5-shearers .siq-lb-name,
+#top5-shedstaff .siq-lb-name,
+#top5-farms   .siq-lb-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#top5-shearers .siq-lb-name,
+#top5-shedstaff .siq-lb-name,
+#top5-farms   .siq-lb-name {
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
+}
+#top5-shearers .siq-lb-value,
+#top5-shedstaff .siq-lb-value,
+#top5-farms   .siq-lb-value {
+  font-size: clamp(0.80rem, 1.6vw, 0.95rem);
+  line-height: 1.1;
+}
+
+#top5-shearers, #top5-shedstaff, #top5-farms {
+  width: 100%;
+  max-width: none !important;
+}
