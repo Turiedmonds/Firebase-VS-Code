@@ -93,6 +93,17 @@ try {
 
 import { handleLogout } from './auth.js';
 
+// Unhide content immediately to avoid blank screen offline
+const earlyPage = document.getElementById('page-content');
+if (earlyPage) earlyPage.style.display = 'block';
+
+function showOfflineNotice() {
+  const subheading = document.getElementById('dashboard-subheading');
+  if (subheading) {
+    subheading.textContent = 'Offline mode: limited features available';
+  }
+}
+
 // --- Shared helpers for dashboard widgets ---
 function formatInt(n) {
   return (n || 0).toLocaleString();
@@ -1352,13 +1363,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (err) {
       console.error('Failed to fetch contractor profile', err);
-      const subheading = document.getElementById('dashboard-subheading');
-      if (subheading) {
-        subheading.textContent = 'Welcome back, Contractor';
-      }
+      showOfflineNotice();
     } finally {
       if (overlay) overlay.style.display = 'none';
     }
+  }, err => {
+    console.error('Auth state failed', err);
+    showOfflineNotice();
+    if (overlay) overlay.style.display = 'none';
   });
 });
 
