@@ -3460,7 +3460,7 @@ function initTallyTooltips() {
       endGuided();
       return;
     }
-    guidedList = Array.from(document.querySelectorAll('#tallySheetView [data-help]')).filter(el => el.offsetParent !== null && !el.disabled);
+    guidedList = Array.from(document.querySelectorAll('#tallySheetView [data-help], #summaryView [data-help], #stationSummaryView [data-help]')).filter(el => el.offsetParent !== null && !el.disabled);
     if (!guidedList.length) return;
     guidedMode = true;
     guidedIndex = 0;
