@@ -1276,6 +1276,21 @@ button {
   line-height: 1.1;
 }
 
+/* Skeleton placeholders for Top 5 widgets */
+.siq-lb-row.skeleton .siq-lb-rank,
+.siq-lb-row.skeleton .siq-lb-name,
+.siq-lb-row.skeleton .siq-lb-value {
+  background: #1e2330;
+  color: transparent; /* reserve height without text */
+  border-radius: 4px;
+}
+.siq-lb-row.skeleton .siq-lb-name {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.siq-lb-row.skeleton .siq-lb-fill { display: none; }
+
 #top5-shearers, #top5-shedstaff, #top5-farms {
   width: 100%;
   max-width: none !important;
