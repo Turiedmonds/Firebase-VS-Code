@@ -129,6 +129,44 @@ function renderSessionRowInto(container, docId, data) {
   });
   btns.appendChild(editBtn);
 
+  const delBtn = document.createElement('button');
+  delBtn.textContent = 'Delete';
+  delBtn.className = 'tab-button';
+  delBtn.style.marginLeft = '6px';
+  delBtn.addEventListener('click', async () => {
+    if (!confirm('Delete this session?')) return;
+    const expectedPin = localStorage.getItem('contractor_pin') || '1234';
+    const pin = prompt('\uD83D\uDD10 Enter Contractor PIN to delete:');
+    if (pin !== expectedPin) {
+      if (pin !== null) alert('Incorrect PIN');
+      return;
+    }
+    try {
+      await firebase
+        .firestore()
+        .collection('contractors')
+        .doc(_contractorId)
+        .collection('sessions')
+        .doc(docId)
+        .delete();
+
+      allSessions = allSessions.filter(s => s.__id !== docId);
+      _totalLoaded = allSessions.length;
+      applyFiltersAndRender();
+      updateMetaAndButton();
+
+      if (localStorage.getItem('firestoreSessionId') === docId) {
+        localStorage.removeItem('active_session');
+        localStorage.removeItem('firestoreSessionId');
+        localStorage.removeItem('viewOnlyMode');
+      }
+    } catch (err) {
+      console.error('Failed to delete session', err);
+      alert('Failed to delete session.');
+    }
+  });
+  btns.appendChild(delBtn);
+
   row.appendChild(btns);
   container.appendChild(row);
 }
