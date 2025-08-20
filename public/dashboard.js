@@ -319,21 +319,49 @@ function renderTop5Farms(rows, container) {
   }).join('');
 }
 
+// Render placeholder rows to reserve space until data arrives
+function renderSkeletonRows(container) {
+  if (!container) return;
+  container.innerHTML = Array.from({ length: 5 }).map(() => `
+    <div class="siq-lb-row skeleton">
+      <div class="siq-lb-rank">&nbsp;</div>
+      <div class="siq-lb-bar">
+        <div class="siq-lb-fill"></div>
+        <div class="siq-lb-name">&nbsp;</div>
+      </div>
+      <div class="siq-lb-value">&nbsp;</div>
+    </div>
+  `).join('');
+}
+
 function renderCachedTop5Widgets() {
   const shearersEl = document.querySelector('#top5-shearers #top5-shearers-list');
-  if (shearersEl && dashCache.top5Shearers && dashCache.top5Shearers.length) {
-    renderTop5Shearers(dashCache.top5Shearers, shearersEl);
-    dashCacheRendered.shearers = true;
+  if (shearersEl) {
+    if (dashCache.top5Shearers && dashCache.top5Shearers.length) {
+      renderTop5Shearers(dashCache.top5Shearers, shearersEl);
+      dashCacheRendered.shearers = true;
+    } else {
+      // No cache yet: show fixed-height skeleton rows to avoid layout jump
+      renderSkeletonRows(shearersEl);
+    }
   }
   const shedStaffEl = document.querySelector('#top5-shedstaff #top5-shedstaff-list');
-  if (shedStaffEl && dashCache.top5ShedStaff && dashCache.top5ShedStaff.length) {
-    renderTop5ShedStaff(dashCache.top5ShedStaff, shedStaffEl);
-    dashCacheRendered.shedstaff = true;
+  if (shedStaffEl) {
+    if (dashCache.top5ShedStaff && dashCache.top5ShedStaff.length) {
+      renderTop5ShedStaff(dashCache.top5ShedStaff, shedStaffEl);
+      dashCacheRendered.shedstaff = true;
+    } else {
+      renderSkeletonRows(shedStaffEl);
+    }
   }
   const farmsEl = document.querySelector('#top5-farms #top5-farms-list');
-  if (farmsEl && dashCache.top5Farms && dashCache.top5Farms.length) {
-    renderTop5Farms(dashCache.top5Farms, farmsEl);
-    dashCacheRendered.farms = true;
+  if (farmsEl) {
+    if (dashCache.top5Farms && dashCache.top5Farms.length) {
+      renderTop5Farms(dashCache.top5Farms, farmsEl);
+      dashCacheRendered.farms = true;
+    } else {
+      renderSkeletonRows(farmsEl);
+    }
   }
 }
 
