@@ -3403,9 +3403,17 @@ function initTallyTooltips() {
     requestAnimationFrame(tick);
   }
 
+  function ensureGuidedView(el){
+    const view = el?.closest('.view');
+    if (view && view.style.display === 'none') {
+      showView(view.id);
+    }
+  }
+
   function showGuidedStep() {
     const el = guidedList[guidedIndex];
     if (!el) { endGuided(); return; }
+    ensureGuidedView(el);
     clearHighlight();
     guidedCurrent = el;
     highlight(el);
@@ -3460,7 +3468,7 @@ function initTallyTooltips() {
       endGuided();
       return;
     }
-    guidedList = Array.from(document.querySelectorAll('#tallySheetView [data-help]')).filter(el => el.offsetParent !== null && !el.disabled);
+    guidedList = Array.from(document.querySelectorAll('#tallySheetView [data-help], #summaryView [data-help], #stationSummaryView [data-help]')).filter(el => !el.disabled);
     if (!guidedList.length) return;
     guidedMode = true;
     guidedIndex = 0;
