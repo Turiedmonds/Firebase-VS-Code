@@ -1375,7 +1375,7 @@ button {
 .kpi-controls {
   display: flex; gap: 12px; padding: 12px 16px; flex-wrap: wrap;
 }
-.kpi-note { opacity: .7; align-self: center; }
+.kpi-note { opacity: .7; }
 .kpi-sections { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 0 16px 16px; }
 .kpi-sections h3 { margin: 10px 0; }
 .kpi-table { width: 100%; border-collapse: collapse; }
