@@ -2501,6 +2501,11 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         maxH = Math.max(maxH, parseHours(ss.hoursWorked || ss.totalHours || ss.hours));
       });
     }
+    if (session && typeof session.hours === 'object' && session.hours) {
+      Object.values(session.hours).forEach(h => {
+        maxH = Math.max(maxH, parseHours(h));
+      });
+    }
     return maxH || 0;
   }
 
@@ -2513,6 +2518,14 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       session.shearers.forEach(sh => {
         const hours = parseHours(sh.hoursWorked || sh.totalHours || sh.hours);
         if (hours > 0) push({ name: sh.name || sh.shearerName || 'Unknown', role: 'Shearer', dateKey: dayStr, hours });
+      });
+    } else {
+      const names = Array.isArray(session?.stands)
+        ? session.stands
+        : Object.keys(session?.hours || {});
+      names.forEach(name => {
+        const hours = parseHours(session?.hours?.[name]);
+        if (hours > 0) push({ name, role: 'Shearer', dateKey: dayStr, hours });
       });
     }
     if (Array.isArray(session?.shedStaff)) {
