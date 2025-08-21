@@ -1520,6 +1520,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         SessionStore.start(user.uid, { monthsLive: 12 });
+        if (!localStorage.getItem('savedAtBackfilled') && typeof backfillSavedAtForSessions === 'function') {
+          backfillSavedAtForSessions().finally(() => {
+            try { localStorage.setItem('savedAtBackfilled', 'true'); } catch {}
+          });
+        }
         document.addEventListener('visibilitychange', () => {
           if (document.hidden) {
             SessionStore.stop();
