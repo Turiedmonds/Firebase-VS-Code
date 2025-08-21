@@ -2280,7 +2280,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
           const num = Number(perStand[i]);
           if(!isFinite(num) || num<=0) continue;
           const shearerName = nameByIndex[i] || `Stand ${i+1}`;
-          yield { shearerName, count: num, sheepType };
+          yield { shearerName, count: num, sheepType, standIndex: i };
         }
       }
       return;
@@ -2291,7 +2291,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         yield {
           shearerName: t.shearerName || t.shearer || t.name,
           count: Number(t.count || t.tally || 0),
-          sheepType: t.sheepType || t.type
+          sheepType: t.sheepType || t.type,
+          standIndex: Number.isFinite(t?.standIndex) ? Number(t.standIndex) :
+                      (Number.isFinite(t?.index) ? Number(t.index) : undefined)
         };
       }
       return;
@@ -2300,19 +2302,23 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     if (Array.isArray(session?.shearers)) {
       for (const sh of session.shearers) {
         const shearerName = sh.name || sh.shearerName || sh.displayName || sh.id || 'Unknown';
+        const standIndex = Number.isFinite(sh?.standIndex) ? Number(sh.standIndex) :
+                           (Number.isFinite(sh?.index) ? Number(sh.index) : undefined);
         const runs = sh.runs || sh.tallies || sh.entries || [];
         for (const r of runs) {
           yield {
             shearerName,
             count: Number(r.count || r.tally || 0),
-            sheepType: r.sheepType || r.type
+            sheepType: r.sheepType || r.type,
+            standIndex
           };
         }
         if (typeof sh.total === 'number') {
           yield {
             shearerName,
             count: Number(sh.total),
-            sheepType: sh.sheepType || null
+            sheepType: sh.sheepType || null,
+            standIndex
           };
         }
       }
@@ -2325,7 +2331,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
           yield {
             shearerName,
             count: Number(e.count || e.tally || 0),
-            sheepType: e.sheepType || e.type
+            sheepType: e.sheepType || e.type,
+            standIndex: Number.isFinite(e?.standIndex) ? Number(e.standIndex) :
+                        (Number.isFinite(e?.index) ? Number(e.index) : undefined)
           };
         }
       }
@@ -2390,20 +2398,29 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       if (farmFilter && farmFilter !== '__ALL__' && farm !== farmFilter) continue;
       farmsSet.add(farm);
 
-      const hoursMap = new Map();
+      const staffByIndex = [];
       for (const st of iterateStaff(data)) {
-        hoursMap.set(st.name, (hoursMap.get(st.name) || 0) + st.hours);
+        staffByIndex.push(st);
       }
 
-      const sheepMap = new Map();
+      const sheepByName = new Map();
+      const sheepByIndex = [];
       for (const t of iterateTallies(data)) {
         if (!includeCrut && isCrutched(t.sheepType)) continue;
         const name = normalizeName(t.shearerName);
-        sheepMap.set(name, (sheepMap.get(name) || 0) + (t.count || 0));
+        if (name) sheepByName.set(name, (sheepByName.get(name) || 0) + (t.count || 0));
+        if (Number.isInteger(t.standIndex)) {
+          const idx = t.standIndex;
+          sheepByIndex[idx] = (sheepByIndex[idx] || 0) + (t.count || 0);
+        }
       }
 
-      for (const [name, hours] of hoursMap.entries()) {
-        const sheep = sheepMap.get(name) || 0;
+      for (let i=0; i<staffByIndex.length; i++) {
+        const st = staffByIndex[i];
+        const name = st.name;
+        const hours = st.hours;
+        let sheep = sheepByName.get(name) || 0;
+        if (!sheep && sheepByIndex[i]) sheep = sheepByIndex[i];
         if (sheep > 0 && hours > 0) {
           totalSheep += sheep;
           totalHours += hours;
