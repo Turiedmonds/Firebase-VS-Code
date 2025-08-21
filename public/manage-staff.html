@@ -64,13 +64,14 @@
       width: 100%;
       margin-top: 20px;
       table-layout: auto;
+      font-size: 14px;
     }
     #staffTable th,
     #staffTable td,
     #deletedStaffTable th,
     #deletedStaffTable td {
       border: 1px solid #333;
-      padding: 8px 12px;
+      padding: 6px 8px;
       text-align: left;
     }
     #staffTable th,
@@ -258,13 +259,13 @@
       }
       #staffTable,
       #deletedStaffTable {
-        font-size: 14px;
+        font-size: 12px;
       }
       #staffTable th,
       #staffTable td,
       #deletedStaffTable th,
       #deletedStaffTable td {
-        padding: 6px 8px;
+        padding: 4px 6px;
       }
       .tab-button,
       form button {
@@ -305,18 +306,18 @@
     /* Let the TABLE grow to its content; not the page */
     .table-scroll .staff-table {
       table-layout: auto;
-      width: auto;
-      min-width: max-content;
+      width: 100%;
+      min-width: 0;
       border-collapse: collapse;
     }
 
     /* Prevent wrapping/overlap in table cells */
     .table-scroll .staff-table th,
     .table-scroll .staff-table td {
-      white-space: nowrap !important;
-      word-break: normal !important;
-      overflow-wrap: normal !important;
-      padding: 8px;
+      white-space: normal !important;
+      word-break: break-word !important;
+      overflow-wrap: anywhere !important;
+      padding: 4px 8px;
     }
 
     /* Make the label column narrow so the email column gets space */
