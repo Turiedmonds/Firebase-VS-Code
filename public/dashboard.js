@@ -129,9 +129,8 @@ function pickFarmName(session) {
 }
 
 function getSessionDateYMD(session) {
-  const d = session?.date;
-  if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
-  return toYMDFromSavedAt(session?.savedAt);
+  const val = session?.date || session?.sessionDate || session?.createdAt || session?.timestamp || session?.savedAt;
+  return toYMDFromSavedAt(val);
 }
 
 function sumSheep(session) {
@@ -509,7 +508,7 @@ function initTop5ShearersWidget() {
     // Extract tallies (shearerName, count, sheepType, date) from a session doc
     function* iterateTalliesFromSession(sessionDoc) {
       const s = sessionDoc.data ? sessionDoc.data() : sessionDoc; // QueryDocumentSnapshot or plain object
-      const sessionDate = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
+      const sessionDate = sessionDateToJS(s.date || s.sessionDate || s.createdAt || s.timestamp || s.savedAt);
 
       // Preferred path: shearerCounts[].stands[] + session.stands name map
       if (Array.isArray(s.shearerCounts)) {
@@ -641,7 +640,7 @@ function initTop5ShearersWidget() {
       const years = new Set();
       for (const doc of sessions) {
         const s = doc.data ? doc.data() : doc;
-        const dt = sessionDateToJS(s.date || s.sessionDate || s.createdAt);
+        const dt = sessionDateToJS(s.date || s.sessionDate || s.createdAt || s.timestamp || s.savedAt);
         if (dt) years.add(dt.getFullYear());
       }
       const arr = Array.from(years).sort((a, b) => b - a);
