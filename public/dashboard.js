@@ -2911,9 +2911,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     saveDashCache();
   }
 
-  function renderSummary(sessionHours, shedStaffHours){
+  function renderSummary(sessionHours, crewHours, shedStaffHours){
     tbodySummary.innerHTML = `
       <tr><td>Session Hours (pill metric)</td><td>${hoursToHM(sessionHours)}</td></tr>
+      <tr><td>Total Crew Hours</td><td>${hoursToHM(crewHours)}</td></tr>
       <tr><td>Shed Staff Hours (combined)</td><td>${hoursToHM(shedStaffHours)}</td></tr>
     `;
   }
@@ -2963,6 +2964,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   function aggregate(sessions, farmFilter){
     let totalSessionHours = 0;
     let totalShedStaffHours = 0;
+    let totalCrewHours = 0;
 
     const byFarm = new Map();   // farm -> { sessionHours, shedStaffHours }
     const byPerson = new Map(); // name|role -> { name, role, days:Set, totalHours }
@@ -2987,6 +2989,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
       // Sum crew hours by role (for reference)
       let shedStaffHours = 0;
+      let sessionCrewHours = 0;
 
       const addPerson = (name, role, dayKey, hours) => {
         const key = `${name}|${role}`;
@@ -3000,9 +3003,11 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       eachPersonInSession(s, ({name, role, dateKey, hours})=>{
         addPerson(name, role, dateKey, hours);
         if (role === 'Shed Staff') shedStaffHours += hours;
+        sessionCrewHours += hours;
       });
 
       totalShedStaffHours += shedStaffHours;
+      totalCrewHours += sessionCrewHours;
 
       // By farm rollup
       const f = byFarm.get(farm) || { sessionHours:0, shedStaffHours:0 };
@@ -3027,6 +3032,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     return {
       totalSessionHours,
       totalShedStaffHours,
+      totalCrewHours,
       farmRows,
       personRows,
       monthMap: byMonth,
@@ -3056,7 +3062,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     renderPill(agg.totalSessionHours);
 
     // Render modal tables
-    renderSummary(agg.totalSessionHours, agg.totalShedStaffHours);
+    renderSummary(agg.totalSessionHours, agg.totalCrewHours, agg.totalShedStaffHours);
     renderByFarm(agg.farmRows);
     renderByPerson(agg.personRows);
     renderByMonth(agg.monthMap);
