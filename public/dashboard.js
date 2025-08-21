@@ -2177,3 +2177,305 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   SessionStore.start(contractorId, { monthsLive: 12 });
 })();
+
+// === KPI: Efficiency (Sheep/hr) ===
+(function setupKpiEfficiency(){
+  const pill = document.getElementById('kpiEfficiency');
+  const pillVal = document.getElementById('kpiEfficiencyValue');
+  const modal = document.getElementById('kpiEfficiencyModal');
+  const closeBtn = document.getElementById('kpiEfficiencyClose');
+  const closeBtnFooter = document.getElementById('kpiEfficiencyCloseFooter');
+  const yearSel = document.getElementById('kpiEffYearSelect');
+  const farmSel = document.getElementById('kpiEffFarmSelect');
+  const includeCrutched = document.getElementById('kpiEffIncludeCrutched');
+  const offlineNote = document.getElementById('kpiEffOfflineNote');
+  const tblShearers = document.querySelector('#kpiEffShearerTable tbody');
+  const tblFarms = document.querySelector('#kpiEffFarmTable tbody');
+
+  if (!pill || !pillVal || !modal) return;
+
+  const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+
+  function isCrutched(type){
+    return String(type || '').toLowerCase().includes('crutch');
+  }
+
+  function parseHoursToDecimal(str){
+    if (!str) return 0;
+    const s = String(str).trim();
+    if (!s) return 0;
+    if (/^\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+    const hm = s.match(/^(\d+):(\d{1,2})$/);
+    if (hm){
+      const h = parseInt(hm[1],10); const m = parseInt(hm[2],10);
+      if (m>=0 && m<60) return h + m/60;
+    }
+    let norm = s.replace(/\s+/g,' ').replace(/hours?|hrs?/g,'h').replace(/minutes?|mins?|min\b/g,'m');
+    const h_m = norm.match(/^(\d+)\s*h(?:\s*(\d+)\s*m)?$/);
+    if (h_m){
+      const h = parseInt(h_m[1],10); const m = h_m[2]?parseInt(h_m[2],10):0;
+      if(!Number.isNaN(h)&&!Number.isNaN(m)) return h + m/60;
+    }
+    const hCompact = norm.match(/^(\d+)\s*h\s*(\d{1,2})$/);
+    if (hCompact){
+      const h=parseInt(hCompact[1],10); const m=parseInt(hCompact[2],10);
+      if(m>=0 && m<60) return h + m/60;
+    }
+    const mOnly = norm.match(/^(\d+)\s*m$/);
+    if (mOnly) return parseInt(mOnly[1],10)/60;
+    const hOnly = norm.match(/^(\d+)\s*h$/);
+    if (hOnly) return parseInt(hOnly[1],10);
+    return 0;
+  }
+
+  function normalizeName(name){
+    if (!name) return '';
+    const t = String(name).trim().replace(/\s+/g,' ');
+    const parts = t.split(' ');
+    return parts.map(p => p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : '').join(' ');
+  }
+
+  function* iterateStaff(session){
+    let arr = [];
+    if (Array.isArray(session?.shedStaff)) arr = session.shedStaff;
+    else if (Array.isArray(session?.shedstaff)) arr = session.shedstaff;
+    else if (Array.isArray(session?.staff)) arr = session.staff;
+    else if (Array.isArray(session?.staffHours)) arr = session.staffHours;
+    else if (Array.isArray(session?.staffhours)) arr = session.staffhours;
+    else if (session?.staffHours && typeof session.staffHours === 'object') {
+      for (const [name, hrs] of Object.entries(session.staffHours)) {
+        arr.push({ name, hoursWorked: hrs });
+      }
+    }
+    for (const entry of arr){
+      if (!entry) continue;
+      const name = normalizeName(entry.name || entry.staffName || entry.displayName || entry.id || entry[0]);
+      const hours = parseHoursToDecimal(entry.hoursWorked ?? entry.hours ?? entry.total ?? entry.time ?? entry[1]);
+      if (!name || !hours) continue;
+      yield { name, hours };
+    }
+  }
+
+  function* iterateTallies(session){
+    if (Array.isArray(session?.shearerCounts)) {
+      const stands = Array.isArray(session.stands) ? session.stands : [];
+      const nameByIndex = {};
+      const rawIdx = stands.map((st,i)=>(st && st.index!=null?Number(st.index):i));
+      const has0 = rawIdx.includes(0); const has1 = rawIdx.includes(1);
+      const looksOneBased = !has0 && has1;
+      stands.forEach((st,pos)=>{
+        let i = (st && st.index!=null)?Number(st.index):pos;
+        if(!Number.isFinite(i)) i=pos;
+        if(looksOneBased) i=i-1;
+        if(i<0) i=0;
+        let name='';
+        if(st) name=String(st.name||st.shearerName||st.id||'').trim();
+        if(!name || /^stand\s+\d+$/i.test(name)) name=null;
+        nameByIndex[i]=name;
+      });
+      for (const row of session.shearerCounts){
+        const sheepType = row?.sheepType || '';
+        const perStand = Array.isArray(row?.stands) ? row.stands : [];
+        for (let i=0;i<perStand.length;i++){
+          const num = Number(perStand[i]);
+          if(!isFinite(num) || num<=0) continue;
+          const shearerName = nameByIndex[i] || `Stand ${i+1}`;
+          yield { shearerName, count: num, sheepType };
+        }
+      }
+      return;
+    }
+
+    if (Array.isArray(session?.tallies)) {
+      for (const t of session.tallies) {
+        yield {
+          shearerName: t.shearerName || t.shearer || t.name,
+          count: Number(t.count || t.tally || 0),
+          sheepType: t.sheepType || t.type
+        };
+      }
+      return;
+    }
+
+    if (Array.isArray(session?.shearers)) {
+      for (const sh of session.shearers) {
+        const shearerName = sh.name || sh.shearerName || sh.displayName || sh.id || 'Unknown';
+        const runs = sh.runs || sh.tallies || sh.entries || [];
+        for (const r of runs) {
+          yield {
+            shearerName,
+            count: Number(r.count || r.tally || 0),
+            sheepType: r.sheepType || r.type
+          };
+        }
+        if (typeof sh.total === 'number') {
+          yield {
+            shearerName,
+            count: Number(sh.total),
+            sheepType: sh.sheepType || null
+          };
+        }
+      }
+      return;
+    }
+
+    if (session?.shearerTallies && typeof session.shearerTallies === 'object') {
+      for (const [shearerName, entries] of Object.entries(session.shearerTallies)) {
+        for (const e of (entries || [])) {
+          yield {
+            shearerName,
+            count: Number(e.count || e.tally || 0),
+            sheepType: e.sheepType || e.type
+          };
+        }
+      }
+    }
+  }
+
+  function yearBounds(y){
+    const start = new Date(Date.UTC(y,0,1,0,0,0));
+    const end = new Date(Date.UTC(y,11,31,23,59,59));
+    return {start,end};
+  }
+
+  async function fetchSessionsForYear(year){
+    const { start, end } = yearBounds(year);
+    const cached = SessionStore.getAll().map(d => ({ id: d.id, ...d.data() }));
+    if (cached.length){
+      const filtered = cached.filter(s => {
+        const ts = s.date || s.savedAt || s.updatedAt;
+        const t = ts?.toDate ? ts.toDate() : new Date(ts);
+        return t >= start && t <= end;
+      });
+      offlineNote.hidden = !(!navigator.onLine);
+      return filtered;
+    }
+
+    if (!contractorId || !window.firebase?.firestore) {
+      offlineNote.hidden = false;
+      return [];
+    }
+    try {
+      const db = firebase.firestore();
+      const ref = db.collection('contractors').doc(contractorId).collection('sessions');
+      const q = ref.where('savedAt','>=',start).where('savedAt','<=',end);
+      const snap = await q.get();
+      offlineNote.hidden = true;
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (err) {
+      console.warn('KPI efficiency fetch failed; possibly offline', err);
+      offlineNote.hidden = false;
+      return [];
+    }
+  }
+
+  function fillYearsSelect(){
+    const thisYear = new Date().getFullYear();
+    const years = [];
+    for (let y=thisYear; y>=thisYear-6; y--) years.push(y);
+    yearSel.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    yearSel.value = String(thisYear);
+  }
+
+  function aggregate(sessions, farmFilter, includeCrut){
+    const farmsSet = new Set();
+    const shearerMap = new Map();
+    const farmMap = new Map();
+    let totalSheep = 0;
+    let totalHours = 0;
+
+    for (const session of sessions){
+      const data = session.data ? session.data() : session;
+      const farm = pickFarmName(data) || 'Unknown';
+      if (farmFilter && farmFilter !== '__ALL__' && farm !== farmFilter) continue;
+      farmsSet.add(farm);
+
+      const hoursMap = new Map();
+      for (const st of iterateStaff(data)) {
+        hoursMap.set(st.name, (hoursMap.get(st.name) || 0) + st.hours);
+      }
+
+      const sheepMap = new Map();
+      for (const t of iterateTallies(data)) {
+        if (!includeCrut && isCrutched(t.sheepType)) continue;
+        const name = normalizeName(t.shearerName);
+        sheepMap.set(name, (sheepMap.get(name) || 0) + (t.count || 0));
+      }
+
+      for (const [name, hours] of hoursMap.entries()) {
+        const sheep = sheepMap.get(name) || 0;
+        if (sheep > 0 && hours > 0) {
+          totalSheep += sheep;
+          totalHours += hours;
+          const sh = shearerMap.get(name) || { sheep:0, hours:0 };
+          sh.sheep += sheep;
+          sh.hours += hours;
+          shearerMap.set(name, sh);
+          const fm = farmMap.get(farm) || { sheep:0, hours:0 };
+          fm.sheep += sheep;
+          fm.hours += hours;
+          farmMap.set(farm, fm);
+        }
+      }
+    }
+
+    const shearerRows = Array.from(shearerMap.entries())
+      .map(([name,v]) => ({ name, sheep: v.sheep, hours: v.hours, rate: v.sheep / v.hours }))
+      .sort((a,b)=> b.rate - a.rate);
+
+    const farmRows = Array.from(farmMap.entries())
+      .map(([farm,v]) => ({ farm, sheep: v.sheep, hours: v.hours, rate: v.sheep / v.hours }))
+      .sort((a,b)=> b.rate - a.rate);
+
+    const overallRate = totalHours > 0 ? totalSheep / totalHours : 0;
+    return { overallRate, shearerRows, farmRows, farms: Array.from(farmsSet).sort() };
+  }
+
+  function renderShearers(rows){
+    tblShearers.innerHTML = '';
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.name}</td><td>${r.sheep.toLocaleString()}</td><td>${r.hours.toFixed(2)}</td><td>${r.rate.toFixed(1)}</td>`;
+      tblShearers.appendChild(tr);
+    });
+  }
+
+  function renderFarms(rows){
+    tblFarms.innerHTML = '';
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.farm}</td><td>${r.sheep.toLocaleString()}</td><td>${r.hours.toFixed(2)}</td><td>${r.rate.toFixed(1)}</td>`;
+      tblFarms.appendChild(tr);
+    });
+  }
+
+  async function refresh(){
+    const year = Number(yearSel.value || new Date().getFullYear());
+    const farm = farmSel.value || '__ALL__';
+    const sessions = await fetchSessionsForYear(year);
+    const agg = aggregate(sessions, farm, includeCrutched?.checked);
+    pillVal.textContent = agg.overallRate.toFixed(1);
+
+    const current = farmSel.value;
+    farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + agg.farms.map(f=>`<option value="${f}">${f}</option>`).join('');
+    if (agg.farms.includes(current)) farmSel.value = current;
+
+    renderShearers(agg.shearerRows);
+    renderFarms(agg.farmRows);
+  }
+
+  function openModal(){ modal.hidden = false; refresh(); }
+  function closeModal(){ modal.hidden = true; }
+
+  if (pill) pill.addEventListener('click', openModal);
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (closeBtnFooter) closeBtnFooter.addEventListener('click', closeModal);
+  if (yearSel) yearSel.addEventListener('change', refresh);
+  if (farmSel) farmSel.addEventListener('change', refresh);
+  if (includeCrutched) includeCrutched.addEventListener('change', refresh);
+
+  fillYearsSelect();
+
+  SessionStore.onChange(()=>{ refresh(); });
+  if (SessionStore.getAll().length) refresh();
+})();
