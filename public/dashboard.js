@@ -2828,29 +2828,41 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     return maxH || 0;
   }
 
+  // Helper: iterate shearers with normalized names and hours
+  function eachShearerHours(session, fn) {
+    if (Array.isArray(session?.shearers)) {
+      session.shearers.forEach(sh => {
+        const raw = sh.name || sh.shearerName || sh.displayName || sh.shearer || sh.id;
+        const name = normalizeName(raw) || 'Unknown';
+        const hours = parseHours(sh.hoursWorked || sh.totalHours || sh.hours);
+        if (hours > 0) fn(name, hours);
+      });
+    } else {
+      const rawNames = Array.isArray(session?.stands) ? session.stands : Object.keys(session?.hours || {});
+      rawNames.forEach(raw => {
+        const name = normalizeName(raw) || 'Unknown';
+        const hours = parseHours(session?.hours?.[name] ?? session?.hours?.[raw]);
+        if (hours > 0) fn(name, hours);
+      });
+    }
+  }
+
   // Gather per-person hours and roles
   function eachPersonInSession(session, push){
     const dayKey = (session.date && session.date.toDate) ? session.date.toDate() : new Date(session.date || session.savedAt || session.updatedAt || Date.now());
     const dayStr = dayKey.toISOString().slice(0,10); // YYYY-MM-DD
 
-    if (Array.isArray(session?.shearers)) {
-      session.shearers.forEach(sh => {
-        const hours = parseHours(sh.hoursWorked || sh.totalHours || sh.hours);
-        if (hours > 0) push({ name: sh.name || sh.shearerName || 'Unknown', role: 'Shearer', dateKey: dayStr, hours });
-      });
-    } else {
-      const names = Array.isArray(session?.stands)
-        ? session.stands
-        : Object.keys(session?.hours || {});
-      names.forEach(name => {
-        const hours = parseHours(session?.hours?.[name]);
-        if (hours > 0) push({ name, role: 'Shearer', dateKey: dayStr, hours });
-      });
-    }
+    eachShearerHours(session, (name, hours) => {
+      if (hours > 0) push({ name, role: 'Shearer', dateKey: dayStr, hours });
+    });
+
     if (Array.isArray(session?.shedStaff)) {
       session.shedStaff.forEach(ss => {
         const hours = parseHours(ss.hoursWorked || ss.totalHours || ss.hours);
-        if (hours > 0) push({ name: ss.name || ss.staffName || 'Unknown', role: 'Shed Staff', dateKey: dayStr, hours });
+        if (hours > 0) {
+          const name = normalizeName(ss.name || ss.staffName || ss.displayName || ss.id) || 'Unknown';
+          push({ name, role: 'Shed Staff', dateKey: dayStr, hours });
+        }
       });
     }
   }
