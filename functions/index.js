@@ -54,6 +54,46 @@ exports.sendStaffCredentials = onCall(
   }
 );
 
+exports.sendPasswordResetEmail = onCall(
+  {
+    secrets: ["GMAIL_USER", "GMAIL_PASS"]
+  },
+  async (request) => {
+    const { email } = request.data || {};
+    if (!email) {
+      throw new functions.https.HttpsError('invalid-argument', 'Missing email');
+    }
+
+    try {
+      const resetLink = await admin.auth().generatePasswordResetLink(email);
+
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_PASS,
+        },
+      });
+
+      const mailOptions = {
+        from: process.env.GMAIL_USER,
+        to: email,
+        subject: 'Reset Your SHE\u0394R iQ Password',
+        text: `Kia ora,\n\nWe received a request to reset your SHE\u0394R iQ password.\n\nPlease set your new password using the following link:\n${resetLink}\n\nIf you didn't request this, you can ignore this email.\n\nNg\u0101 mihi,\nThe SHE\u0394R iQ Team`,
+      };
+
+      await transporter.sendMail(mailOptions);
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending password reset email', error);
+      if (error.code === 'auth/user-not-found') {
+        throw new functions.https.HttpsError('not-found', 'No user found with that email');
+      }
+      throw new functions.https.HttpsError('internal', error.message);
+    }
+  }
+);
+
 exports.deleteStaffUser = onCall(async (request) => {
   const { uid, contractorId } = request.data || {};
   if (!uid || !contractorId) {

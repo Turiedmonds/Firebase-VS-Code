@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const auth = firebase.auth();
+  const functions = firebase.functions();
   const form = document.getElementById('forgotPasswordForm');
   const messageDiv = document.getElementById('message');
 
@@ -8,15 +8,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const email = document.getElementById('email').value.trim();
 
     try {
-      await auth.sendPasswordResetEmail(email);
+      const sendReset = functions.httpsCallable('sendPasswordResetEmail');
+      await sendReset({ email });
       messageDiv.innerHTML = 'Password reset email sent. <a href="login.html">Return to login</a>';
     } catch (err) {
       let msg = '';
       switch (err.code) {
-        case 'auth/invalid-email':
+        case 'functions/invalid-argument':
           msg = 'Please enter a valid email address';
           break;
-        case 'auth/user-not-found':
+        case 'functions/not-found':
           msg = 'No user found with that email';
           break;
         default:
