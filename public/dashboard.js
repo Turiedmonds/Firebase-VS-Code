@@ -1486,7 +1486,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (btnReturnToActive && activeSession) {
         btnReturnToActive.style.display = 'block';
         btnReturnToActive.addEventListener('click', () => {
-          window.location.href = 'tally.html';
+          sessionStorage.setItem('launch_override', 'tally');
+          window.location.href = 'tally.html?loadedSession=true';
         });
       }
 
