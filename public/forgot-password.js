@@ -10,21 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const sendReset = functions.httpsCallable('sendPasswordResetEmail');
       await sendReset({ email });
-      messageDiv.innerHTML = 'Password reset email sent. <a href="login.html">Return to login</a>';
     } catch (err) {
-      let msg = '';
-      switch (err.code) {
-        case 'functions/invalid-argument':
-          msg = 'Please enter a valid email address';
-          break;
-        case 'functions/not-found':
-          msg = 'No user found with that email';
-          break;
-        default:
-          msg = 'Failed to send reset email. Please try again';
+      if (err.code === 'functions/invalid-argument') {
+        messageDiv.textContent = 'Please enter a valid email address';
+        return;
       }
-      messageDiv.textContent = msg;
     }
+    messageDiv.innerHTML = 'Password reset email sent. <a href="login.html">Return to login</a>';
   });
 });
 
