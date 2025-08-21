@@ -1941,6 +1941,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     return;
   }
 
+  if (dashCache.kpiSheepCount != null) {
+    pillVal.textContent = Number(dashCache.kpiSheepCount).toLocaleString();
+  }
+
   // Find contractor id (same logic you already use)
   const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
 
@@ -2120,7 +2124,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   function updatePill(value){
     if (!pillVal) return;
-    pillVal.textContent = Number(value || 0).toLocaleString();
+    const num = Number(value || 0);
+    pillVal.textContent = num.toLocaleString();
+    dashCache.kpiSheepCount = num;
+    saveDashCache();
   }
 
   function fillYearsSelect(){
@@ -2210,6 +2217,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   const tblFarms = document.querySelector('#kpiEffFarmTable tbody');
 
   if (!pill || !pillVal || !modal) return;
+
+  if (dashCache.kpiEfficiency != null) {
+    pillVal.textContent = Number(dashCache.kpiEfficiency).toFixed(1);
+  }
 
   const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
 
@@ -2563,7 +2574,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const farm = farmSel.value || '__ALL__';
     const sessions = await fetchSessionsForYear(year);
     const agg = aggregate(sessions, farm, includeCrutched?.checked);
-    pillVal.textContent = agg.overallRate.toFixed(1);
+    const val = agg.overallRate.toFixed(1);
+    pillVal.textContent = val;
+    dashCache.kpiEfficiency = val;
+    saveDashCache();
 
     const current = farmSel.value;
     farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + agg.farms.map(f=>`<option value="${f}">${f}</option>`).join('');
@@ -2608,6 +2622,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   const exportBtn = document.getElementById('kpiTHExport');
 
   const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+
+  if (dashCache.kpiTotalHours != null && pillVal) {
+    pillVal.textContent = dashCache.kpiTotalHours;
+  }
 
   // Prefer existing parser if available
   const parseHours = (typeof window.parseHoursToDecimal === 'function')
@@ -2736,7 +2754,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   function renderPill(hours){
-    pillVal.textContent = isFinite(hours) && hours > 0 ? (Math.round(hours*10)/10).toFixed(1) + ' h' : '—';
+    const text = isFinite(hours) && hours > 0 ? (Math.round(hours*10)/10).toFixed(1) + ' h' : '—';
+    pillVal.textContent = text;
+    dashCache.kpiTotalHours = text;
+    saveDashCache();
   }
 
   function renderSummary(sessionHours, shedStaffHours){
@@ -2929,6 +2950,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
 
+  if (dashCache.kpiDaysWorked != null && pillVal) {
+    pillVal.textContent = dashCache.kpiDaysWorked;
+  }
+
   function yearBounds(y){
     const start = new Date(Date.UTC(y,0,1,0,0,0));
     const end = new Date(Date.UTC(y,11,31,23,59,59));
@@ -3008,7 +3033,12 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     return { total: daySet.size, farmRows, personRows, monthRows, farms:Array.from(farmsSet).sort() };
   }
 
-  function renderPill(val){ pillVal.textContent = val>0 ? val : '—'; }
+  function renderPill(val){
+    const text = val>0 ? val : '—';
+    pillVal.textContent = text;
+    dashCache.kpiDaysWorked = text;
+    saveDashCache();
+  }
   function renderSummary(val){ tbodySummary.innerHTML = `<tr><td>Days Worked</td><td>${val}</td></tr>`; }
   function renderByFarm(rows){ tblByFarm.innerHTML = rows.map(r=>`<tr><td>${r.farm}</td><td>${r.days}</td></tr>`).join(''); }
   function renderByPerson(rows){ tblByPerson.innerHTML = rows.map(r=>`<tr><td>${r.name}</td><td>${r.role}</td><td>${r.days}</td></tr>`).join(''); }
