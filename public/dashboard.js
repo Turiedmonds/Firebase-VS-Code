@@ -3237,7 +3237,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
   function renderSummary(val){ tbodySummary.innerHTML = `<tr><td>Days Worked</td><td>${val}</td></tr>`; }
   function renderByFarm(rows){ tblByFarm.innerHTML = rows.map(r=>`<tr><td>${r.farm}</td><td>${r.days}</td></tr>`).join(''); }
-  function renderByPerson(rows){ tblByPerson.innerHTML = rows.map(r=>`<tr><td>${r.name}</td><td>${r.role}</td><td>${r.days}</td></tr>`).join(''); }
+  function renderByPerson(rows){ tblByPerson.innerHTML = rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${r.role}</td><td>${r.days}</td></tr>`).join(''); }
   function renderByMonth(rows){ tblByMonth.innerHTML = rows.map(r=>`<tr><td>${r.month}</td><td>${r.days}</td></tr>`).join(''); }
 
   async function refresh(){
