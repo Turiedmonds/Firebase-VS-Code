@@ -1505,6 +1505,13 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
 
+      const btnChangePassword = document.getElementById('btnChangePassword');
+        if (btnChangePassword) {
+          btnChangePassword.addEventListener('click', () => {
+            window.location.href = 'change-password.html';
+          });
+        }
+
         SessionStore.start(user.uid, { monthsLive: 12 });
         document.addEventListener('visibilitychange', () => {
           if (document.hidden) {
@@ -1676,6 +1683,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { sel: '#btnStartNewDay', text: 'Start New Day — begin today’s tally.' },
     { sel: '#farm-summary-btn', text: 'Farm Summary — compare farm totals and visits.' },
     { sel: '#btnChangePin', text: 'Change Contractor PIN — secure control for edits.' },
+    { sel: '#btnChangePassword', text: 'Change Password — update your login password securely.' },
     { sel: '#btnSettings', text: 'Settings / Preferences — coming soon (not yet enabled).' },
     { sel: '#logoutBtn', text: 'Logout — safely sign out.' }
   ];
