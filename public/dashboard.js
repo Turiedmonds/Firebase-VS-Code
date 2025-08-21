@@ -2918,7 +2918,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   yearSel?.addEventListener('change', refresh);
   farmSel?.addEventListener('change', refresh);
 
-  // Init: fill years and render immediately
+  // Init: fill years
   function fillYearsSelect(sel){
     const thisYear = new Date().getFullYear();
     const years = [];
@@ -2927,7 +2927,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     sel.value = String(thisYear);
   }
   fillYearsSelect(yearSel);
-  refresh();
+
+  SessionStore.onChange(refresh);
+  if (SessionStore.getAll().length) refresh();
 })();
 
 // === KPI: Days Worked (unique session-days) ===
@@ -3094,6 +3096,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     URL.revokeObjectURL(url);
   });
 
+  // Init: fill years
   function fillYearsSelect(sel){
     const thisYear=new Date().getFullYear();
     const years=[]; for(let y=thisYear;y>=thisYear-6;y--) years.push(y);
@@ -3101,5 +3104,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     sel.value=String(thisYear);
   }
   fillYearsSelect(yearSel);
-  refresh();
+
+  SessionStore.onChange(refresh);
+  if (SessionStore.getAll().length) refresh();
 })();
