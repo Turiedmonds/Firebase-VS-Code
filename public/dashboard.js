@@ -1980,8 +1980,22 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   // Extract tallies from a session; adjust to your schema
   function iterTallies(session, fn){
     // Example shapes supported:
+    // - session.shearerCounts[ ... ] with .sheepType/.type and .total or .stands
     // - session.shearers[ i ].runs[ j ].tally with .sheepType and .count
     // - session.tallies[ ... ] with .sheepType and .count
+    if (Array.isArray(session?.shearerCounts)) {
+      session.shearerCounts.forEach(row => {
+        const type = row?.sheepType || row?.type || 'Unknown';
+        let count = Number(row?.total);
+        if (!Number.isFinite(count) && Array.isArray(row?.stands)) {
+          count = row.stands.reduce((sum, s) => sum + Number(s?.count ?? s ?? 0), 0);
+        }
+        if (Number.isFinite(count) && count > 0) {
+          fn(type, count, session.farmName, session.date || session.savedAt);
+        }
+      });
+      return;
+    }
     if (Array.isArray(session?.shearers)) {
       session.shearers.forEach(sh => {
         (sh.runs || []).forEach(run => {
