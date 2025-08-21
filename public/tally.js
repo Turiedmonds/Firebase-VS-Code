@@ -46,6 +46,7 @@ if (localStorage.getItem('setup_modal_enabled') == null){
   localStorage.setItem('setup_modal_enabled', 'true');
 }
 if (localStorage.getItem('hours_modal_enabled') == null) localStorage.setItem('hours_modal_enabled','true');
+if (localStorage.getItem('tally_autosave_mode') == null) localStorage.setItem('tally_autosave_mode','both');
 
 // ===== Help/Tour global runtime state (safe default) =====
 window.TT_STATE = window.TT_STATE || {
@@ -83,6 +84,25 @@ window.renderHelpMenu = function () {
   const hoursModalToggle = m.querySelector('#hoursModalToggle');
   const start = m.querySelector('#start');
   const ttx = m.querySelector('#ttx');
+  const autosaveRow = document.createElement('label');
+  autosaveRow.style.display = 'block';
+  autosaveRow.style.margin = '8px 0';
+  autosaveRow.innerHTML = `Autosave mode <select id="autosaveMode">
+    <option value="off">Off</option>
+    <option value="local">Local</option>
+    <option value="cloud">Cloud</option>
+    <option value="both">Both</option>
+  </select>`;
+  start?.before(autosaveRow);
+  const autosaveSelect = autosaveRow.querySelector('#autosaveMode');
+  if (autosaveSelect){
+    autosaveSelect.value = localStorage.getItem('tally_autosave_mode') || 'both';
+    autosaveSelect.addEventListener('change', () => {
+      const mode = autosaveSelect.value;
+      localStorage.setItem('tally_autosave_mode', mode);
+      document.dispatchEvent(new CustomEvent('autosave-mode-changed', {detail:{mode}}));
+    });
+  }
   const setupToggleRow = document.createElement('div');
   setupToggleRow.innerHTML = `
     <label style="display:block;margin:8px 0;">
@@ -442,18 +462,20 @@ window.addEventListener('online', () => {
 
 window.addEventListener('offline', updateSyncStatusBanner);
 
-function updateAutosaveIndicator() {
+function updateAutosaveIndicator(mode) {
     const el = document.getElementById('autosaveInfo');
     if (!el) return;
     const time = new Date().toLocaleTimeString();
-    el.innerText = `Autosaved ${time}`;
+    const modeLabel = mode && mode !== 'both' ? ` (${mode})` : '';
+    el.innerText = `Autosaved${modeLabel} ${time}`;
     el.style.display = 'block';
 }
 
-function showAutosaveStatus(message) {
+function showAutosaveStatus(message, mode) {
     const el = document.getElementById('autosaveStatus');
     if (!el) return;
-    el.innerText = message;
+    const modeLabel = mode && mode !== 'both' ? ` (${mode})` : '';
+    el.innerText = message + modeLabel;
     el.style.display = 'block';
     if (autosaveHideTimer) clearTimeout(autosaveHideTimer);
     autosaveHideTimer = setTimeout(() => {
@@ -464,22 +486,22 @@ function showAutosaveStatus(message) {
 function scheduleAutosave() {
     if (autosaveTimer) clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(() => {
+        const mode = localStorage.getItem('tally_autosave_mode') || 'both';
+        if (mode === 'off') return;
         const data = collectExportData();
         const json = JSON.stringify(data);
         if (json === lastSavedJson) return;
         const now = Date.now();
         let saved = false;
 
-        // Always save to localStorage if 10s passed
-        if (now - lastLocalSave >= 10000) {
+        if ((mode === 'local' || mode === 'both') && now - lastLocalSave >= 10000) {
             saveData(false);
             lastLocalSave = now;
             saved = true;
         }
 
-        // Only save to Firestore if station, date, and leader are all filled in
         const hasAllKeys = data.stationName && data.date && data.teamLeader;
-        if (hasAllKeys && now - lastCloudSave >= 10000) {
+        if ((mode === 'cloud' || mode === 'both') && hasAllKeys && now - lastCloudSave >= 10000) {
             saveSessionToFirestore(false);
             lastCloudSave = now;
             saved = true;
@@ -487,7 +509,8 @@ function scheduleAutosave() {
 
         if (saved) {
             lastSavedJson = json;
-            updateAutosaveIndicator();
+            updateAutosaveIndicator(mode);
+            showAutosaveStatus('Autosaved', mode);
         }
     }, 3000);
 }

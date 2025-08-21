@@ -53,6 +53,7 @@ user has a missing or unknown role the app alerts them and signs out.
 ## Features
 
 - Save and load sessions, including a backup and a **Return to Today's Session** option.
+- Configurable autosave mode (Off, Local, Cloud or Both) from the Help menu.
 - View-only mode protected by a contractor PIN.
 - Edit tallies manually and configure runs in a modal window.
 - Accurate hours worked with breaks for both **8‑** and **9‑hour** days.
