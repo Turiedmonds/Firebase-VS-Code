@@ -924,6 +924,8 @@ function showSetupModal() {
     const modal = document.getElementById('setupModal');
     if (!modal) return;
     modal.style.display = 'flex';
+    const reminder = document.getElementById('setup-reminder-toast');
+    if (reminder) reminder.style.display = 'none';
 
     const disableChk = document.getElementById('disableSetupModalFromSetup');
     if (disableChk){
@@ -940,6 +942,24 @@ function showSetupModal() {
 function hideSetupModal() {
     const modal = document.getElementById('setupModal');
     if (modal) modal.style.display = 'none';
+    if (isSetupModalEnabled()) showSetupReminderToast();
+}
+
+function showSetupReminderToast() {
+    let toast = document.getElementById('setup-reminder-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'setup-reminder-toast';
+        toast.textContent = 'Setup dismissed. Tap to reopen.';
+        document.body.appendChild(toast);
+        toast.addEventListener('click', () => {
+            toast.style.display = 'none';
+            showSetupModal();
+        });
+    }
+    toast.style.display = 'block';
+    clearTimeout(showSetupReminderToast._t);
+    showSetupReminderToast._t = setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
 function confirmSetupModal() {
