@@ -2370,6 +2370,31 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
 
+  // Returns { hours: Number, displayText: String }.
+  // displayText prefers the original user-entered string if available.
+  // hours always returns a decimal for math (via parseHours or derived).
+  function normalizeSessionHoursDisplay(raw) {
+    if (!raw) return { hours: 0, displayText: '0:00' };
+    const s = String(raw).trim();
+    const hours = parseHours ? parseHours(s) : parseFloat(s) || 0;
+
+    // Prefer the original input style for display if it looks like time text:
+    const looksLikeTime = /[:h]|m\b/i.test(s);
+    if (looksLikeTime) return { hours, displayText: s };
+
+    // Fallback: convert decimal -> H:MM for display
+    return { hours, displayText: hoursToHMM(hours) };
+  }
+
+  // Convert decimal hours to H:MM (e.g., 7.5 -> "7:30")
+  function hoursToHMM(dec) {
+    if (!dec || isNaN(dec)) return '0:00';
+    const totalMins = Math.round(dec * 60);
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    return `${h}:${String(m).padStart(2, '0')}`;
+  }
+
   function parseHours(input){
     if (!input) return 0;
     const s = String(input).trim().toLowerCase();
@@ -2417,6 +2442,65 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       });
     }
     return maxH || 0;
+  }
+
+  // Preserve original implementation before redefining
+  const __old_getSessionHours__ = getSessionHours;
+
+  // NEW: return both number and display for session-level hours
+  // Prefers explicit session hours field; else derive from start/finish/breaks;
+  // else fallback to largest individual worker hours (existing logic).
+  function getSessionHoursInfo(session) {
+    // 1) Try explicit session-level hours fields where your app stores them.
+    // Common paths to check; keep them safe and optional:
+    const explicit =
+      session?.meta?.hoursWorked ||
+      session?.hoursWorked ||
+      session?.summary?.hoursWorked ||
+      session?.totals?.hoursWorked ||
+      null;
+
+    if (explicit) {
+      return normalizeSessionHoursDisplay(explicit);
+    }
+
+    // 2) Derive from start/finish/breaks if available (reuse existing logic you have):
+    // Try to call your existing derivation (if it exists) but capture the original user input
+    // if present (e.g., session.meta.hoursInputRaw). Keep this robust & optional.
+    let derivedDec = 0;
+    try {
+      if (typeof __old_getSessionHours__ === 'function') {
+        derivedDec = Number(__old_getSessionHours__(session)) || 0;
+      }
+    } catch (_) {}
+
+    // If you kept a raw input string somewhere like session.meta.hoursInputRaw, prefer it:
+    const rawCandidate =
+      session?.meta?.hoursInputRaw ||
+      session?.hoursInputRaw ||
+      null;
+
+    if (rawCandidate) {
+      const n = normalizeSessionHoursDisplay(rawCandidate);
+      // If parse failed, overwrite hours with derivedDec
+      if (!n.hours && derivedDec) n.hours = derivedDec;
+      return n;
+    }
+
+    // 3) Fallback: decimal only -> H:MM for display
+    return { hours: derivedDec, displayText: hoursToHMM(derivedDec) };
+  }
+
+  // Redefine getSessionHours to delegate to new info function
+  function getSessionHours(session) {
+    if (__old_getSessionHours__ && __old_getSessionHours__ !== getSessionHours) {
+      try {
+        const n = __old_getSessionHours__(session);
+        return (typeof n === 'number' && !isNaN(n)) ? n : 0;
+      } catch (_) {}
+    }
+    const info = getSessionHoursInfo(session);
+    return (typeof info.hours === 'number' && !isNaN(info.hours)) ? info.hours : 0;
   }
 
   function eachShearerHours(session, fn){
@@ -2516,6 +2600,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const shearerMap = new Map();
     let totalSheep = 0;
     let totalHours = 0;
+    window.aggTotalMins = 0;
+    let sessionCount = 0;
+    let lastDisplay = '';
 
     sessions.forEach(s => {
       const farm = pickFarmName(s) || 'Unknown Farm';
@@ -2523,7 +2610,12 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       if (farmFilter && farm !== farmFilter) return;
       const day = getSessionDateYMD(s);
       if (day) daySet.add(day);
-      totalHours += getSessionHours(s);
+
+      const hInfo = getSessionHoursInfo(s);
+      totalHours += hInfo.hours;
+      window.aggTotalMins += Math.round((hInfo.hours || 0) * 60);
+      sessionCount++;
+      if (sessionCount === 1) lastDisplay = hInfo.displayText;
 
       const hoursMap = new Map();
       eachShearerHours(s, (name,h)=>{
@@ -2545,6 +2637,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         shearerMap.set(name, entry);
       });
     });
+
+    window.aggDisplayHours = sessionCount === 1 ? (lastDisplay || hoursToHMM((window.aggTotalMins||0)/60)) : hoursToHMM((window.aggTotalMins||0)/60);
 
     const shearerRows = Array.from(shearerMap.entries())
       .map(([name,data])=>({ name, sheep:data.sheep, hours:data.hours, rate: data.hours>0 ? data.sheep/data.hours : 0 }))
@@ -2574,7 +2668,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   function updatePill(stats){
     const rate = stats.totalHours > 0 ? (stats.totalSheep / stats.totalHours) : 0;
     const rateText = rate > 0 ? rate.toFixed(1) : '—';
-    const metaText = `${stats.days} days • ${stats.totalHours.toFixed(1)}h`;
+    const displayTotalHMM = window.aggDisplayHours || hoursToHMM((window.aggTotalMins || 0) / 60);
+    const metaHoursText = /[a-z]/i.test(displayTotalHMM) ? displayTotalHMM : `${displayTotalHMM} hours`;
+    const metaText = `${stats.days} days • ${metaHoursText}`;
     pillVal.textContent = rateText;
     if (pillMeta) pillMeta.textContent = metaText;
     dashCache.kpiSheepPerHourRate = rateText;
