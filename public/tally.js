@@ -489,8 +489,9 @@ function scheduleAutosave() {
     autosaveTimer = setTimeout(() => {
         const mode = localStorage.getItem('tally_autosave_mode') || 'both';
         if (mode === 'off') return;
-        const data = collectExportData();
-        const json = JSON.stringify(data);
+        const session = collectExportData();
+        const json = JSON.stringify(session);
+        localStorage.setItem('active_session', json);
         if (json === lastSavedJson) return;
         const now = Date.now();
         let saved = false;
@@ -501,7 +502,7 @@ function scheduleAutosave() {
             saved = true;
         }
 
-        const hasAllKeys = data.stationName && data.date && data.teamLeader;
+        const hasAllKeys = session.stationName && session.date && session.teamLeader;
         if ((mode === 'cloud' || mode === 'both') && hasAllKeys && now - lastCloudSave >= 10000) {
             saveSessionToFirestore(false);
             lastCloudSave = now;
@@ -1819,6 +1820,13 @@ function performSave(saveLocal, saveCloud, manual) {
     data.viewOnly = true; // Lock session by default
     data.meta = data.meta || {};
     data.meta.date = new Date().toLocaleDateString("en-NZ");
+
+    // Keep an up-to-date active session for quick resumption
+    try {
+        localStorage.setItem('active_session', JSON.stringify(data));
+    } catch (e) {
+        // Swallow storage errors to avoid disrupting save flow
+    }
    
     if (saveLocal) {
         const json = JSON.stringify(data, null, 2);
