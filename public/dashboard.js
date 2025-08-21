@@ -2144,7 +2144,11 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     URL.revokeObjectURL(url);
   });
 
-  // Initial draw (fill years + pill value)
+  // Initial setup
   fillYearsSelect();
-  refresh();
+  SessionStore.start(contractorId, { monthsLive: 12 });
+  SessionStore.onChange(() => {
+    window.__DASHBOARD_SESSIONS = SessionStore.getAll().map(d => ({ id: d.id, ...d.data() }));
+    refresh();
+  });
 })();
