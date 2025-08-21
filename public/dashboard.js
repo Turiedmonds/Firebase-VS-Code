@@ -138,7 +138,16 @@ function sumSheep(session) {
   let total = 0;
   if (Array.isArray(session?.shearerCounts)) {
     for (const sc of session.shearerCounts) {
-      const n = Number(sc?.total);
+      let n = Number(sc?.total);
+      if (!Number.isFinite(n)) {
+        const arr = Array.isArray(sc?.stands)
+          ? sc.stands
+          : (Array.isArray(sc?.counts) ? sc.counts : []);
+        n = arr.reduce((sum, v) => {
+          const m = Number(v);
+          return Number.isFinite(m) ? sum + m : sum;
+        }, 0);
+      }
       if (Number.isFinite(n)) total += n;
     }
   } else if (Array.isArray(session?.tallies)) {
@@ -497,7 +506,9 @@ function initTop5ShearersWidget() {
 
         for (const row of s.shearerCounts) {
           const sheepType = row?.sheepType || '';
-          const perStand = Array.isArray(row?.stands) ? row.stands : [];
+          const perStand = Array.isArray(row?.stands) && row.stands.length
+            ? row.stands
+            : (Array.isArray(row?.counts) ? row.counts : []);
           for (let i = 0; i < perStand.length; i++) {
             const raw = perStand[i];
             // raw may be string like "89" or number
