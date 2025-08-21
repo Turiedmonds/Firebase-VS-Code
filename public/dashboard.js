@@ -2270,7 +2270,17 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     for (const entry of arr){
       if (!entry) continue;
       const name = normalizeName(entry.name || entry.shearerName || entry.displayName || entry.id || entry[0]);
-      const hours = parseHoursToDecimal(entry.hoursWorked ?? entry.hours ?? entry.total ?? entry.time ?? entry[1]);
+      const rawHours =
+        entry.hoursWorked ??
+        entry.totalHours ??
+        entry.hours ??
+        entry.total ??
+        entry.time ??
+        entry.minutesWorked ??
+        entry.minutes ??
+        entry.mins ??
+        entry[1];
+      const hours = parseHoursToDecimal(rawHours);
       if (!name || !hours) continue;
       yield { name, hours };
     }
@@ -2480,16 +2490,39 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         const hours = sh.hours;
         let sheep = sheepByName.get(name) || 0;
         if (!sheep && sheepByIndex[i]) sheep = sheepByIndex[i];
-        if (sheep > 0 && hours > 0) {
+        if (sheep > 0) {
           totalSheep += sheep;
-          totalHours += hours;
-          const sh = shearerMap.get(name) || { sheep:0, hours:0 };
-          sh.sheep += sheep;
-          sh.hours += hours;
-          shearerMap.set(name, sh);
           const fm = farmMap.get(farm) || { sheep:0, hours:0 };
           fm.sheep += sheep;
-          fm.hours += hours;
+          if (hours > 0) {
+            totalHours += hours;
+            fm.hours += hours;
+            const shRec = shearerMap.get(name) || { sheep:0, hours:0 };
+            shRec.sheep += sheep;
+            shRec.hours += hours;
+            shearerMap.set(name, shRec);
+          }
+          farmMap.set(farm, fm);
+        }
+      }
+
+      if (shearersByIndex.length === 0) {
+        const sheep = sumSheep(data);
+        const hours = parseHoursToDecimal(
+          data.totalHours ??
+          data.hoursWorked ??
+          data.hours ??
+          data.time ??
+          data.duration
+        );
+        if (sheep > 0) {
+          totalSheep += sheep;
+          const fm = farmMap.get(farm) || { sheep:0, hours:0 };
+          fm.sheep += sheep;
+          if (hours > 0) {
+            totalHours += hours;
+            fm.hours += hours;
+          }
           farmMap.set(farm, fm);
         }
       }
