@@ -94,7 +94,7 @@ function renderSessionRowInto(container, docId, data) {
   info.innerHTML = `
     <strong>${station}</strong><br>
     ${dateStr || ''}<br>
-    🐑 ${totalSheep} | Shearers: ${shearers} | Shed Staff: ${shedStaff}
+    Sheep: ${totalSheep} | Shearers: ${shearers} | Shed Staff: ${shedStaff}
   `;
   row.appendChild(info);
 
@@ -116,7 +116,7 @@ function renderSessionRowInto(container, docId, data) {
   editBtn.className = 'tab-button';
   editBtn.style.marginLeft = '6px';
   editBtn.addEventListener('click', () => {
-    const pin = prompt('\uD83D\uDD10 Enter Contractor PIN to edit:');
+    const pin = prompt('Enter Contractor PIN to edit:');
     if (pin === '1234') {
       const editable = { ...data, viewOnly: false };
       localStorage.setItem('active_session', JSON.stringify(editable));
@@ -136,7 +136,7 @@ function renderSessionRowInto(container, docId, data) {
   delBtn.addEventListener('click', async () => {
     if (!confirm('Delete this session?')) return;
     const expectedPin = localStorage.getItem('contractor_pin') || '1234';
-    const pin = prompt('\uD83D\uDD10 Enter Contractor PIN to delete:');
+    const pin = prompt('Enter Contractor PIN to delete:');
     if (pin !== expectedPin) {
       if (pin !== null) alert('Incorrect PIN');
       return;
