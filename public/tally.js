@@ -2918,11 +2918,17 @@ function loadSessionObject(session) {
     lastLocalSave = now;
     lastCloudSave = now;
     
-    // Always enforce locking first so any subsequent DOM manipulation
-    // doesn't accidentally trigger focus events while unlocked
-    enforceSessionLock(session.date);
-    if (session.viewOnly) {
-       lockSession(); // Let focusin listener handle PIN prompt if needed
+    const viewOnlyFlag = localStorage.getItem('viewOnlyMode');
+
+    if (typeof isLoadedSession !== 'undefined' && isLoadedSession && viewOnlyFlag === null) {
+        unlockSession();
+    } else {
+        // Always enforce locking first so any subsequent DOM manipulation
+        // doesn't accidentally trigger focus events while unlocked
+        enforceSessionLock(session.date);
+        if (session.viewOnly) {
+           lockSession(); // Let focusin listener handle PIN prompt if needed
+        }
     }
     populateSessionData(session);
     rebuildRowsFromSession(session);
