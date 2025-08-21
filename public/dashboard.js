@@ -2277,6 +2277,11 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         maxH = Math.max(maxH, parseHours(ss.hoursWorked || ss.totalHours || ss.hours));
       });
     }
+    if (session && typeof session.hours === 'object' && session.hours) {
+      Object.values(session.hours).forEach(h => {
+        maxH = Math.max(maxH, parseHours(h));
+      });
+    }
     return maxH || 0;
   }
 
