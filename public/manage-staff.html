@@ -320,9 +320,10 @@
       padding: 4px 8px;
     }
 
-    /* Make the label column narrow so the email column gets space */
-    .table-scroll .staff-table th:first-child,
-    .table-scroll .staff-table td:first-child {
+    /* Make the first column narrow only for the active staff table so
+       the email column gets more space without affecting deleted staff */
+    #staffTable th:first-child,
+    #staffTable td:first-child {
       width: 1%;
     }
 
