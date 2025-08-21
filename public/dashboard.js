@@ -224,9 +224,11 @@ const SessionStore = (() => {
   }
 
   function maybeInitYearFilter() {
-    const sel = document.querySelector('.top5-card select');
-    const currentVal = sel ? sel.value : null;
-    if (!sel || currentVal) return;
+    // Query all year dropdowns used by the Top 5 widgets.
+    const selects = document.querySelectorAll('.top5-widget .year-select');
+    if (!selects.length) return;
+
+    // Determine the year from the first session in cache.
     const first = cache[0];
     if (!first) return;
     const data = typeof first.data === 'function' ? first.data() : first.data;
@@ -247,10 +249,16 @@ const SessionStore = (() => {
         if (m) year = parseInt(m[3], 10);
       }
     }
-    if (year) {
-      sel.value = String(year);
-      sel.dispatchEvent(new Event('change', { bubbles: true }));
-    }
+    if (!year) return;
+
+    // Initialize each select that doesn't yet have a year selected.
+    selects.forEach(sel => {
+      if (!sel.value) {
+        sel.value = String(year);
+        // Trigger downstream widgets to refresh.
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
   }
 
   return {
