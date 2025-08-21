@@ -132,6 +132,65 @@
       </div>
       <div class="dashboard-main">
         <p id="dashboard-subheading"></p>
+        <!-- KPI BAR (new) -->
+        <section id="kpiBar" aria-label="Key performance indicators">
+          <button class="kpi-pill" id="kpiSheepCount" aria-haspopup="dialog" aria-controls="kpiSheepModal">
+            <span class="kpi-label">Sheep Count</span>
+            <span class="kpi-value" id="kpiSheepCountValue">—</span>
+          </button>
+        </section>
+
+        <!-- KPI MODAL (new) -->
+        <div id="kpiSheepModal" class="kpi-modal" role="dialog" aria-modal="true" aria-labelledby="kpiSheepTitle" hidden>
+          <div class="kpi-modal-card">
+            <header class="kpi-modal-header">
+              <h2 id="kpiSheepTitle">Sheep Count — Year to Date</h2>
+              <button class="kpi-close" id="kpiSheepClose" aria-label="Close">✕</button>
+            </header>
+
+            <div class="kpi-controls">
+              <label>
+                Year
+                <select id="kpiYearSelect"></select>
+              </label>
+              <label>
+                Farm
+                <select id="kpiFarmSelect">
+                  <option value="__ALL__">All farms</option>
+                </select>
+              </label>
+              <small id="kpiOfflineNote" class="kpi-note" hidden>Offline data may be incomplete.</small>
+            </div>
+
+            <div class="kpi-sections">
+              <section>
+                <h3>Full Sheep (excludes crutched)</h3>
+                <table class="kpi-table" id="kpiFullSheepTable">
+                  <thead>
+                    <tr><th>Sheep Type</th><th>Total</th><th>% of Full</th><th>Farms</th><th>Top Farm (day)</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </section>
+
+              <section>
+                <h3>Crutched</h3>
+                <table class="kpi-table" id="kpiCrutchedTable">
+                  <thead>
+                    <tr><th>Sheep Type</th><th>Total</th><th>% of Crutched</th><th>Farms</th><th>Top Farm (day)</th></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </section>
+            </div>
+
+            <footer class="kpi-actions">
+              <button id="kpiExportCsv">Export CSV</button>
+              <button id="kpiSheepCloseFooter">Close</button>
+            </footer>
+          </div>
+        </div>
+
         <div id="siq-widgets-grid">
         <!-- BEGIN: Top 5 Shearers Widget -->
         <section id="top5-shearers" class="dash-card top5-widget">

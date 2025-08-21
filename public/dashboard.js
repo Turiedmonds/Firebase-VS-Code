@@ -1911,3 +1911,240 @@ async function backfillSavedAtForSessions() {
 }
 window.backfillSavedAtForSessions = backfillSavedAtForSessions;
 console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSavedAtForSessions()');
+
+// === KPI: Sheep Count ===
+(function setupKpiSheepCount(){
+  const pill = document.getElementById('kpiSheepCount');
+  const pillVal = document.getElementById('kpiSheepCountValue');
+  const modal = document.getElementById('kpiSheepModal');
+  const closeBtn = document.getElementById('kpiSheepClose');
+  const closeBtnFooter = document.getElementById('kpiSheepCloseFooter');
+  const yearSel = document.getElementById('kpiYearSelect');
+  const farmSel = document.getElementById('kpiFarmSelect');
+  const offlineNote = document.getElementById('kpiOfflineNote');
+  const tblFull = document.querySelector('#kpiFullSheepTable tbody');
+  const tblCrutched = document.querySelector('#kpiCrutchedTable tbody');
+  const exportBtn = document.getElementById('kpiExportCsv');
+
+  // Find contractor id (same logic you already use)
+  const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+
+  // Utility: crutched?
+  function isCrutched(name){
+    return String(name || '').toLowerCase().includes('crutch');
+  }
+
+  // Date helpers (NZ local)
+  function yearBounds(y){
+    const start = new Date(Date.UTC(y,0,1,0,0,0));
+    const end = new Date(Date.UTC(y,11,31,23,59,59));
+    return {start, end};
+  }
+
+  // Get candidate sessions:
+  // Prefer already loaded/cached sessions if your dashboard widgets have them (adjust if you keep them elsewhere).
+  async function fetchSessionsForYear(year){
+    const { start, end } = yearBounds(year);
+    // Try to reuse any global cache if your dashboard sets it (safe fallback if not found)
+    if (window.__DASHBOARD_SESSIONS && Array.isArray(window.__DASHBOARD_SESSIONS)) {
+      const filtered = window.__DASHBOARD_SESSIONS.filter(s => {
+        const ts = s.date || s.savedAt || s.updatedAt;
+        const t = ts?.toDate ? ts.toDate() : new Date(ts);
+        return t >= start && t <= end;
+      });
+      offlineNote.hidden = !(!navigator.onLine);
+      return filtered;
+    }
+
+    // Firestore fallback (compat assumed)
+    if (!contractorId || !window.firebase?.firestore) {
+      offlineNote.hidden = false;
+      return [];
+    }
+    try {
+      const db = firebase.firestore();
+      const ref = db.collection('contractors').doc(contractorId).collection('sessions');
+      const {start: s, end: e} = yearBounds(year);
+      // If you store a timestamp field, prefer that (savedAt/updatedAt/sessionDate). Adjust as needed:
+      const q = ref.where('savedAt', '>=', s).where('savedAt', '<=', e);
+      const snap = await q.get();
+      offlineNote.hidden = true;
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (err) {
+      console.warn('KPI fetch failed; possibly offline', err);
+      offlineNote.hidden = false;
+      return [];
+    }
+  }
+
+  // Extract tallies from a session; adjust to your schema
+  function iterTallies(session, fn){
+    // Example shapes supported:
+    // - session.shearers[ i ].runs[ j ].tally with .sheepType and .count
+    // - session.tallies[ ... ] with .sheepType and .count
+    if (Array.isArray(session?.shearers)) {
+      session.shearers.forEach(sh => {
+        (sh.runs || []).forEach(run => {
+          const type = run?.sheepType ?? run?.type ?? 'Unknown';
+          const count = Number(run?.tally ?? run?.count ?? 0);
+          if (count) fn(type, count, session.farmName, session.date || session.savedAt);
+        });
+      });
+    }
+    if (Array.isArray(session?.tallies)) {
+      session.tallies.forEach(t => {
+        const type = t?.sheepType ?? t?.type ?? 'Unknown';
+        const count = Number(t?.count ?? 0);
+        if (count) fn(type, count, session.farmName, session.date || session.savedAt);
+      });
+    }
+  }
+
+  function aggregate(sessions, farmFilter){
+    const farmsSet = new Set();
+    const byTypeFull = new Map();   // type -> { total, farms:Set, topFarm:{name, day, count} }
+    const byTypeCrut = new Map();
+    let totalFull = 0, totalCrut = 0;
+
+    const perFarmDay = new Map(); // key `${farm}|${dayISO}` -> sum that day
+
+    sessions.forEach(s => {
+      const farm = s.farmName || 'Unknown Farm';
+      farmsSet.add(farm);
+      iterTallies(s, (type, count, f, dateTs) => {
+        const farmName = f || farm;
+        if (farmFilter && farmFilter !== '__ALL__' && farmName !== farmFilter) return;
+
+        const bucket = isCrutched(type) ? byTypeCrut : byTypeFull;
+        const key = type || 'Unknown';
+        const obj = bucket.get(key) || { total: 0, farms: new Set(), topFarm: null };
+        obj.total += count;
+        obj.farms.add(farmName);
+        bucket.set(key, obj);
+
+        if (bucket === byTypeCrut) totalCrut += count; else totalFull += count;
+
+        // track top farm/day per type
+        const day = toDayIso(dateTs);
+        const k = `${farmName}|${day}`;
+        const prev = perFarmDay.get(k) || 0;
+        perFarmDay.set(k, prev + count);
+      });
+    });
+
+    // Compute top farm/day per type (approximation using perFarmDay totals)
+    function computeTopFarm(typeMap){
+      // We’ll assign top farm/day globally per map, then each row can show it (simple for v1)
+      // More precise per-type/day can be added later if needed.
+      let top = { farm: '-', day: '-', count: 0 };
+      perFarmDay.forEach((count, key) => {
+        if (count > top.count) {
+          const [farm, day] = key.split('|');
+          top = { farm, day, count };
+        }
+      });
+      // Attach same global top as reference (keeps UI simple)
+      typeMap.forEach(v => { v.topFarm = top; });
+    }
+    computeTopFarm(byTypeFull);
+    computeTopFarm(byTypeCrut);
+
+    // Convert to arrays with %
+    const fullArr = Array.from(byTypeFull.entries())
+      .map(([type, v]) => ({ type, total: v.total, pct: totalFull ? (v.total/totalFull*100) : 0, farms: v.farms.size, top: v.topFarm }))
+      .sort((a,b)=>b.total-a.total);
+
+    const crutArr = Array.from(byTypeCrut.entries())
+      .map(([type, v]) => ({ type, total: v.total, pct: totalCrut ? (v.total/totalCrut*100) : 0, farms: v.farms.size, top: v.topFarm }))
+      .sort((a,b)=>b.total-a.total);
+
+    return { totalFull, totalCrut, fullArr, crutArr, farms: Array.from(farmsSet).sort() };
+  }
+
+  function toDayIso(ts){
+    const d = ts?.toDate ? ts.toDate() : new Date(ts || Date.now());
+    // normalise to YYYY-MM-DD (NZ local assumed OK for v1)
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function renderTable(tbody, rows){
+    tbody.innerHTML = '';
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.type}</td>
+        <td>${r.total.toLocaleString()}</td>
+        <td>${r.pct.toFixed(1)}%</td>
+        <td>${r.farms}</td>
+        <td>${r.top.farm} (${r.top.day})</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function updatePill(value){
+    pillVal.textContent = Number(value || 0).toLocaleString();
+  }
+
+  function fillYearsSelect(){
+    const thisYear = new Date().getFullYear();
+    const years = [];
+    for (let y = thisYear; y >= thisYear - 6; y--) years.push(y);
+    yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+    yearSel.value = String(thisYear);
+  }
+
+  async function refresh(){
+    const year = Number(yearSel.value || new Date().getFullYear());
+    const farm = farmSel.value || '__ALL__';
+    const sessions = await fetchSessionsForYear(year);
+    const agg = aggregate(sessions, farm);
+    updatePill(agg.totalFull);
+
+    // Populate farm list (keep current selection if possible)
+    const current = farmSel.value;
+    farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + agg.farms.map(f=>`<option value="${f}">${f}</option>`).join('');
+    if (agg.farms.includes(current)) farmSel.value = current;
+
+    renderTable(tblFull, agg.fullArr);
+    renderTable(tblCrutched, agg.crutArr);
+  }
+
+  // Open/close modal
+  function openModal(){ modal.hidden = false; refresh(); }
+  function closeModal(){ modal.hidden = true; }
+
+  // Wire up
+  if (pill) pill.addEventListener('click', openModal);
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (closeBtnFooter) closeBtnFooter.addEventListener('click', closeModal);
+  if (yearSel) yearSel.addEventListener('change', refresh);
+  if (farmSel) farmSel.addEventListener('change', refresh);
+
+  // CSV export (current tables)
+  exportBtn?.addEventListener('click', () => {
+    const rows = [['Section','Sheep Type','Total','Percent','Farms','Top Farm (day)']];
+    document.querySelectorAll('#kpiFullSheepTable tbody tr').forEach(tr=>{
+      const cells=[...tr.children].map(td=>td.textContent.trim());
+      rows.push(['Full Sheep', ...cells]);
+    });
+    document.querySelectorAll('#kpiCrutchedTable tbody tr').forEach(tr=>{
+      const cells=[...tr.children].map(td=>td.textContent.trim());
+      rows.push(['Crutched', ...cells]);
+    });
+    const csv = rows.map(r=>r.map(v=>`"${v.replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `SheepCount_${yearSel.value}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Initial draw (fill years + pill value)
+  fillYearsSelect();
+  refresh();
+})();
