@@ -595,6 +595,11 @@ function initTop5ShearersWidget() {
     function sessionDateToJS(d) {
       if (!d) return null;
       if (typeof d === 'object' && d.toDate) return d.toDate();
+      if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        const [y, m, day] = d.split('-').map(Number);
+        const dt = new Date(y, m - 1, day);
+        return isNaN(dt.getTime()) ? null : dt;
+      }
       const dt = new Date(d);
       return isNaN(dt.getTime()) ? null : dt;
     }
@@ -1010,6 +1015,11 @@ function initTop5ShedStaffWidget() {
     function sessionDateToJS(d) {
       if (!d) return null;
       if (typeof d === 'object' && d.toDate) return d.toDate();
+      if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        const [y, m, day] = d.split('-').map(Number);
+        const dt = new Date(y, m - 1, day);
+        return isNaN(dt.getTime()) ? null : dt;
+      }
       const dt = new Date(d);
       return isNaN(dt.getTime()) ? null : dt;
     }
@@ -1340,6 +1350,12 @@ function initTop5FarmsWidget() {
 
     function sessionDateToJS(d) {
       if (!d) return null;
+      if (typeof d === 'object' && d.toDate) return d.toDate();
+      if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        const [y, m, day] = d.split('-').map(Number);
+        const dt = new Date(y, m - 1, day);
+        return isNaN(dt.getTime()) ? null : dt;
+      }
       const dt = new Date(d);
       return isNaN(dt.getTime()) ? null : dt;
     }
