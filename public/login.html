@@ -37,6 +37,16 @@
       width: 100%;
       height: auto;
     }
+    #forgotPassword {
+      display: block;
+      margin: 6px 0;
+      text-align: right;
+      color: #ffea00;
+      text-decoration: none;
+    }
+    #forgotPassword:hover {
+      text-decoration: underline;
+    }
   </style>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -57,7 +67,7 @@
         <input type="checkbox" id="rememberMe">
         Remember Me
       </label>
-      <a id="forgotPassword" href="forgot-password.html">Forgot password?</a>
+      <a id="forgotPassword" href="forgot-password.html">Forgot Password?</a>
       <button type="submit">Login</button>
       <div id="login-error"></div>
     </form>
