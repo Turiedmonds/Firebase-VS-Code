@@ -1551,6 +1551,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnReturnToActive.style.display = 'block';
         btnReturnToActive.addEventListener('click', () => {
           sessionStorage.setItem('launch_override', 'tally');
+          try { localStorage.setItem('viewOnlyMode', 'false'); } catch (e) {}
           window.location.href = 'tally.html?loadedSession=true';
         });
       }
