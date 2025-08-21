@@ -2861,6 +2861,15 @@ function resetTallySheet() {
     layoutBuilt = false;
     isSetupComplete = false;
     hasUserStartedEnteringData = false;
+
+    // Remove any stored active session so a fresh setup can begin
+    try {
+        localStorage.removeItem('active_session');
+        localStorage.removeItem('firestoreSessionId');
+        localStorage.removeItem('viewOnlyMode');
+    } catch (e) {
+        // Ignore any errors accessing localStorage
+    }
 }
 
 // Clear any stored metadata so a new day's session doesn't reuse old values
@@ -2879,6 +2888,9 @@ function resetForNewDay() {
   // Clear saved data from localStorage if it exists
   try {
     localStorage.removeItem('session_data');
+    localStorage.removeItem('active_session');
+    localStorage.removeItem('firestoreSessionId');
+    localStorage.removeItem('viewOnlyMode');
   } catch (e) {
     // Ignore any errors
   }
