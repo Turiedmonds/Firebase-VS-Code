@@ -133,6 +133,19 @@ function getSessionDateYMD(session) {
   return toYMDFromSavedAt(val);
 }
 
+function normalizeName(input) {
+  if (!input) return '';
+  if (typeof input === 'object') {
+    if (input.displayName) input = input.displayName;
+    else if (input.name) input = input.name;
+    else if (typeof input.id === 'string') input = input.id;
+    else if (input.ref && typeof input.ref.id === 'string') input = input.ref.id;
+  }
+  const t = String(input).trim().replace(/\s+/g, ' ');
+  const parts = t.split(' ');
+  return parts.map(p => (p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : '')).join(' ');
+}
+
 function sumSheep(session) {
   let total = 0;
   if (Array.isArray(session?.shearerCounts)) {
@@ -945,19 +958,6 @@ function initTop5ShedStaffWidget() {
       return 0;
     }
 
-
-    function normalizeName(input) {
-      if (!input) return '';
-      if (typeof input === 'object') {
-        if (input.displayName) input = input.displayName;
-        else if (input.name) input = input.name;
-        else if (typeof input.id === 'string') input = input.id;
-        else if (input.ref && typeof input.ref.id === 'string') input = input.ref.id;
-      }
-      const t = String(input).trim().replace(/\s+/g, ' ');
-      const parts = t.split(' ');
-      return parts.map(p => p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : '').join(' ');
-    }
 
     function sessionDateString(s) {
       const dt = sessionDateToJS(s.date || s.sessionDate || s.createdAt || s.timestamp || s.savedAt);
