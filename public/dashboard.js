@@ -2325,8 +2325,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   async function fetchSessions(){
-    if (SessionStore.getAll && SessionStore.getAll().length) {
-      return SessionStore.getAll();
+    const cached = SessionStore.getAll ? SessionStore.getAll() : [];
+    if (cached.length) {
+      return cached.map(doc => ({ id: doc.id, ...doc.data() }));
     }
     if (!contractorId || !window.firebase?.firestore) return [];
     try {
