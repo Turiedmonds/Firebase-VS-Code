@@ -557,7 +557,7 @@ function initTop5ShearersWidget() {
 
       if (Array.isArray(s.shearers)) {
         for (const sh of s.shearers) {
-          const shearerName = sh.name || sh.shearerName || sh.displayName || sh.id || 'Unknown';
+          const shearerName = normalizeName(sh.name || sh.shearerName || sh.displayName || sh.shearer || sh.id) || 'Unknown';
           const runs = sh.runs || sh.tallies || sh.entries || [];
           for (const r of (runs || [])) {
             yield {
@@ -946,9 +946,15 @@ function initTop5ShedStaffWidget() {
     }
 
 
-    function normalizeName(name) {
-      if (!name) return '';
-      const t = String(name).trim().replace(/\s+/g, ' ');
+    function normalizeName(input) {
+      if (!input) return '';
+      if (typeof input === 'object') {
+        if (input.displayName) input = input.displayName;
+        else if (input.name) input = input.name;
+        else if (typeof input.id === 'string') input = input.id;
+        else if (input.ref && typeof input.ref.id === 'string') input = input.ref.id;
+      }
+      const t = String(input).trim().replace(/\s+/g, ' ');
       const parts = t.split(' ');
       return parts.map(p => p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : '').join(' ');
     }
@@ -2294,14 +2300,16 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   function eachShearerHours(session, fn){
     if (Array.isArray(session?.shearers)) {
       session.shearers.forEach(sh => {
-        const name = sh.name || sh.shearerName || sh.displayName || sh.id || 'Unknown';
+        const raw = sh.name || sh.shearerName || sh.displayName || sh.shearer || sh.id;
+        const name = normalizeName(raw) || 'Unknown';
         const hours = parseHours(sh.hoursWorked || sh.totalHours || sh.hours);
         if (hours > 0) fn(name, hours);
       });
     } else {
-      const names = Array.isArray(session?.stands) ? session.stands : Object.keys(session?.hours || {});
-      names.forEach(name => {
-        const hours = parseHours(session?.hours?.[name]);
+      const rawNames = Array.isArray(session?.stands) ? session.stands : Object.keys(session?.hours || {});
+      rawNames.forEach(raw => {
+        const name = normalizeName(raw) || 'Unknown';
+        const hours = parseHours(session?.hours?.[name] ?? session?.hours?.[raw]);
         if (hours > 0) fn(name, hours);
       });
     }
@@ -2310,7 +2318,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   function iterShearerTallies(session, fn){
     if (Array.isArray(session?.shearers)) {
       session.shearers.forEach(sh => {
-        const shearerName = sh.name || sh.shearerName || sh.displayName || sh.id || 'Unknown';
+        const shearerName = normalizeName(sh.name || sh.shearerName || sh.displayName || sh.shearer || sh.id) || 'Unknown';
         const runs = sh.runs || sh.tallies || sh.entries || [];
         runs.forEach(run => {
           const type = run?.sheepType ?? run?.type ?? 'Unknown';
@@ -2333,7 +2341,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         perStand.forEach((raw,i)=>{
           const cnt = Number(raw?.count ?? raw);
           if (!Number.isFinite(cnt) || cnt <= 0) return;
-          const name = names[i] || `Stand ${i+1}`;
+          const rawName = names[i];
+          const name = normalizeName(rawName) || `Stand ${i+1}`;
           fn(name, type, cnt);
         });
       });
@@ -2341,7 +2350,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     }
     if (Array.isArray(session?.tallies)) {
       session.tallies.forEach(t => {
-        const name = t.shearerName || t.shearer || t.name || 'Unknown';
+        const rawName = t.shearerName || t.shearer || t.name;
+        const name = normalizeName(rawName) || 'Unknown';
         const type = t.sheepType || t.type || 'Unknown';
         const cnt = Number(t.count ?? t.tally ?? t.total);
         if (name && Number.isFinite(cnt) && cnt > 0) fn(name, type, cnt);
@@ -2349,7 +2359,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       return;
     }
     if (session && typeof session.shearerTallies === 'object') {
-      Object.entries(session.shearerTallies).forEach(([name, entries]) => {
+      Object.entries(session.shearerTallies).forEach(([rawName, entries]) => {
+        const name = normalizeName(rawName) || 'Unknown';
         (entries || []).forEach(e => {
           const type = e.sheepType || e.type || 'Unknown';
           const cnt = Number(e.count ?? e.tally ?? e.total);
@@ -2432,7 +2443,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     tblBody.innerHTML = '';
     rows.forEach(r => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${r.name}</td><td>${r.sheep.toLocaleString()}</td><td>${r.hours.toFixed(1)}</td><td>${r.rate.toFixed(1)}</td>`;
+      const name = normalizeName(r.name) || 'Unknown';
+      tr.innerHTML = `<td>${name}</td><td>${r.sheep.toLocaleString()}</td><td>${r.hours.toFixed(1)}</td><td>${r.rate.toFixed(1)}</td>`;
       tblBody.appendChild(tr);
     });
   }
