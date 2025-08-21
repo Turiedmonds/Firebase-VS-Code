@@ -2157,7 +2157,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
     // Populate farm list (keep current selection if possible)
     const current = farmSel.value;
-    farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + agg.farms.map(f=>`<option value="${f}">${f}</option>`).join('');
+    farmSel.innerHTML =
+      `<option value="__ALL__">All farms</option>` +
+      agg.farms.map(f => `<option value="${f}">${f}</option>`).join('');
     if (agg.farms.includes(current)) farmSel.value = current;
 
     if (tblFull) renderTable(tblFull, agg.fullArr);
@@ -2392,7 +2394,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const sessions = await fetchSessions();
     const overall = aggregate(sessions, null);
     const current = farmSel.value;
-    farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + overall.farms.map(f=>`<option value="${f}">${f}</option>`).join('');
+    farmSel.innerHTML =
+      `<option value="__ALL__">All farms</option>` +
+      overall.farms.map(f => `<option value="${f}">${f}</option>`).join('');
     if (overall.farms.includes(current)) farmSel.value = current; else farmSel.value = '__ALL__';
 
     updatePill(overall);
@@ -2718,7 +2722,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     // Populate farms select
     const farms = Array.from(new Set(sessions.map(s=>pickFarmName(s) || 'Unknown Farm'))).sort();
     const current = farmSel.value;
-    farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + farms.map(f=>`<option value="${f}">${f}</option>`).join('');
+    farmSel.innerHTML =
+      `<option value="__ALL__">All farms</option>` +
+      farms.map(f => `<option value="${f}">${f}</option>`).join('');
     if (farms.includes(current)) farmSel.value = current;
 
     const agg = aggregate(sessions, farm);
@@ -2871,7 +2877,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const agg = aggregate(sessions, farm);
 
     const farms = Array.from(new Set(sessions.map(s=>pickFarmName(s) || 'Unknown Farm'))).sort();
-    farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + farms.map(f=>`<option value="${f}">${f}</option>`).join('');
+    farmSel.innerHTML =
+      `<option value="__ALL__">All farms</option>` +
+      farms.map(f => `<option value="${f}">${f}</option>`).join('');
     if (farms.includes(farm)) farmSel.value = farm;
 
     offlineNote.hidden = navigator.onLine;
