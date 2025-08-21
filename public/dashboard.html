@@ -218,12 +218,18 @@
                   <option value="__ALL__">All farms</option>
                 </select>
               </label>
-              <button id="kpiSPHClearFarm" class="kpi-clear">Clear Filter</button>
+              <label>
+                Sheep Type
+                <select id="kpiSPHTypeSelect">
+                  <option value="__ALL__">All types</option>
+                </select>
+              </label>
+              <button id="kpiSPHClearFilters" class="kpi-clear">Clear Filters</button>
             </div>
 
             <table class="kpi-table" id="kpiSPHTable">
               <thead>
-                <tr><th>Sheep Type</th><th>Total</th></tr>
+                <tr><th>Shearer</th><th>Total Sheep</th><th>Total Hours</th><th>Sheep/Hour</th></tr>
               </thead>
               <tbody></tbody>
             </table>
