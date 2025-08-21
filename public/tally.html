@@ -596,6 +596,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const table = document.getElementById('tallyTable');
   if (table) table.dispatchEvent(new Event('input', { bubbles: true }));
+  if (typeof autosaveTimer !== 'undefined') {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+  }
+  localStorage.removeItem('active_session');
   hideModal();
   if (window.unlockSession) window.unlockSession();
 }
