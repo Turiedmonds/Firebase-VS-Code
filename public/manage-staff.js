@@ -76,12 +76,12 @@ async function loadStaffList(contractorId) {
       }
     }
     const diff = Date.now() - lastActiveMs;
-    let status = '⚫ Last seen unknown';
+    let status = 'Last seen unknown';
     if (lastActiveMs && diff <= 5 * 60 * 1000) {
-      status = '🟢 Online now';
+      status = 'Online now';
     } else if (lastActiveMs) {
       const mins = Math.round(diff / 60000);
-      status = `⚫ Last seen ${mins} mins ago`;
+      status = `Last seen ${mins} mins ago`;
     }
 
     const tr = document.createElement('tr');
@@ -90,13 +90,13 @@ async function loadStaffList(contractorId) {
       <td>${data.name || ''}</td>
       <td>${data.email}</td>
       <td>${status}</td>
-      <td><button class="deleteStaffBtn" data-uid="${docSnap.id}" data-email="${data.email}" data-name="${data.name || ''}">🗑 Delete</button></td>`;
+      <td><button class="deleteStaffBtn" data-uid="${docSnap.id}" data-email="${data.email}" data-name="${data.name || ''}">Delete</button></td>`;
     tbody.appendChild(tr);
   });
 
-  if (summaryEl) {
-    summaryEl.textContent = `👥 ${docs.length} staff added (limit: ${STAFF_LIMIT})`;
-  }
+    if (summaryEl) {
+      summaryEl.textContent = `${docs.length} staff added (limit: ${STAFF_LIMIT})`;
+    }
 
   tbody.querySelectorAll('.deleteStaffBtn').forEach(btn => {
     btn.addEventListener('click', () => deleteStaff(btn));
@@ -140,7 +140,7 @@ async function loadDeletedStaff(contractorId) {
       <td>${data.name || ''}</td>
       <td>${data.email || ''}</td>
       <td>${deletedAt}</td>
-      <td><button class="restoreStaffBtn" data-logid="${docSnap.id}" data-name="${data.name || ''}">↩ Restore</button></td>`;
+      <td><button class="restoreStaffBtn" data-logid="${docSnap.id}" data-name="${data.name || ''}">Restore</button></td>`;
     tbody.appendChild(tr);
   });
 
@@ -309,7 +309,7 @@ async function restoreStaff(btn) {
         return;
       }
 
-        console.log('\uD83D\uDCE4 Creating staff user with', { email, password });
+        console.log('Creating staff user with', { email, password });
 
         try {
           if (createOverlay) createOverlay.style.display = 'flex';
@@ -327,8 +327,8 @@ async function restoreStaff(btn) {
           createdAt: serverTimestamp()
         });
 
-        console.log('\u2705 Reached sendStaffCredentials function');
-        console.log('\uD83D\uDCE7 Contractor email:', auth.currentUser?.email);
+        console.log('Reached sendStaffCredentials function');
+        console.log('Contractor email:', auth.currentUser?.email);
         console.log('staffName:', staffName, 'staffEmail:', email, 'password:', password);
 
         try {
@@ -339,9 +339,9 @@ async function restoreStaff(btn) {
             password,
             contractorEmail: auth.currentUser.email
           });
-          console.log('\uD83D\uDCE8 Staff credentials email sent successfully:', response.data);
+          console.log('Staff credentials email sent successfully:', response.data);
         } catch (error) {
-          console.error('\u274C Email function failed:', error.message || error);
+          console.error('Email function failed:', error.message || error);
           throw error;
         }
 
