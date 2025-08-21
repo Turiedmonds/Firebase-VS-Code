@@ -185,6 +185,15 @@ function sumSheep(session) {
   return total;
 }
 
+// Convert decimal hours to "Hh Mm" (e.g., 7.5 -> "7h 30m")
+function hoursToHM(dec) {
+  if (!dec || isNaN(dec)) return '0h';
+  const totalMins = Math.round(dec * 60);
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+
 // Populate a <select> with year options from the current year backwards.
 // Defaults to 6 years and sets the select's value to the current year.
 function fillYearsSelect(sel, yearsBack = 6) {
@@ -2381,15 +2390,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
     // Fallback: convert decimal -> Hh Mm for display
     return { hours, displayText: hoursToHM(hours) };
-  }
-
-  // Convert decimal hours to "Hh Mm" (e.g., 7.5 -> "7h 30m")
-  function hoursToHM(dec) {
-    if (!dec || isNaN(dec)) return '0h';
-    const totalMins = Math.round(dec * 60);
-    const h = Math.floor(totalMins / 60);
-    const m = totalMins % 60;
-    return m ? `${h}h ${m}m` : `${h}h`;
   }
 
   function parseHours(input){
