@@ -2955,6 +2955,75 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     return dayStr.slice(0,7); // YYYY-MM
   }
 
+  // Map stand index -> shearer name (normalized); adapted from Top 5 Shearers widget
+  function buildStandIndexNameMap(sessionData) {
+    const map = {};
+    const arr = Array.isArray(sessionData?.stands) ? sessionData.stands : [];
+    const rawIdx = arr.map((st, i) => (st && st.index != null ? Number(st.index) : i));
+    const has0 = rawIdx.includes(0);
+    const has1 = rawIdx.includes(1);
+    const looksOneBased = !has0 && has1;
+    arr.forEach((st, pos) => {
+      let i = (st && st.index != null) ? Number(st.index) : pos;
+      if (!Number.isFinite(i)) i = pos;
+      if (looksOneBased) i = i - 1;
+      if (i < 0) i = 0;
+      let name = normalizeName(st?.name || st?.shearerName || st?.id);
+      if (!name || /^stand\s+\d+$/i.test(name)) name = null;
+      map[i] = name;
+    });
+    return map;
+  }
+
+  // Collect unique shearer names from a session, handling multiple schema shapes
+  function collectShearerNames(sessionDoc) {
+    const s = sessionDoc?.data ? sessionDoc.data() : sessionDoc;
+    const names = new Set();
+
+    if (Array.isArray(s.shearers)) {
+      s.shearers.forEach(sh => {
+        const n = normalizeName(sh.name || sh.shearerName || sh.displayName || sh.shearer || sh.id);
+        if (n) names.add(n);
+      });
+    }
+
+    const standMap = buildStandIndexNameMap(s);
+    Object.values(standMap).forEach(n => { if (n) names.add(n); });
+
+    if (Array.isArray(s.shearerCounts)) {
+      s.shearerCounts.forEach(run => {
+        if (Array.isArray(run.stands)) {
+          run.stands.forEach((st, i) => {
+            let n;
+            if (typeof st === 'object') {
+              n = normalizeName(st.name || st.shearerName || st.id);
+            } else {
+              n = normalizeName(st);
+            }
+            if (n) names.add(n);
+            else if (standMap[i]) names.add(standMap[i]);
+          });
+        }
+      });
+    }
+
+    if (Array.isArray(s.tallies)) {
+      s.tallies.forEach(t => {
+        const n = normalizeName(t.shearerName || t.shearer || t.name);
+        if (n) names.add(n);
+      });
+    }
+
+    if (s.shearerTallies && typeof s.shearerTallies === 'object') {
+      Object.keys(s.shearerTallies).forEach(k => {
+        const n = normalizeName(k);
+        if (n) names.add(n);
+      });
+    }
+
+    return Array.from(names);
+  }
+
   async function fetchSessionsForYear(year){
     const { start, end } = yearBounds(year);
     if (window.__DASHBOARD_SESSIONS && Array.isArray(window.__DASHBOARD_SESSIONS)) {
@@ -2994,8 +3063,12 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         if (!personDayMap.has(key)) personDayMap.set(key, new Set());
         personDayMap.get(key).add(dayStr);
       }
-      (s.shearers || []).forEach(sh => addPerson(sh.name || sh.shearerName || 'Unknown', 'Shearer'));
-      (s.shedStaff || []).forEach(ss => addPerson(ss.name || ss.staffName || 'Unknown', 'Shed Staff'));
+      const shearerNames = collectShearerNames(s);
+      shearerNames.forEach(name => addPerson(name || 'Unknown', 'Shearer'));
+      (s.shedStaff || []).forEach(ss => {
+        const n = normalizeName(ss.name || ss.staffName || ss.displayName || ss.id);
+        addPerson(n || 'Unknown', 'Shed Staff');
+      });
 
       const mKey = monthKeyFromDay(dayStr);
       if (!monthDayMap.has(mKey)) monthDayMap.set(mKey, new Set());
