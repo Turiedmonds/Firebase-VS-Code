@@ -2195,7 +2195,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   SessionStore.start(contractorId, { monthsLive: 12 });
 })();
 
-// === KPI: Efficiency (Sheep/hr) ===
+// === KPI: Sheep Per Hour (Efficiency) ===
 (function setupKpiEfficiency(){
   const pill = document.getElementById('kpiEfficiency');
   const pillVal = document.getElementById('kpiEfficiencyValue');
@@ -2429,7 +2429,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
           }
           offlineNote.hidden = true;
         } catch (err) {
-          console.warn('KPI efficiency fetch failed; possibly offline', err);
+          console.warn('KPI sheep per hour fetch failed; possibly offline', err);
           offlineNote.hidden = false;
         }
       }
