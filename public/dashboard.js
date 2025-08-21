@@ -2202,402 +2202,198 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   SessionStore.start(contractorId, { monthsLive: 12 });
 })();
 
-// === KPI: Sheep Per Hour (Efficiency) ===
-(function setupKpiEfficiency(){
-  const pill = document.getElementById('kpiEfficiency');
-  const pillVal = document.getElementById('kpiEfficiencyValue');
-  const modal = document.getElementById('kpiEfficiencyModal');
-  const closeBtn = document.getElementById('kpiEfficiencyClose');
-  const closeBtnFooter = document.getElementById('kpiEfficiencyCloseFooter');
-  const yearSel = document.getElementById('kpiEffYearSelect');
-  const farmSel = document.getElementById('kpiEffFarmSelect');
-  const includeCrutched = document.getElementById('kpiEffIncludeCrutched');
-  const offlineNote = document.getElementById('kpiEffOfflineNote');
-  const tblShearers = document.querySelector('#kpiEffShearerTable tbody');
-  const tblFarms = document.querySelector('#kpiEffFarmTable tbody');
+// === KPI: Sheep Per Hour ===
+(function setupKpiSheepPerHour(){
+  const pill = document.getElementById('kpiSheepPerHour');
+  const pillVal = document.getElementById('kpiSheepPerHourValue');
+  const pillMeta = document.getElementById('kpiSheepPerHourMeta');
+  const modal = document.getElementById('kpiSheepPerHourModal');
+  const closeX = document.getElementById('kpiSheepPerHourClose');
+  const closeFooter = document.getElementById('kpiSheepPerHourCloseFooter');
+  const farmSel = document.getElementById('kpiSPHFarmSelect');
+  const clearBtn = document.getElementById('kpiSPHClearFarm');
+  const tblBody = document.querySelector('#kpiSPHTable tbody');
 
   if (!pill || !pillVal || !modal) return;
 
-  if (dashCache.kpiEfficiency != null) {
-    pillVal.textContent = Number(dashCache.kpiEfficiency).toFixed(1);
+  if (dashCache.kpiSheepPerHourRate != null) {
+    pillVal.textContent = dashCache.kpiSheepPerHourRate;
+    if (pillMeta && dashCache.kpiSheepPerHourMeta) {
+      pillMeta.textContent = dashCache.kpiSheepPerHourMeta;
+    }
   }
 
   const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
 
-  function isCrutched(type){
-    return String(type || '').toLowerCase().includes('crutch');
-  }
-
-  function parseHoursToDecimal(str){
-    if (!str) return 0;
-    const s = String(str).trim();
-    if (!s) return 0;
-    if (/^\d+(\.\d+)?$/.test(s)) return parseFloat(s);
-    const hm = s.match(/^(\d+):(\d{1,2})$/);
-    if (hm){
-      const h = parseInt(hm[1],10); const m = parseInt(hm[2],10);
-      if (m>=0 && m<60) return h + m/60;
-    }
-    let norm = s.replace(/\s+/g,' ').replace(/hours?|hrs?/g,'h').replace(/minutes?|mins?|min\b/g,'m');
-    const h_m = norm.match(/^(\d+)\s*h(?:\s*(\d+)\s*m)?$/);
-    if (h_m){
-      const h = parseInt(h_m[1],10); const m = h_m[2]?parseInt(h_m[2],10):0;
-      if(!Number.isNaN(h)&&!Number.isNaN(m)) return h + m/60;
-    }
-    const hCompact = norm.match(/^(\d+)\s*h\s*(\d{1,2})$/);
-    if (hCompact){
-      const h=parseInt(hCompact[1],10); const m=parseInt(hCompact[2],10);
-      if(m>=0 && m<60) return h + m/60;
-    }
-    const mOnly = norm.match(/^(\d+)\s*m$/);
-    if (mOnly) return parseInt(mOnly[1],10)/60;
-    const hOnly = norm.match(/^(\d+)\s*h$/);
-    if (hOnly) return parseInt(hOnly[1],10);
+  function parseHours(input){
+    if (!input) return 0;
+    const s = String(input).trim().toLowerCase();
+    const m = s.match(/^(\d+):(\d{1,2})$/);
+    if (m) return (+m[1]) + (+m[2]/60);
+    const hm = s.match(/^(\d+)\s*h(?:\s*(\d+)\s*m)?$/);
+    if (hm) return (+hm[1]) + (+hm[2] || 0)/60;
+    const minOnly = s.match(/^(\d+)\s*m/);
+    if (minOnly) return (+minOnly[1]) / 60;
+    if (/^\d+(\.\d+)?$/.test(s)) return +s;
     return 0;
   }
 
-  function normalizeName(name){
-    if (!name) return '';
-    const t = String(name).trim().replace(/\s+/g,' ');
-    const parts = t.split(' ');
-    return parts.map(p => p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : '').join(' ');
-  }
-
-  function* iterateShearers(session){
-    let arr = [];
-    if (Array.isArray(session?.shearers)) arr = session.shearers;
-    else if (Array.isArray(session?.shearerHours)) arr = session.shearerHours;
-    else if (Array.isArray(session?.shearerhours)) arr = session.shearerhours;
-    else if (session?.shearerHours && typeof session.shearerHours === 'object') {
-      for (const [name, hrs] of Object.entries(session.shearerHours)) {
-        arr.push({ name, hoursWorked: hrs });
+  function getSessionHours(session){
+    const explicit = session.sessionHours || session.sessionLength || session.dayHours || null;
+    if (explicit) return parseHours(explicit);
+    const st = session.startTime || session.start || null;
+    const ft = session.finishTime || session.finish || null;
+    if (st && ft) {
+      const start = new Date(st);
+      const finish = new Date(ft);
+      let hrs = (finish - start) / 3600000;
+      if (!isNaN(hrs) && hrs > 0) {
+        const lunch = parseHours(session.lunchBreak || session.lunch);
+        const smoko1 = parseHours(session.morningSmoko);
+        const smoko2 = parseHours(session.afternoonSmoko);
+        hrs = Math.max(0, hrs - (lunch + smoko1 + smoko2));
+        return hrs;
       }
     }
-    else if (session?.hours && typeof session.hours === 'object') {
-      for (const [id, hrs] of Object.entries(session.hours)) {
-        arr.push({ name: id, hoursWorked: hrs });
-      }
-    }
-    for (const entry of arr){
-      if (!entry) continue;
-      const name = normalizeName(entry.name || entry.shearerName || entry.displayName || entry.id || entry[0]);
-      const rawHours =
-        entry.hoursWorked ??
-        entry.totalHours ??
-        entry.hours ??
-        entry.total ??
-        entry.time ??
-        entry.minutesWorked ??
-        entry.minutes ??
-        entry.mins ??
-        entry[1];
-      const hours = parseHoursToDecimal(rawHours);
-      if (!name || !hours) continue;
-      yield { name, hours };
-    }
-  }
-
-  function* iterateTallies(session){
-    if (Array.isArray(session?.shearerCounts)) {
-      const stands = Array.isArray(session.stands) ? session.stands : [];
-      const nameByIndex = {};
-      const rawIdx = stands.map((st,i)=>(st && st.index!=null?Number(st.index):i));
-      const has0 = rawIdx.includes(0); const has1 = rawIdx.includes(1);
-      const looksOneBased = !has0 && has1;
-      stands.forEach((st,pos)=>{
-        let i = (st && st.index!=null)?Number(st.index):pos;
-        if(!Number.isFinite(i)) i=pos;
-        if(looksOneBased) i=i-1;
-        if(i<0) i=0;
-        let name='';
-        if(st) name=String(st.name||st.shearerName||st.id||'').trim();
-        if(!name || /^stand\s+\d+$/i.test(name)) name=null;
-        nameByIndex[i]=name;
-      });
-      for (const row of session.shearerCounts){
-        const sheepType = row?.sheepType || '';
-        const perStand = Array.isArray(row?.stands) ? row.stands : [];
-        for (let i=0;i<perStand.length;i++){
-          const num = Number(perStand[i]);
-          if(!isFinite(num) || num<=0) continue;
-          const shearerName = nameByIndex[i] || `Stand ${i+1}`;
-          yield { shearerName, count: num, sheepType, standIndex: i };
-        }
-      }
-      return;
-    }
-
-    if (Array.isArray(session?.tallies)) {
-      for (const t of session.tallies) {
-        yield {
-          shearerName: t.shearerName || t.shearer || t.name,
-          count: Number(t.count || t.tally || 0),
-          sheepType: t.sheepType || t.type,
-          standIndex: Number.isFinite(t?.standIndex) ? Number(t.standIndex) :
-                      (Number.isFinite(t?.index) ? Number(t.index) : undefined)
-        };
-      }
-      return;
-    }
-
+    let maxH = 0;
     if (Array.isArray(session?.shearers)) {
-      for (const sh of session.shearers) {
-        const shearerName = sh.name || sh.shearerName || sh.displayName || sh.id || 'Unknown';
-        const standIndex = Number.isFinite(sh?.standIndex) ? Number(sh.standIndex) :
-                           (Number.isFinite(sh?.index) ? Number(sh.index) : undefined);
-        const runs = sh.runs || sh.tallies || sh.entries || [];
-        for (const r of runs) {
-          yield {
-            shearerName,
-            count: Number(r.count || r.tally || 0),
-            sheepType: r.sheepType || r.type,
-            standIndex
-          };
+      session.shearers.forEach(sh => {
+        maxH = Math.max(maxH, parseHours(sh.hoursWorked || sh.totalHours || sh.hours));
+      });
+    }
+    if (Array.isArray(session?.shedStaff)) {
+      session.shedStaff.forEach(ss => {
+        maxH = Math.max(maxH, parseHours(ss.hoursWorked || ss.totalHours || ss.hours));
+      });
+    }
+    return maxH || 0;
+  }
+
+  function iterTallies(session, fn){
+    if (Array.isArray(session?.shearerCounts)) {
+      session.shearerCounts.forEach(row => {
+        const type = row?.sheepType || row?.type || 'Unknown';
+        let count = Number(row?.total);
+        if (!Number.isFinite(count) && Array.isArray(row?.stands)) {
+          count = row.stands.reduce((sum, s) => sum + Number(s?.count ?? s ?? 0), 0);
         }
-        if (typeof sh.total === 'number') {
-          yield {
-            shearerName,
-            count: Number(sh.total),
-            sheepType: sh.sheepType || null,
-            standIndex
-          };
-        }
-      }
+        if (Number.isFinite(count) && count > 0) fn(type, count);
+      });
       return;
     }
-
-    if (session?.shearerTallies && typeof session.shearerTallies === 'object') {
-      for (const [shearerName, entries] of Object.entries(session.shearerTallies)) {
-        for (const e of (entries || [])) {
-          yield {
-            shearerName,
-            count: Number(e.count || e.tally || 0),
-            sheepType: e.sheepType || e.type,
-            standIndex: Number.isFinite(e?.standIndex) ? Number(e.standIndex) :
-                        (Number.isFinite(e?.index) ? Number(e.index) : undefined)
-          };
-        }
-      }
-    }
-  }
-
-  function yearBounds(y){
-    const start = new Date(Date.UTC(y,0,1,0,0,0));
-    const end = new Date(Date.UTC(y,11,31,23,59,59));
-    return {start,end};
-  }
-
-  async function fetchSessionsForYear(year){
-    const { start, end } = yearBounds(year);
-    // Start with whatever the SessionStore already has cached
-    let cachedDocs = SessionStore.getAll();
-    let cached = cachedDocs.map(d => ({ id: d.id, ...d.data() }));
-
-    // Determine if the existing cache spans the requested year
-    let earliest = null;
-    for (const s of cached) {
-      const ts = s.date || s.savedAt || s.updatedAt;
-      const t = ts?.toDate ? ts.toDate() : new Date(ts);
-      if (!earliest || t < earliest) earliest = t;
-    }
-    let cacheCoversYear = earliest && earliest <= start;
-
-    // If not, try to load older sessions once and wait for cache update
-    if (!cacheCoversYear && SessionStore.loadAllTimeOnce) {
-      await new Promise(resolve => {
-        let resolved = false;
-        const off = SessionStore.onChange(() => {
-          if (!resolved) { resolved = true; off(); resolve(); }
+    if (Array.isArray(session?.shearers)) {
+      session.shearers.forEach(sh => {
+        (sh.runs || []).forEach(run => {
+          const type = run?.sheepType ?? run?.type ?? 'Unknown';
+          const count = Number(run?.tally ?? run?.count ?? run?.total);
+          if (Number.isFinite(count) && count > 0) fn(type, count);
         });
-        setTimeout(() => { if (!resolved) { resolved = true; off(); resolve(); } }, 3000);
-        SessionStore.loadAllTimeOnce();
       });
-      cachedDocs = SessionStore.getAll();
-      cached = cachedDocs.map(d => ({ id: d.id, ...d.data() }));
-      earliest = null;
-      for (const s of cached) {
-        const ts = s.date || s.savedAt || s.updatedAt;
-        const t = ts?.toDate ? ts.toDate() : new Date(ts);
-        if (!earliest || t < earliest) earliest = t;
-      }
-      cacheCoversYear = earliest && earliest <= start;
+      return;
     }
-
-    // Still missing coverage? Fetch directly from Firestore and merge
-    if (!cacheCoversYear) {
-      if (!contractorId || !window.firebase?.firestore) {
-        offlineNote.hidden = false;
-      } else {
-        try {
-          const db = firebase.firestore();
-          const ref = db.collection('contractors').doc(contractorId).collection('sessions');
-          const q = ref.where('savedAt','>=',start).where('savedAt','<=',end);
-          const snap = await q.get();
-          const fetched = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          const existingIds = new Set(cached.map(s => s.id));
-          for (const sess of fetched) {
-            if (!existingIds.has(sess.id)) cached.push(sess);
-          }
-          offlineNote.hidden = true;
-        } catch (err) {
-          console.warn('KPI sheep per hour fetch failed; possibly offline', err);
-          offlineNote.hidden = false;
-        }
-      }
-    } else {
-      offlineNote.hidden = !(!navigator.onLine);
+    if (Array.isArray(session?.tallies)) {
+      session.tallies.forEach(t => {
+        const type = t?.sheepType ?? t?.type ?? 'Unknown';
+        const count = Number(t?.count ?? t?.total ?? t?.tally);
+        if (Number.isFinite(count) && count > 0) fn(type, count);
+      });
+      return;
     }
-
-    // Finally, filter sessions for the requested year
-    const filtered = cached.filter(s => {
-      const ts = s.date || s.savedAt || s.updatedAt;
-      const t = ts?.toDate ? ts.toDate() : new Date(ts);
-      return t >= start && t <= end;
-    });
-    return filtered;
+    if (Array.isArray(session?.shearerTallies)) {
+      session.shearerTallies.forEach(t => {
+        const type = t?.sheepType ?? t?.type ?? 'Unknown';
+        const count = Number(t?.count ?? t?.total ?? t?.tally);
+        if (Number.isFinite(count) && count > 0) fn(type, count);
+      });
+    }
   }
 
-  function fillYearsSelect(){
-    const thisYear = new Date().getFullYear();
-    const years = [];
-    for (let y=thisYear; y>=thisYear-6; y--) years.push(y);
-    yearSel.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
-    yearSel.value = String(thisYear);
+  async function fetchSessions(){
+    if (SessionStore.getAll && SessionStore.getAll().length) {
+      return SessionStore.getAll();
+    }
+    if (!contractorId || !window.firebase?.firestore) return [];
+    try {
+      const db = firebase.firestore();
+      const ref = db.collection('contractors').doc(contractorId).collection('sessions');
+      const snap = await ref.get();
+      return snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    } catch(e){
+      console.warn('Sheep/hr KPI fetch failed', e);
+      return [];
+    }
   }
 
-  function aggregate(sessions, farmFilter, includeCrut){
+  function aggregate(sessions, farmFilter){
+    const daySet = new Set();
+    const typeMap = new Map();
     const farmsSet = new Set();
-    const shearerMap = new Map();
-    const farmMap = new Map();
     let totalSheep = 0;
     let totalHours = 0;
 
-    for (const session of sessions){
-      const data = session.data ? session.data() : session;
-      const farm = pickFarmName(data) || 'Unknown';
-      if (farmFilter && farmFilter !== '__ALL__' && farm !== farmFilter) continue;
+    sessions.forEach(s => {
+      const farm = pickFarmName(s) || 'Unknown Farm';
       farmsSet.add(farm);
+      if (farmFilter && farm !== farmFilter) return;
+      const day = getSessionDateYMD(s);
+      if (day) daySet.add(day);
+      totalSheep += sumSheep(s);
+      totalHours += getSessionHours(s);
+      iterTallies(s, (type,count) => {
+        const key = type || 'Unknown';
+        typeMap.set(key, (typeMap.get(key) || 0) + count);
+      });
+    });
 
-      const shearersByIndex = [];
-      for (const sh of iterateShearers(data)) {
-        shearersByIndex.push(sh);
-      }
-
-      const sheepByName = new Map();
-      const sheepByIndex = [];
-      for (const t of iterateTallies(data)) {
-        if (!includeCrut && isCrutched(t.sheepType)) continue;
-        const name = normalizeName(t.shearerName);
-        if (name) sheepByName.set(name, (sheepByName.get(name) || 0) + (t.count || 0));
-        if (Number.isInteger(t.standIndex)) {
-          const idx = t.standIndex;
-          sheepByIndex[idx] = (sheepByIndex[idx] || 0) + (t.count || 0);
-        }
-      }
-
-      for (let i=0; i<shearersByIndex.length; i++) {
-        const sh = shearersByIndex[i];
-        const name = sh.name;
-        const hours = sh.hours;
-        let sheep = sheepByName.get(name) || 0;
-        if (!sheep && sheepByIndex[i]) sheep = sheepByIndex[i];
-        if (sheep > 0) {
-          totalSheep += sheep;
-          const fm = farmMap.get(farm) || { sheep:0, hours:0 };
-          fm.sheep += sheep;
-          if (hours > 0) {
-            totalHours += hours;
-            fm.hours += hours;
-            const shRec = shearerMap.get(name) || { sheep:0, hours:0 };
-            shRec.sheep += sheep;
-            shRec.hours += hours;
-            shearerMap.set(name, shRec);
-          }
-          farmMap.set(farm, fm);
-        }
-      }
-
-      if (shearersByIndex.length === 0) {
-        const sheep = sumSheep(data);
-        const hours = parseHoursToDecimal(
-          data.totalHours ??
-          data.hoursWorked ??
-          data.hours ??
-          data.time ??
-          data.duration
-        );
-        if (sheep > 0) {
-          totalSheep += sheep;
-          const fm = farmMap.get(farm) || { sheep:0, hours:0 };
-          fm.sheep += sheep;
-          if (hours > 0) {
-            totalHours += hours;
-            fm.hours += hours;
-          }
-          farmMap.set(farm, fm);
-        }
-      }
-    }
-
-    const shearerRows = Array.from(shearerMap.entries())
-      .map(([name,v]) => ({ name, sheep: v.sheep, hours: v.hours, rate: v.sheep / v.hours }))
-      .sort((a,b)=> b.rate - a.rate);
-
-    const farmRows = Array.from(farmMap.entries())
-      .map(([farm,v]) => ({ farm, sheep: v.sheep, hours: v.hours, rate: v.sheep / v.hours }))
-      .sort((a,b)=> b.rate - a.rate);
-
-    const overallRate = totalHours > 0 ? totalSheep / totalHours : 0;
-    return { overallRate, shearerRows, farmRows, farms: Array.from(farmsSet).sort() };
+    const typeRows = Array.from(typeMap.entries())
+      .map(([type,total]) => ({ type, total }))
+      .sort((a,b)=> b.total - a.total);
+    return { days: daySet.size, totalSheep, totalHours, typeRows, farms: Array.from(farmsSet).sort() };
   }
 
-  function renderShearers(rows){
-    tblShearers.innerHTML = '';
+  function renderTable(rows){
+    if (!tblBody) return;
+    tblBody.innerHTML = '';
     rows.forEach(r => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${r.name}</td><td>${r.sheep.toLocaleString()}</td><td>${r.hours.toFixed(2)}</td><td>${r.rate.toFixed(1)}</td>`;
-      tblShearers.appendChild(tr);
+      tr.innerHTML = `<td>${r.type}</td><td>${r.total.toLocaleString()}</td>`;
+      tblBody.appendChild(tr);
     });
   }
 
-  function renderFarms(rows){
-    tblFarms.innerHTML = '';
-    rows.forEach(r => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${r.farm}</td><td>${r.sheep.toLocaleString()}</td><td>${r.hours.toFixed(2)}</td><td>${r.rate.toFixed(1)}</td>`;
-      tblFarms.appendChild(tr);
-    });
+  function updatePill(stats){
+    const rate = stats.totalHours > 0 ? (stats.totalSheep / stats.totalHours) : 0;
+    const rateText = rate > 0 ? rate.toFixed(1) : '—';
+    const metaText = `${stats.days} days • ${stats.totalHours.toFixed(1)}h`;
+    pillVal.textContent = rateText;
+    if (pillMeta) pillMeta.textContent = metaText;
+    dashCache.kpiSheepPerHourRate = rateText;
+    dashCache.kpiSheepPerHourMeta = metaText;
+    saveDashCache();
   }
 
   async function refresh(){
-    const year = Number(yearSel.value || new Date().getFullYear());
-    const farm = farmSel.value || '__ALL__';
-    const sessions = await fetchSessionsForYear(year);
-    const agg = aggregate(sessions, farm, includeCrutched?.checked);
-    const val = agg.overallRate.toFixed(1);
-    pillVal.textContent = val;
-    dashCache.kpiEfficiency = val;
-    saveDashCache();
-
+    const sessions = await fetchSessions();
+    const overall = aggregate(sessions, null);
     const current = farmSel.value;
-    farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + agg.farms.map(f=>`<option value="${f}">${f}</option>`).join('');
-    if (agg.farms.includes(current)) farmSel.value = current;
+    farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + overall.farms.map(f=>`<option value="${f}">${f}</option>`).join('');
+    if (overall.farms.includes(current)) farmSel.value = current; else farmSel.value = '__ALL__';
 
-    renderShearers(agg.shearerRows);
-    renderFarms(agg.farmRows);
+    updatePill(overall);
+
+    const farm = farmSel.value;
+    const viewStats = farm === '__ALL__' ? overall : aggregate(sessions, farm);
+    renderTable(viewStats.typeRows);
   }
 
   function openModal(){ modal.hidden = false; refresh(); }
   function closeModal(){ modal.hidden = true; }
 
-  if (pill) pill.addEventListener('click', openModal);
-  if (closeBtn) closeBtn.addEventListener('click', closeModal);
-  if (closeBtnFooter) closeBtnFooter.addEventListener('click', closeModal);
-  if (yearSel) yearSel.addEventListener('change', refresh);
-  if (farmSel) farmSel.addEventListener('change', refresh);
-  if (includeCrutched) includeCrutched.addEventListener('change', refresh);
-
-  fillYearsSelect();
+  pill?.addEventListener('click', openModal);
+  closeX?.addEventListener('click', closeModal);
+  closeFooter?.addEventListener('click', closeModal);
+  farmSel?.addEventListener('change', refresh);
+  clearBtn?.addEventListener('click', ()=>{ farmSel.value='__ALL__'; refresh(); });
 
   SessionStore.onChange(()=>{ refresh(); });
   if (SessionStore.getAll().length) refresh();

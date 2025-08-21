@@ -138,9 +138,10 @@
             <span class="kpi-label">Sheep Count</span>
             <span class="kpi-value" id="kpiSheepCountValue">—</span>
           </button>
-          <button class="kpi-pill" id="kpiEfficiency" aria-haspopup="dialog" aria-controls="kpiEfficiencyModal">
+          <button class="kpi-pill" id="kpiSheepPerHour" aria-haspopup="dialog" aria-controls="kpiSheepPerHourModal">
             <span class="kpi-label">Sheep Per Hour</span>
-            <span class="kpi-value" id="kpiEfficiencyValue">—</span>
+            <span class="kpi-value" id="kpiSheepPerHourValue">—</span>
+            <span class="kpi-meta" id="kpiSheepPerHourMeta"></span>
           </button>
           <button class="kpi-pill" id="kpiTotalHours" aria-haspopup="dialog" aria-controls="kpiTotalHoursModal">
             <span class="kpi-label">Total Hours</span>
@@ -203,54 +204,32 @@
           </div>
         </div>
 
-        <div id="kpiEfficiencyModal" class="kpi-modal" role="dialog" aria-modal="true" aria-labelledby="kpiEfficiencyTitle" hidden>
+        <div id="kpiSheepPerHourModal" class="kpi-modal" role="dialog" aria-modal="true" aria-labelledby="kpiSheepPerHourTitle" hidden>
           <div class="kpi-modal-card">
             <header class="kpi-modal-header">
-              <h2 id="kpiEfficiencyTitle">Sheep Per Hour — Efficiency</h2>
-              <button class="kpi-close" id="kpiEfficiencyClose" aria-label="Close">✕</button>
+              <h2 id="kpiSheepPerHourTitle">Sheep Per Hour Breakdown</h2>
+              <button class="kpi-close" id="kpiSheepPerHourClose" aria-label="Close">✕</button>
             </header>
 
             <div class="kpi-controls">
               <label>
-                Year
-                <select id="kpiEffYearSelect"></select>
-              </label>
-              <label>
                 Farm
-                <select id="kpiEffFarmSelect">
+                <select id="kpiSPHFarmSelect">
                   <option value="__ALL__">All farms</option>
                 </select>
               </label>
-              <label>
-                <input type="checkbox" id="kpiEffIncludeCrutched"> Include crutched tallies
-              </label>
-              <small id="kpiEffOfflineNote" class="kpi-note" hidden>Offline data may be incomplete.</small>
+              <button id="kpiSPHClearFarm" class="kpi-clear">Clear Filter</button>
             </div>
 
-            <div class="kpi-sections">
-              <section>
-                <h3>Shearer Leaderboard</h3>
-                <table class="kpi-table" id="kpiEffShearerTable">
-                  <thead>
-                    <tr><th>Shearer</th><th>Sheep</th><th>Hours</th><th>Sheep/hr</th></tr>
-                  </thead>
-                  <tbody></tbody>
-                </table>
-              </section>
-
-              <section>
-                <h3>By Farm</h3>
-                <table class="kpi-table" id="kpiEffFarmTable">
-                  <thead>
-                    <tr><th>Farm</th><th>Sheep</th><th>Hours</th><th>Sheep/hr</th></tr>
-                  </thead>
-                  <tbody></tbody>
-                </table>
-              </section>
-            </div>
+            <table class="kpi-table" id="kpiSPHTable">
+              <thead>
+                <tr><th>Sheep Type</th><th>Total</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
 
             <footer class="kpi-actions">
-              <button id="kpiEfficiencyCloseFooter">Close</button>
+              <button id="kpiSheepPerHourCloseFooter">Close</button>
             </footer>
           </div>
         </div>
