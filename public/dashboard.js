@@ -2357,33 +2357,72 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   async function fetchSessionsForYear(year){
     const { start, end } = yearBounds(year);
-    const cached = SessionStore.getAll().map(d => ({ id: d.id, ...d.data() }));
-    if (cached.length){
-      const filtered = cached.filter(s => {
+    // Start with whatever the SessionStore already has cached
+    let cachedDocs = SessionStore.getAll();
+    let cached = cachedDocs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Determine if the existing cache spans the requested year
+    let earliest = null;
+    for (const s of cached) {
+      const ts = s.date || s.savedAt || s.updatedAt;
+      const t = ts?.toDate ? ts.toDate() : new Date(ts);
+      if (!earliest || t < earliest) earliest = t;
+    }
+    let cacheCoversYear = earliest && earliest <= start;
+
+    // If not, try to load older sessions once and wait for cache update
+    if (!cacheCoversYear && SessionStore.loadAllTimeOnce) {
+      await new Promise(resolve => {
+        let resolved = false;
+        const off = SessionStore.onChange(() => {
+          if (!resolved) { resolved = true; off(); resolve(); }
+        });
+        setTimeout(() => { if (!resolved) { resolved = true; off(); resolve(); } }, 3000);
+        SessionStore.loadAllTimeOnce();
+      });
+      cachedDocs = SessionStore.getAll();
+      cached = cachedDocs.map(d => ({ id: d.id, ...d.data() }));
+      earliest = null;
+      for (const s of cached) {
         const ts = s.date || s.savedAt || s.updatedAt;
         const t = ts?.toDate ? ts.toDate() : new Date(ts);
-        return t >= start && t <= end;
-      });
-      offlineNote.hidden = !(!navigator.onLine);
-      return filtered;
+        if (!earliest || t < earliest) earliest = t;
+      }
+      cacheCoversYear = earliest && earliest <= start;
     }
 
-    if (!contractorId || !window.firebase?.firestore) {
-      offlineNote.hidden = false;
-      return [];
+    // Still missing coverage? Fetch directly from Firestore and merge
+    if (!cacheCoversYear) {
+      if (!contractorId || !window.firebase?.firestore) {
+        offlineNote.hidden = false;
+      } else {
+        try {
+          const db = firebase.firestore();
+          const ref = db.collection('contractors').doc(contractorId).collection('sessions');
+          const q = ref.where('savedAt','>=',start).where('savedAt','<=',end);
+          const snap = await q.get();
+          const fetched = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          const existingIds = new Set(cached.map(s => s.id));
+          for (const sess of fetched) {
+            if (!existingIds.has(sess.id)) cached.push(sess);
+          }
+          offlineNote.hidden = true;
+        } catch (err) {
+          console.warn('KPI efficiency fetch failed; possibly offline', err);
+          offlineNote.hidden = false;
+        }
+      }
+    } else {
+      offlineNote.hidden = !(!navigator.onLine);
     }
-    try {
-      const db = firebase.firestore();
-      const ref = db.collection('contractors').doc(contractorId).collection('sessions');
-      const q = ref.where('savedAt','>=',start).where('savedAt','<=',end);
-      const snap = await q.get();
-      offlineNote.hidden = true;
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch (err) {
-      console.warn('KPI efficiency fetch failed; possibly offline', err);
-      offlineNote.hidden = false;
-      return [];
-    }
+
+    // Finally, filter sessions for the requested year
+    const filtered = cached.filter(s => {
+      const ts = s.date || s.savedAt || s.updatedAt;
+      const t = ts?.toDate ? ts.toDate() : new Date(ts);
+      return t >= start && t <= end;
+    });
+    return filtered;
   }
 
   function fillYearsSelect(){
