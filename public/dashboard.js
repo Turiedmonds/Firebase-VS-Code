@@ -1991,7 +1991,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
           count = row.stands.reduce((sum, s) => sum + Number(s?.count ?? s ?? 0), 0);
         }
         if (Number.isFinite(count) && count > 0) {
-          fn(type, count, session.farmName, session.date || session.savedAt);
+          fn(type, count, pickFarmName(session), session.date || session.savedAt);
         }
       });
       return;
@@ -2001,7 +2001,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         (sh.runs || []).forEach(run => {
           const type = run?.sheepType ?? run?.type ?? 'Unknown';
           const count = Number(run?.tally ?? run?.count ?? 0);
-          if (count) fn(type, count, session.farmName, session.date || session.savedAt);
+          if (count) fn(type, count, pickFarmName(session), session.date || session.savedAt);
         });
       });
     }
@@ -2009,7 +2009,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       session.tallies.forEach(t => {
         const type = t?.sheepType ?? t?.type ?? 'Unknown';
         const count = Number(t?.count ?? 0);
-        if (count) fn(type, count, session.farmName, session.date || session.savedAt);
+        if (count) fn(type, count, pickFarmName(session), session.date || session.savedAt);
       });
     }
   }
@@ -2023,7 +2023,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const perFarmDay = new Map(); // key `${farm}|${dayISO}` -> sum that day
 
     sessions.forEach(s => {
-      const farm = s.farmName || 'Unknown Farm';
+      const farm = pickFarmName(s) || 'Unknown Farm';
       farmsSet.add(farm);
       iterTallies(s, (type, count, f, dateTs) => {
         const farmName = f || farm;
