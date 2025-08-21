@@ -2651,11 +2651,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     pillVal.textContent = isFinite(hours) && hours > 0 ? (Math.round(hours*10)/10).toFixed(1) + ' h' : '—';
   }
 
-  function renderSummary(sessionHours, shedStaffHours, shearerHours){
+  function renderSummary(sessionHours, shedStaffHours){
     tbodySummary.innerHTML = `
       <tr><td>Session Hours (pill metric)</td><td>${sessionHours.toFixed(1)}</td></tr>
       <tr><td>Shed Staff Hours (combined)</td><td>${shedStaffHours.toFixed(1)}</td></tr>
-      <tr><td>Shearers Hours (combined)</td><td>${shearerHours.toFixed(1)}</td></tr>
     `;
   }
 
@@ -2668,7 +2667,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         <td>${r.farm}</td>
         <td>${r.sessionHours.toFixed(1)}</td>
         <td>${r.shedStaffHours.toFixed(1)}</td>
-        <td>${r.shearerHours.toFixed(1)}</td>
       `;
       tblByFarm.appendChild(tr);
     });
@@ -2704,9 +2702,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   function aggregate(sessions, farmFilter){
     let totalSessionHours = 0;
     let totalShedStaffHours = 0;
-    let totalShearerHours = 0;
 
-    const byFarm = new Map();   // farm -> { sessionHours, shedStaffHours, shearerHours }
+    const byFarm = new Map();   // farm -> { sessionHours, shedStaffHours }
     const byPerson = new Map(); // name|role -> { name, role, days:Set, totalHours }
     const byMonth = new Map();  // YYYY-MM -> hours
     const farmsSet = new Set();
@@ -2729,7 +2726,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
       // Sum crew hours by role (for reference)
       let shedStaffHours = 0;
-      let shearerHours = 0;
 
       const addPerson = (name, role, dayKey, hours) => {
         const key = `${name}|${role}`;
@@ -2743,25 +2739,21 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       eachPersonInSession(s, ({name, role, dateKey, hours})=>{
         addPerson(name, role, dateKey, hours);
         if (role === 'Shed Staff') shedStaffHours += hours;
-        if (role === 'Shearer') shearerHours += hours;
       });
 
       totalShedStaffHours += shedStaffHours;
-      totalShearerHours += shearerHours;
 
       // By farm rollup
-      const f = byFarm.get(farm) || { sessionHours:0, shedStaffHours:0, shearerHours:0 };
+      const f = byFarm.get(farm) || { sessionHours:0, shedStaffHours:0 };
       f.sessionHours += sessionHours;
       f.shedStaffHours += shedStaffHours;
-      f.shearerHours += shearerHours;
       byFarm.set(farm, f);
     });
 
     const farmRows = Array.from(byFarm.entries()).map(([farm, v]) => ({
       farm,
       sessionHours: v.sessionHours || 0,
-      shedStaffHours: v.shedStaffHours || 0,
-      shearerHours: v.shearerHours || 0
+      shedStaffHours: v.shedStaffHours || 0
     }));
 
     const personRows = Array.from(byPerson.values()).map(v => ({
@@ -2774,7 +2766,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     return {
       totalSessionHours,
       totalShedStaffHours,
-      totalShearerHours,
       farmRows,
       personRows,
       monthMap: byMonth,
@@ -2802,7 +2793,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     renderPill(agg.totalSessionHours);
 
     // Render modal tables
-    renderSummary(agg.totalSessionHours, agg.totalShedStaffHours, agg.totalShearerHours);
+    renderSummary(agg.totalSessionHours, agg.totalShedStaffHours);
     renderByFarm(agg.farmRows);
     renderByPerson(agg.personRows);
     renderByMonth(agg.monthMap);
