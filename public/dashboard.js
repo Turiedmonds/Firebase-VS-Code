@@ -2893,7 +2893,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   function renderPill(hours){
-    const text = isFinite(hours) && hours > 0 ? (Math.round(hours*10)/10).toFixed(1) + ' h' : '—';
+    const text = isFinite(hours) && hours > 0 ? hoursToHM(hours) : '—';
     pillVal.textContent = text;
     dashCache.kpiTotalHours = text;
     saveDashCache();
@@ -2901,8 +2901,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   function renderSummary(sessionHours, shedStaffHours){
     tbodySummary.innerHTML = `
-      <tr><td>Session Hours (pill metric)</td><td>${sessionHours.toFixed(1)}</td></tr>
-      <tr><td>Shed Staff Hours (combined)</td><td>${shedStaffHours.toFixed(1)}</td></tr>
+      <tr><td>Session Hours (pill metric)</td><td>${hoursToHM(sessionHours)}</td></tr>
+      <tr><td>Shed Staff Hours (combined)</td><td>${hoursToHM(shedStaffHours)}</td></tr>
     `;
   }
 
@@ -2913,8 +2913,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${r.farm}</td>
-        <td>${r.sessionHours.toFixed(1)}</td>
-        <td>${r.shedStaffHours.toFixed(1)}</td>
+        <td>${hoursToHM(r.sessionHours)}</td>
+        <td>${hoursToHM(r.shedStaffHours)}</td>
       `;
       tblByFarm.appendChild(tr);
     });
@@ -2922,15 +2922,16 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   function renderByPerson(rows){
     tblByPerson.innerHTML = '';
-    rows.sort((a,b)=>b.totalHours - a.totalHours);
-    rows.forEach(r=>{
+    const shearers = rows.filter(r => r.role === 'Shearer');
+    shearers.sort((a,b)=>b.totalHours - a.totalHours);
+    shearers.forEach((r,i)=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `
+        <td>${i+1}</td>
         <td>${r.name}</td>
-        <td>${r.role}</td>
         <td>${r.daysWorked}</td>
-        <td>${r.totalHours.toFixed(1)}</td>
-        <td>${r.daysWorked ? (r.totalHours / r.daysWorked).toFixed(2) : '—'}</td>
+        <td>${hoursToHM(r.totalHours)}</td>
+        <td>${r.daysWorked ? hoursToHM(r.totalHours / r.daysWorked) : '—'}</td>
       `;
       tblByPerson.appendChild(tr);
     });
@@ -2942,7 +2943,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     tblByMonth.innerHTML = '';
     entries.forEach(([k, hours])=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${k}</td><td>${hours.toFixed(1)}</td>`;
+      tr.innerHTML = `<td>${k}</td><td>${hoursToHM(hours)}</td>`;
       tblByMonth.appendChild(tr);
     });
   }
