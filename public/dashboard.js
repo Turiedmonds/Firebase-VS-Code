@@ -743,6 +743,8 @@ function initTop5ShearersWidget() {
         renderFromCache();
       });
     }
+    // Ensure widget renders even when no SessionStore change fires
+    scheduleRender();
 
     tabs.addEventListener('click', e => {
       if (!rootEl) return;
@@ -1359,8 +1361,10 @@ function initTop5FarmsWidget() {
       renderPending = true;
       requestAnimationFrame(() => { renderPending = false; renderFromCache(); });
     }
+    // Kick off an initial render so cached sessions populate the view
+    scheduleRender();
 
-      viewSel.addEventListener('change', () => {
+    viewSel.addEventListener('change', () => {
         const v = viewSel.value;
         if (v === 'all') {
           yearSel.hidden = true;
