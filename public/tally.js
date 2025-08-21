@@ -350,6 +350,7 @@ let hasUserStartedEnteringData = false;
 let hasTouchedTallyInputs = false;
 // Ensure the Finish Time warning is only shown once
 let hasShownFinishTimeWarning = false;
+let allowCleanup = false;
 
 // === Autosave state ===
 let autosaveTimer = null;
@@ -1609,6 +1610,9 @@ function initAutoHoursField(input) {
     updateLunchToggleButton();
    if (start) start.addEventListener('change', handleStartTimeChange);
    if (end) {
+     end.addEventListener('input', e => {
+       allowCleanup = !!e.target.value.trim();
+     });
      end.addEventListener('change', () => {
        if (!hasTouchedTallyInputs && !hasShownFinishTimeWarning) {
          const enteredTime = end.value;
@@ -1757,11 +1761,8 @@ let saveCallback = null;
 let manualSave = false;
 
 function performSave(saveLocal, saveCloud, manual) {
-    const finishTime = document.getElementById('finishTime')?.value;
-    const sessionHasEnded = finishTime && finishTime.trim() !== '';
-
     if ((isSetupComplete && hasUserStartedEnteringData) || manual) {
-        if (sessionHasEnded || manual) {
+        if (allowCleanup || manual) {
             cleanUpEmptyRowsAndColumns(manual);
         }
     }
