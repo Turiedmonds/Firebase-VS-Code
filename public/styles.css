@@ -1364,8 +1364,8 @@ button {
 .kpi-value {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  font-size: 1.25rem;
-  color: var(--kpi-value-color, #ffd700);
+  font-size: 0.8rem;
+  color: #39ff14;
 }
 .kpi-meta { font-size: .75rem; opacity: .7; }
 
