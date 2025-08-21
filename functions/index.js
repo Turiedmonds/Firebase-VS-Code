@@ -59,9 +59,16 @@ exports.sendPasswordResetEmail = onCall(
     secrets: ["GMAIL_USER", "GMAIL_PASS"]
   },
   async (request) => {
-    const { email } = request.data || {};
+    const { email, appCheckToken } = request.data || {};
     if (!email) {
       throw new functions.https.HttpsError('invalid-argument', 'Missing email');
+    }
+
+    try {
+      await admin.appCheck().verifyToken(appCheckToken);
+    } catch (err) {
+      console.error('App Check verification failed', err);
+      throw new functions.https.HttpsError('failed-precondition', 'Invalid App Check token');
     }
 
     try {
