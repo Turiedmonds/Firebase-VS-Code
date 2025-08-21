@@ -2356,6 +2356,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   const closeFooter = document.getElementById('kpiSheepPerHourCloseFooter');
   const farmSel = document.getElementById('kpiSPHFarmSelect');
   const typeSel = document.getElementById('kpiSPHTypeSelect');
+  const sortSel = document.getElementById('kpiSPHSortSelect');
   const clearBtn = document.getElementById('kpiSPHClearFilters');
   const tblBody = document.querySelector('#kpiSPHTable tbody');
 
@@ -2641,8 +2642,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     window.aggDisplayHours = sessionCount === 1 ? (lastDisplay || hoursToHMM((window.aggTotalMins||0)/60)) : hoursToHMM((window.aggTotalMins||0)/60);
 
     const shearerRows = Array.from(shearerMap.entries())
-      .map(([name,data])=>({ name, sheep:data.sheep, hours:data.hours, rate: data.hours>0 ? data.sheep/data.hours : 0 }))
-      .sort((a,b)=> b.rate - a.rate);
+      .map(([name,data])=>({ name, sheep:data.sheep, hours:data.hours, rate: data.hours>0 ? data.sheep/data.hours : 0 }));
 
     return {
       days: daySet.size,
@@ -2656,11 +2656,32 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   function renderTable(rows){
     if (!tblBody) return;
+    const sortBy = sortSel?.value || 'hours';
+    const sorted = [...rows];
+    switch (sortBy) {
+      case 'sheep':
+        sorted.sort((a,b)=> b.sheep - a.sheep);
+        break;
+      case 'rate':
+        sorted.sort((a,b)=> b.rate - a.rate);
+        break;
+      case 'name':
+        sorted.sort((a,b)=> (normalizeName(a.name)||'').localeCompare(normalizeName(b.name)||''));
+        break;
+      case 'hours':
+      default:
+        sorted.sort((a,b)=> b.hours - a.hours);
+        break;
+    }
     tblBody.innerHTML = '';
-    rows.forEach(r => {
+    sorted.forEach(r => {
       const tr = document.createElement('tr');
       const name = normalizeName(r.name) || 'Unknown';
-      tr.innerHTML = `<td>${name}</td><td>${r.sheep.toLocaleString()}</td><td>${r.hours.toFixed(1)}</td><td>${r.rate.toFixed(1)}</td>`;
+      tr.innerHTML =
+        `<td>${name}</td>`+
+        `<td>${r.sheep.toLocaleString()}</td>`+
+        `<td>${r.hours.toFixed(1)}</td>`+
+        `<td>${r.rate.toFixed(1)}</td>`;
       tblBody.appendChild(tr);
     });
   }
@@ -2710,7 +2731,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   closeFooter?.addEventListener('click', closeModal);
   farmSel?.addEventListener('change', refresh);
   typeSel?.addEventListener('change', refresh);
-  clearBtn?.addEventListener('click', ()=>{ farmSel.value='__ALL__'; typeSel.value='__ALL__'; refresh(); });
+  sortSel?.addEventListener('change', refresh);
+  clearBtn?.addEventListener('click', ()=>{ farmSel.value='__ALL__'; typeSel.value='__ALL__'; sortSel.value='hours'; refresh(); });
 
   SessionStore.onChange(()=>{ refresh(); });
   if (SessionStore.getAll().length) refresh();
