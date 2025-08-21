@@ -172,6 +172,17 @@ function sumSheep(session) {
   return total;
 }
 
+// Populate a <select> with year options from the current year backwards.
+// Defaults to 6 years and sets the select's value to the current year.
+function fillYearsSelect(sel, yearsBack = 6) {
+  if (!sel) return;
+  const thisYear = new Date().getFullYear();
+  const years = [];
+  for (let y = thisYear; y >= thisYear - yearsBack; y--) years.push(y);
+  sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+  sel.value = String(thisYear);
+}
+
 // Persist last dashboard widget data to avoid first-paint flash
 const dashCache = (() => {
   try { return JSON.parse(localStorage.getItem('dashboard_cache_v1') || '{}'); }
@@ -2715,13 +2726,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   farmSel?.addEventListener('change', refresh);
 
   // Init: fill years
-  function fillYearsSelect(sel){
-    const thisYear = new Date().getFullYear();
-    const years = [];
-    for (let y = thisYear; y >= thisYear - 6; y--) years.push(y);
-    sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
-    sel.value = String(thisYear);
-  }
   fillYearsSelect(yearSel);
 
   SessionStore.onChange(refresh);
@@ -2893,12 +2897,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   });
 
   // Init: fill years
-  function fillYearsSelect(sel){
-    const thisYear=new Date().getFullYear();
-    const years=[]; for(let y=thisYear;y>=thisYear-6;y--) years.push(y);
-    sel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');
-    sel.value=String(thisYear);
-  }
   fillYearsSelect(yearSel);
 
   SessionStore.onChange(refresh);
