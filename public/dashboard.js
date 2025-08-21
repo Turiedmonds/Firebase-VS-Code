@@ -2250,7 +2250,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   function getSessionHours(session){
-    const explicit = session.sessionHours || session.sessionLength || session.dayHours || null;
+    const explicit = session.sessionHours || session.sessionLength || session.dayHours || session.hoursWorked || null;
     if (explicit) return parseHours(explicit);
     const st = session.startTime || session.start || null;
     const ft = session.finishTime || session.finish || null;
@@ -2467,7 +2467,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   // Compute a single session's "session hours" (shed operating time, not sum of people)
   function getSessionHours(session){
     // 1) Explicit field (preferred)
-    const explicit = session.sessionHours || session.sessionLength || session.dayHours || null;
+    const explicit = session.sessionHours || session.sessionLength || session.dayHours || session.hoursWorked || null;
     if (explicit) return parseHours(explicit);
 
     // 2) Start/finish times (if present)
