@@ -2967,7 +2967,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const farmsSet = new Set();
 
     sessions.forEach(s=>{
-      const farm = s.farmName || 'Unknown Farm';
+      const farm = pickFarmName(s) || 'Unknown Farm';
       if (farmFilter && farmFilter !== '__ALL__' && farm !== farmFilter) return;
 
       farmsSet.add(farm);
@@ -3020,7 +3020,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const sessions = await fetchSessionsForYear(year);
     const agg = aggregate(sessions, farm);
 
-    const farms = Array.from(new Set(sessions.map(s=>s.farmName||'Unknown Farm'))).sort();
+    const farms = Array.from(new Set(sessions.map(s=>pickFarmName(s) || 'Unknown Farm'))).sort();
     farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + farms.map(f=>`<option value="${f}">${f}</option>`).join('');
     if (farms.includes(farm)) farmSel.value = farm;
 
