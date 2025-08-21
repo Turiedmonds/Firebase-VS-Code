@@ -2423,7 +2423,7 @@ async function buildStationSummary() {
 }
  
 function clearStationSummaryView() {
-    document.querySelector('#stationShearerTable thead')?.replaceChildren();
+    document.querySelector('#stationShearerTable thead tr')?.replaceChildren();
     document.querySelector('#stationShearerTable tbody')?.replaceChildren();
     document.querySelector('#stationStaffTable tbody')?.replaceChildren();
     document.querySelector('#stationLeaderTable tbody')?.replaceChildren();
