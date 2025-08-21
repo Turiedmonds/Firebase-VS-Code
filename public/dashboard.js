@@ -2020,7 +2020,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const byTypeCrut = new Map();
     let totalFull = 0, totalCrut = 0;
 
-    const perFarmDay = new Map(); // key `${farm}|${dayISO}` -> sum that day
+    const perTypeFarmDay = new Map(); // type -> Map<`${farm}|${dayISO}`, sum>
 
     sessions.forEach(s => {
       const farm = pickFarmName(s) || 'Unknown Farm';
@@ -2038,27 +2038,30 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
         if (bucket === byTypeCrut) totalCrut += count; else totalFull += count;
 
-        // track top farm/day per type
+        // track totals per type, farm, and day
         const day = toDayIso(dateTs);
         const k = `${farmName}|${day}`;
-        const prev = perFarmDay.get(k) || 0;
-        perFarmDay.set(k, prev + count);
+        const typeMap = perTypeFarmDay.get(key) || new Map();
+        typeMap.set(k, (typeMap.get(k) || 0) + count);
+        perTypeFarmDay.set(key, typeMap);
       });
     });
 
-    // Compute top farm/day per type (approximation using perFarmDay totals)
+    // Determine top farm/day for each type
     function computeTopFarm(typeMap){
-      // We’ll assign top farm/day globally per map, then each row can show it (simple for v1)
-      // More precise per-type/day can be added later if needed.
-      let top = { farm: '-', day: '-', count: 0 };
-      perFarmDay.forEach((count, key) => {
-        if (count > top.count) {
-          const [farm, day] = key.split('|');
-          top = { farm, day, count };
+      typeMap.forEach((v, type) => {
+        let top = { farm: '-', day: '-', count: 0 };
+        const dayMap = perTypeFarmDay.get(type);
+        if (dayMap) {
+          dayMap.forEach((count, key) => {
+            if (count > top.count) {
+              const [farm, day] = key.split('|');
+              top = { farm, day, count };
+            }
+          });
         }
+        v.topFarm = top;
       });
-      // Attach same global top as reference (keeps UI simple)
-      typeMap.forEach(v => { v.topFarm = top; });
     }
     computeTopFarm(byTypeFull);
     computeTopFarm(byTypeCrut);
