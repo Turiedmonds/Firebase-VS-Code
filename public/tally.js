@@ -2480,7 +2480,18 @@ function collectExportData() {
             data.shedStaff.push({ name: name?.value || '', hours: hours?.value || '' });
         }
     });
- 
+
+    // Duplicate session hours for each shearer so efficiency calculations
+    // can treat hours on a per-shearer basis.
+    const sessionHours = data.hoursWorked;
+    const hoursMap = {};
+    if (sessionHours) {
+        data.stands.forEach(s => {
+            if (s.name) hoursMap[s.name] = sessionHours;
+        });
+    }
+    data.hours = hoursMap;
+
      document.querySelectorAll('#sheepTypeTotalsTable tbody tr').forEach(tr => {
          const cells = tr.querySelectorAll('td');
          if (cells.length >= 2) {
