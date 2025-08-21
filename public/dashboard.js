@@ -223,6 +223,36 @@ const SessionStore = (() => {
     });
   }
 
+  function maybeInitYearFilter() {
+    const sel = document.querySelector('.top5-card select');
+    const currentVal = sel ? sel.value : null;
+    if (!sel || currentVal) return;
+    const first = cache[0];
+    if (!first) return;
+    const data = typeof first.data === 'function' ? first.data() : first.data;
+    let year = null;
+    try {
+      if (data?.savedAt && typeof data.savedAt.toDate === 'function') {
+        const d = data.savedAt.toDate();
+        if (d && !isNaN(d.getTime())) year = d.getFullYear();
+      }
+    } catch {}
+    if (!year && typeof data?.date === 'string') {
+      const ds = data.date.trim();
+      let m = ds.match(/^\d{4}-\d{2}-\d{2}$/);
+      if (m) {
+        year = parseInt(ds.slice(0, 4), 10);
+      } else {
+        m = ds.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (m) year = parseInt(m[3], 10);
+      }
+    }
+    if (year) {
+      sel.value = String(year);
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
   return {
     start(id, { monthsLive = 12 } = {}) {
       contractorId = id;
@@ -249,7 +279,10 @@ const SessionStore = (() => {
             changed = true;
           }
         }
-        if (changed) notify();
+        if (changed) {
+          maybeInitYearFilter();
+          notify();
+        }
       }, err => console.error('[SessionStore] listener error:', err));
       started = true;
     },
@@ -279,6 +312,7 @@ const SessionStore = (() => {
         const existing = new Set(cache.map(d => d.id));
         snap.forEach(doc => { if (!existing.has(doc.id)) cache.push(doc); });
         loadedAllTime = true;
+        maybeInitYearFilter();
         notify();
       }).catch(err => console.error('[SessionStore] loadAllTimeOnce error:', err));
     }
