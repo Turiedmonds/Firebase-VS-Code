@@ -366,6 +366,15 @@ function renderSkeletonRows(container) {
   `).join('');
 }
 
+function renderEmptyLeaderboard(container, modalTbody, message) {
+  if (container) {
+    container.innerHTML = `<div class="siq-lb-empty">${message}</div>`;
+  }
+  if (modalTbody) {
+    modalTbody.innerHTML = `<tr><td colspan="3" class="siq-lb-empty">${message}</td></tr>`;
+  }
+}
+
 function renderCachedTop5Widgets() {
   const shearersEl = document.querySelector('#top5-shearers #top5-shearers-list');
   if (shearersEl) {
@@ -726,8 +735,7 @@ function initTop5ShearersWidget() {
       function renderFromCache() {
         if (!cachedSessions.length) {
           if (!(dashCache.top5Shearers && dashCache.top5Shearers.length)) {
-            listEl.innerHTML = '';
-            modalBodyTbody.innerHTML = '';
+            renderEmptyLeaderboard(listEl, modalBodyTbody, 'No sessions yet');
           }
           return;
         }
@@ -1077,8 +1085,7 @@ function initTop5ShedStaffWidget() {
     function renderFromCache() {
       if (!cachedSessions.length) {
         if (!(dashCache.top5ShedStaff && dashCache.top5ShedStaff.length)) {
-          listEl.innerHTML = '';
-          modalBodyTbody.innerHTML = '';
+          renderEmptyLeaderboard(listEl, modalBodyTbody, 'No sessions yet');
         }
         cachedSig = '';
         return;
@@ -1342,8 +1349,7 @@ function initTop5FarmsWidget() {
     function renderFromCache() {
       if (!cachedSessions.length) {
         if (!(dashCache.top5Farms && dashCache.top5Farms.length)) {
-          listEl.innerHTML = '';
-          modalBodyTbody.innerHTML = '';
+          renderEmptyLeaderboard(listEl, modalBodyTbody, 'No sessions yet');
         }
         return;
       }

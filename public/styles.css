@@ -596,6 +596,12 @@ button {
   align-items: center;
   gap: 10px;
 }
+#top5-shearers .siq-lb-empty , #top5-shedstaff .siq-lb-empty , #top5-farms .siq-lb-empty {
+  color: #b9c2d0;
+  text-align: center;
+  font-size: 0.9rem;
+  padding: 8px 0;
+}
 #top5-shearers .siq-lb-rank , #top5-shedstaff .siq-lb-rank , #top5-farms .siq-lb-rank {
   color: #8c94a7;
   text-align: right;
