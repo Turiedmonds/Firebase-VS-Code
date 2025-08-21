@@ -1926,6 +1926,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   const tblCrutched = document.querySelector('#kpiCrutchedTable tbody');
   const exportBtn = document.getElementById('kpiExportCsv');
 
+  if (!pill || !pillVal || !modal || !yearSel || !farmSel) {
+    return;
+  }
+
   // Find contractor id (same logic you already use)
   const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
 
@@ -2088,6 +2092,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   function renderTable(tbody, rows){
+    if (!tbody) return;
     tbody.innerHTML = '';
     rows.forEach(r => {
       const tr = document.createElement('tr');
@@ -2103,6 +2108,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   function updatePill(value){
+    if (!pillVal) return;
     pillVal.textContent = Number(value || 0).toLocaleString();
   }
 
@@ -2119,15 +2125,15 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const farm = farmSel.value || '__ALL__';
     const sessions = await fetchSessionsForYear(year);
     const agg = aggregate(sessions, farm);
-    updatePill(agg.totalFull);
+    if (pillVal) updatePill(agg.totalFull);
 
     // Populate farm list (keep current selection if possible)
     const current = farmSel.value;
     farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + agg.farms.map(f=>`<option value="${f}">${f}</option>`).join('');
     if (agg.farms.includes(current)) farmSel.value = current;
 
-    renderTable(tblFull, agg.fullArr);
-    renderTable(tblCrutched, agg.crutArr);
+    if (tblFull) renderTable(tblFull, agg.fullArr);
+    if (tblCrutched) renderTable(tblCrutched, agg.crutArr);
   }
 
   // Open/close modal
