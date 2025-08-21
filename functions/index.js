@@ -3,22 +3,21 @@ const { onCall } = require('firebase-functions/v2/https');
 const { onDocumentDeleted } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
-const crypto = require('crypto');
 admin.initializeApp();
 
 exports.createStaffUser = onCall(async (request) => {
-  const { email, password = "Test1234!" } = request.data;
+  const { email } = request.data;
   console.log("📥 Received data in function:", { email });
 
   if (!email) {
     throw new Error('Missing email');
   }
 
-  const userRecord = await admin.auth().createUser({ email, password });
+  const userRecord = await admin.auth().createUser({ email });
   return { uid: userRecord.uid };
 });
 
-async function sendCredentialsEmail({ staffName, staffEmail, password, contractorEmail }) {
+async function sendCredentialsEmail({ staffName, staffEmail, contractorEmail }) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -27,12 +26,14 @@ async function sendCredentialsEmail({ staffName, staffEmail, password, contracto
     },
   });
 
+  const resetLink = await admin.auth().generatePasswordResetLink(staffEmail);
+
   const mailOptions = {
     from: process.env.GMAIL_USER,
     // Send to both contractor and staff
     to: [contractorEmail, staffEmail],
     subject: 'New Staff Login Created',
-    text: `Kia ora,\n\nYou've successfully created a new SHE\u0394R iQ staff login.\n\nHere are the details for your records:\n\nName: ${staffName}\nEmail: ${staffEmail}\nPassword: ${password}\n\nPlease share these login details with your staff member so they can access the SHE\u0394R iQ app.\n\nNg\u0101 mihi,\nThe SHE\u0394R iQ Team`,
+    text: `Kia ora,\n\nYou've successfully created a new SHE\u0394R iQ staff login.\n\nHere are the details for your records:\n\nName: ${staffName}\nEmail: ${staffEmail}\n\nPlease set your password using the following link:\n${resetLink}\n\nNg\u0101 mihi,\nThe SHE\u0394R iQ Team`,
   };
 
   await transporter.sendMail(mailOptions);
@@ -111,12 +112,6 @@ exports.onStaffDeleted = onDocumentDeleted(
   }
 );
 
-function generatePassword() {
-  // 12 random alphanumeric characters with added complexity
-  const base = crypto.randomBytes(9).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
-  return (base + 'Aa1!').slice(0, 12);
-}
-
 exports.restoreStaffUser = onCall(
   {
     secrets: ["GMAIL_USER", "GMAIL_PASS"]
@@ -138,11 +133,10 @@ exports.restoreStaffUser = onCall(
       throw new functions.https.HttpsError('invalid-argument', 'Log missing email');
     }
 
-    const password = generatePassword();
     let uid;
 
     try {
-      const userRecord = await admin.auth().createUser({ email, password });
+      const userRecord = await admin.auth().createUser({ email });
       uid = userRecord.uid;
 
       await admin
@@ -160,7 +154,6 @@ exports.restoreStaffUser = onCall(
       await sendCredentialsEmail({
         staffName: name,
         staffEmail: email,
-        password,
         contractorEmail: contractorUser.email,
       });
 
