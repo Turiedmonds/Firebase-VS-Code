@@ -223,6 +223,41 @@ const SessionStore = (() => {
     });
   }
 
+  // Derive a usable timestamp from various possible fields on a session
+  function deriveSavedAt(data) {
+    const convert = val => {
+      try {
+        if (!val) return null;
+        if (typeof val.toDate === 'function') return val; // Firestore Timestamp
+        if (val instanceof Date) return firebase.firestore.Timestamp.fromDate(val);
+        if (typeof val === 'number') return firebase.firestore.Timestamp.fromMillis(val);
+        if (typeof val === 'string') {
+          const iso = new Date(val);
+          if (!isNaN(iso.getTime())) return firebase.firestore.Timestamp.fromDate(iso);
+          const m = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+          if (m) {
+            const d = new Date(`${m[3]}-${m[2]}-${m[1]}`);
+            if (!isNaN(d.getTime())) return firebase.firestore.Timestamp.fromDate(d);
+          }
+        }
+      } catch {}
+      return null;
+    };
+    let ts = convert(data?.savedAt);
+    if (!ts) ts = convert(data?.date);
+    if (!ts) ts = convert(data?.timestamp);
+    if (!ts) ts = convert(data?.sessionDate);
+    return ts;
+  }
+
+  function wrapDoc(doc) {
+    const data = doc.data ? doc.data() : doc;
+    let ts = deriveSavedAt(data);
+    const newData = { ...data };
+    if (ts) newData.savedAt = ts;
+    return { id: doc.id || data.id, data: () => newData };
+  }
+
   function maybeInitYearFilter() {
     // Query all year dropdowns used by the Top 5 widgets.
     const selects = document.querySelectorAll('.top5-widget .year-select');
@@ -277,20 +312,24 @@ const SessionStore = (() => {
       const colRef = db.collection('contractors').doc(id).collection('sessions');
       const cutoff = new Date();
       cutoff.setMonth(cutoff.getMonth() - monthsLive);
-      const ts = firebase.firestore.Timestamp.fromDate(cutoff);
       console.info('[SessionStore] start listener');
-      unsub = colRef.where('savedAt', '>=', ts).onSnapshot(snap => {
+      unsub = colRef.onSnapshot(snap => {
         let changed = false;
         for (const change of snap.docChanges()) {
-          const idx = cache.findIndex(d => d.id === change.doc.id);
-          if (change.type === 'removed' && idx !== -1) {
-            cache.splice(idx, 1);
-            changed = true;
+          const wrapped = wrapDoc(change.doc);
+          const idx = cache.findIndex(d => d.id === wrapped.id);
+          const ts = deriveSavedAt(wrapped.data());
+          const recent = !ts || ts.toDate().getTime() >= cutoff.getTime();
+          if (change.type === 'removed' || !recent) {
+            if (idx !== -1) {
+              cache.splice(idx, 1);
+              changed = true;
+            }
           } else if (change.type === 'modified' && idx !== -1) {
-            cache[idx] = change.doc;
+            cache[idx] = wrapped;
             changed = true;
-          } else if (change.type === 'added' && idx === -1) {
-            cache.push(change.doc);
+          } else if ((change.type === 'added' || change.type === 'modified') && idx === -1) {
+            cache.push(wrapped);
             changed = true;
           }
         }
@@ -320,12 +359,12 @@ const SessionStore = (() => {
       const db = firebase.firestore ? firebase.firestore() : (typeof getFirestore === 'function' ? getFirestore() : null);
       if (!db) return;
       const colRef = db.collection('contractors').doc(contractorId).collection('sessions');
-      const cutoff = new Date();
-      cutoff.setMonth(cutoff.getMonth() - 12);
-      const ts = firebase.firestore.Timestamp.fromDate(cutoff);
-      colRef.where('savedAt', '<', ts).get().then(snap => {
+      colRef.get().then(snap => {
         const existing = new Set(cache.map(d => d.id));
-        snap.forEach(doc => { if (!existing.has(doc.id)) cache.push(doc); });
+        snap.forEach(doc => {
+          const wrapped = wrapDoc(doc);
+          if (!existing.has(wrapped.id)) cache.push(wrapped);
+        });
         loadedAllTime = true;
         maybeInitYearFilter();
         notify();
