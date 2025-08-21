@@ -1730,6 +1730,7 @@ document.addEventListener('DOMContentLoaded', () => {
   tourTip.style.display = 'none';
 
   const steps = [
+    { sel: '#kpiBar', text: 'Key Metrics — view KPI pills for sheep count, rate, hours, and days worked. Tap any pill for details.' },
     { sel: '#top5-shearers', text: 'Top 5 Shearers — tap “View Full List” to see rankings.' },
     { sel: '#top5-shedstaff', text: 'Top 5 Shed Staff — track hours worked; open “View Full List”.' },
     { sel: '#top5-farms', text: 'Top 5 Farms — view leading farms; open “View All”.' },
