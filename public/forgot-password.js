@@ -22,9 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
         case 'functions/invalid-argument':
           msg = 'Please enter a valid email address';
           break;
-        case 'functions/not-found':
-          msg = 'No user found with that email';
-          break;
         case 'functions/failed-precondition':
           msg = 'App verification failed. Please try again';
           break;

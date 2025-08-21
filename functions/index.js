@@ -92,10 +92,11 @@ exports.sendPasswordResetEmail = onCall(
       await transporter.sendMail(mailOptions);
       return { success: true };
     } catch (error) {
-      console.error('Error sending password reset email', error);
       if (error.code === 'auth/user-not-found') {
-        throw new functions.https.HttpsError('not-found', 'No user found with that email');
+        console.log(`Password reset requested for non-existent user: ${email}`);
+        return { success: true };
       }
+      console.error('Error sending password reset email', error);
       throw new functions.https.HttpsError('internal', error.message);
     }
   }
