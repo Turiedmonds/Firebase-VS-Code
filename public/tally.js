@@ -485,6 +485,13 @@ function showAutosaveStatus(message, mode) {
 }
 
 function scheduleAutosave() {
+    if (!hasUserStartedEnteringData) {
+        if (autosaveTimer) {
+            clearTimeout(autosaveTimer);
+            autosaveTimer = null;
+        }
+        return;
+    }
     if (autosaveTimer) clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(() => {
         const mode = localStorage.getItem('tally_autosave_mode') || 'both';
