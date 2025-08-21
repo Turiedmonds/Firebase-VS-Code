@@ -2227,7 +2227,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   const closeX = document.getElementById('kpiSheepPerHourClose');
   const closeFooter = document.getElementById('kpiSheepPerHourCloseFooter');
   const farmSel = document.getElementById('kpiSPHFarmSelect');
-  const clearBtn = document.getElementById('kpiSPHClearFarm');
+  const typeSel = document.getElementById('kpiSPHTypeSelect');
+  const clearBtn = document.getElementById('kpiSPHClearFilters');
   const tblBody = document.querySelector('#kpiSPHTable tbody');
 
   if (!pill || !pillVal || !modal) return;
@@ -2290,41 +2291,70 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     return maxH || 0;
   }
 
-  function iterTallies(session, fn){
-    if (Array.isArray(session?.shearerCounts)) {
-      session.shearerCounts.forEach(row => {
-        const type = row?.sheepType || row?.type || 'Unknown';
-        let count = Number(row?.total);
-        if (!Number.isFinite(count) && Array.isArray(row?.stands)) {
-          count = row.stands.reduce((sum, s) => sum + Number(s?.count ?? s ?? 0), 0);
+  function eachShearerHours(session, fn){
+    if (Array.isArray(session?.shearers)) {
+      session.shearers.forEach(sh => {
+        const name = sh.name || sh.shearerName || sh.displayName || sh.id || 'Unknown';
+        const hours = parseHours(sh.hoursWorked || sh.totalHours || sh.hours);
+        if (hours > 0) fn(name, hours);
+      });
+    } else {
+      const names = Array.isArray(session?.stands) ? session.stands : Object.keys(session?.hours || {});
+      names.forEach(name => {
+        const hours = parseHours(session?.hours?.[name]);
+        if (hours > 0) fn(name, hours);
+      });
+    }
+  }
+
+  function iterShearerTallies(session, fn){
+    if (Array.isArray(session?.shearers)) {
+      session.shearers.forEach(sh => {
+        const shearerName = sh.name || sh.shearerName || sh.displayName || sh.id || 'Unknown';
+        const runs = sh.runs || sh.tallies || sh.entries || [];
+        runs.forEach(run => {
+          const type = run?.sheepType ?? run?.type ?? 'Unknown';
+          const count = Number(run?.tally ?? run?.count ?? run?.total);
+          if (Number.isFinite(count) && count > 0) fn(shearerName, type, count);
+        });
+        const total = Number(sh.total);
+        if (Number.isFinite(total) && total > 0) {
+          const type = sh.sheepType || sh.type || 'Unknown';
+          fn(shearerName, type, total);
         }
-        if (Number.isFinite(count) && count > 0) fn(type, count);
       });
       return;
     }
-    if (Array.isArray(session?.shearers)) {
-      session.shearers.forEach(sh => {
-        (sh.runs || []).forEach(run => {
-          const type = run?.sheepType ?? run?.type ?? 'Unknown';
-          const count = Number(run?.tally ?? run?.count ?? run?.total);
-          if (Number.isFinite(count) && count > 0) fn(type, count);
+    if (Array.isArray(session?.shearerCounts)) {
+      const names = Array.isArray(session?.stands) ? session.stands : [];
+      session.shearerCounts.forEach(row => {
+        const type = row?.sheepType || row?.type || 'Unknown';
+        const perStand = Array.isArray(row?.stands) ? row.stands : (Array.isArray(row?.counts) ? row.counts : []);
+        perStand.forEach((raw,i)=>{
+          const cnt = Number(raw?.count ?? raw);
+          if (!Number.isFinite(cnt) || cnt <= 0) return;
+          const name = names[i] || `Stand ${i+1}`;
+          fn(name, type, cnt);
         });
       });
       return;
     }
     if (Array.isArray(session?.tallies)) {
       session.tallies.forEach(t => {
-        const type = t?.sheepType ?? t?.type ?? 'Unknown';
-        const count = Number(t?.count ?? t?.total ?? t?.tally);
-        if (Number.isFinite(count) && count > 0) fn(type, count);
+        const name = t.shearerName || t.shearer || t.name || 'Unknown';
+        const type = t.sheepType || t.type || 'Unknown';
+        const cnt = Number(t.count ?? t.tally ?? t.total);
+        if (name && Number.isFinite(cnt) && cnt > 0) fn(name, type, cnt);
       });
       return;
     }
-    if (Array.isArray(session?.shearerTallies)) {
-      session.shearerTallies.forEach(t => {
-        const type = t?.sheepType ?? t?.type ?? 'Unknown';
-        const count = Number(t?.count ?? t?.total ?? t?.tally);
-        if (Number.isFinite(count) && count > 0) fn(type, count);
+    if (session && typeof session.shearerTallies === 'object') {
+      Object.entries(session.shearerTallies).forEach(([name, entries]) => {
+        (entries || []).forEach(e => {
+          const type = e.sheepType || e.type || 'Unknown';
+          const cnt = Number(e.count ?? e.tally ?? e.total);
+          if (Number.isFinite(cnt) && cnt > 0) fn(name, type, cnt);
+        });
       });
     }
   }
@@ -2346,10 +2376,11 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     }
   }
 
-  function aggregate(sessions, farmFilter){
+  function aggregate(sessions, farmFilter, typeFilter){
     const daySet = new Set();
-    const typeMap = new Map();
     const farmsSet = new Set();
+    const typeSet = new Set();
+    const shearerMap = new Map();
     let totalSheep = 0;
     let totalHours = 0;
 
@@ -2359,18 +2390,41 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       if (farmFilter && farm !== farmFilter) return;
       const day = getSessionDateYMD(s);
       if (day) daySet.add(day);
-      totalSheep += sumSheep(s);
       totalHours += getSessionHours(s);
-      iterTallies(s, (type,count) => {
-        const key = type || 'Unknown';
-        typeMap.set(key, (typeMap.get(key) || 0) + count);
+
+      const hoursMap = new Map();
+      eachShearerHours(s, (name,h)=>{
+        hoursMap.set(name, (hoursMap.get(name)||0)+h);
+      });
+
+      iterShearerTallies(s,(name,type,count)=>{
+        typeSet.add(type || 'Unknown');
+        if (typeFilter && type !== typeFilter) return;
+        totalSheep += count;
+        const entry = shearerMap.get(name) || { sheep:0, hours:0 };
+        entry.sheep += count;
+        shearerMap.set(name, entry);
+      });
+
+      hoursMap.forEach((h,name)=>{
+        const entry = shearerMap.get(name) || { sheep:0, hours:0 };
+        entry.hours += h;
+        shearerMap.set(name, entry);
       });
     });
 
-    const typeRows = Array.from(typeMap.entries())
-      .map(([type,total]) => ({ type, total }))
-      .sort((a,b)=> b.total - a.total);
-    return { days: daySet.size, totalSheep, totalHours, typeRows, farms: Array.from(farmsSet).sort() };
+    const shearerRows = Array.from(shearerMap.entries())
+      .map(([name,data])=>({ name, sheep:data.sheep, hours:data.hours, rate: data.hours>0 ? data.sheep/data.hours : 0 }))
+      .sort((a,b)=> b.rate - a.rate);
+
+    return {
+      days: daySet.size,
+      totalSheep,
+      totalHours,
+      shearerRows,
+      farms: Array.from(farmsSet).sort(),
+      sheepTypes: Array.from(typeSet).sort()
+    };
   }
 
   function renderTable(rows){
@@ -2378,7 +2432,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     tblBody.innerHTML = '';
     rows.forEach(r => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${r.type}</td><td>${r.total.toLocaleString()}</td>`;
+      tr.innerHTML = `<td>${r.name}</td><td>${r.sheep.toLocaleString()}</td><td>${r.hours.toFixed(1)}</td><td>${r.rate.toFixed(1)}</td>`;
       tblBody.appendChild(tr);
     });
   }
@@ -2396,18 +2450,26 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   async function refresh(){
     const sessions = await fetchSessions();
-    const overall = aggregate(sessions, null);
-    const current = farmSel.value;
+    const overall = aggregate(sessions, null, null);
+
+    const currentFarm = farmSel.value;
     farmSel.innerHTML =
       `<option value="__ALL__">All farms</option>` +
       overall.farms.map(f => `<option value="${f}">${f}</option>`).join('');
-    if (overall.farms.includes(current)) farmSel.value = current; else farmSel.value = '__ALL__';
+    farmSel.value = overall.farms.includes(currentFarm) ? currentFarm : '__ALL__';
+
+    const currentType = typeSel.value;
+    typeSel.innerHTML =
+      `<option value="__ALL__">All types</option>` +
+      overall.sheepTypes.map(t => `<option value="${t}">${t}</option>`).join('');
+    typeSel.value = overall.sheepTypes.includes(currentType) ? currentType : '__ALL__';
 
     updatePill(overall);
 
-    const farm = farmSel.value;
-    const viewStats = farm === '__ALL__' ? overall : aggregate(sessions, farm);
-    renderTable(viewStats.typeRows);
+    const farm = farmSel.value === '__ALL__' ? null : farmSel.value;
+    const type = typeSel.value === '__ALL__' ? null : typeSel.value;
+    const viewStats = aggregate(sessions, farm, type);
+    renderTable(viewStats.shearerRows);
   }
 
   function openModal(){ modal.hidden = false; refresh(); }
@@ -2417,7 +2479,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   closeX?.addEventListener('click', closeModal);
   closeFooter?.addEventListener('click', closeModal);
   farmSel?.addEventListener('change', refresh);
-  clearBtn?.addEventListener('click', ()=>{ farmSel.value='__ALL__'; refresh(); });
+  typeSel?.addEventListener('change', refresh);
+  clearBtn?.addEventListener('click', ()=>{ farmSel.value='__ALL__'; typeSel.value='__ALL__'; refresh(); });
 
   SessionStore.onChange(()=>{ refresh(); });
   if (SessionStore.getAll().length) refresh();
