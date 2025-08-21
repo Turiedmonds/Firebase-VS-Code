@@ -2251,6 +2251,11 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         arr.push({ name, hoursWorked: hrs });
       }
     }
+    else if (session?.hours && typeof session.hours === 'object') {
+      for (const [id, hrs] of Object.entries(session.hours)) {
+        arr.push({ name: id, hoursWorked: hrs });
+      }
+    }
     for (const entry of arr){
       if (!entry) continue;
       const name = normalizeName(entry.name || entry.shearerName || entry.displayName || entry.id || entry[0]);
