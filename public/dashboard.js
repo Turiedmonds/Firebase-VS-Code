@@ -323,6 +323,9 @@ const SessionStore = (() => {
         maybeInitYearFilter();
         notify();
       }).catch(err => console.error('[SessionStore] loadAllTimeOnce error:', err));
+    },
+    ensureYearFilter() {
+      maybeInitYearFilter();
     }
   };
 })();
@@ -767,12 +770,14 @@ function initTop5ShearersWidget() {
         const years = deriveYearsFromSessions(cachedSessions);
         yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
         if (viewSel.value !== 'year') yearSel.hidden = true;
+        if (!yearSel.value) SessionStore.ensureYearFilter();
         scheduleRender();
       });
 
       const years = deriveYearsFromSessions(cachedSessions);
       yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
       if (viewSel.value !== 'year') yearSel.hidden = true;
+      if (!yearSel.value) SessionStore.ensureYearFilter();
 
       function renderFromCache() {
         if (!cachedSessions.length) {
@@ -1113,6 +1118,7 @@ function initTop5ShedStaffWidget() {
         const years = deriveYearsFromSessions(cachedSessions);
         yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
         if (viewSel.value !== 'year') yearSel.hidden = true;
+        if (!yearSel.value) SessionStore.ensureYearFilter();
       }
 
       SessionStore.onChange(sessions => {
@@ -1381,12 +1387,14 @@ function initTop5FarmsWidget() {
         const years = deriveYearsFromSessions(cachedSessions);
         yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
         if (viewSel.value !== 'year') yearSel.hidden = true;
+        if (!yearSel.value) SessionStore.ensureYearFilter();
         scheduleRender();
       });
 
       const years = deriveYearsFromSessions(cachedSessions);
       yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
       if (viewSel.value !== 'year') yearSel.hidden = true;
+      if (!yearSel.value) SessionStore.ensureYearFilter();
 
     function renderFromCache() {
       if (!cachedSessions.length) {
@@ -1456,6 +1464,7 @@ let dashboardInitRan = false;
 document.addEventListener('DOMContentLoaded', () => {
   if (dashboardInitRan) return; // avoid duplicate init if script executed twice
   dashboardInitRan = true;
+  SessionStore.ensureYearFilter();
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
   if (!(window.firebase && typeof firebase.auth === 'function')) {
