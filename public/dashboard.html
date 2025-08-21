@@ -146,6 +146,10 @@
             <span class="kpi-label">Total Hours</span>
             <span class="kpi-value" id="kpiTotalHoursValue">—</span>
           </button>
+          <button class="kpi-pill" id="kpiDaysWorked" aria-haspopup="dialog" aria-controls="kpiDaysWorkedModal">
+            <span class="kpi-label">Days Worked</span>
+            <span class="kpi-value" id="kpiDaysWorkedValue">—</span>
+          </button>
         </section>
 
         <!-- KPI MODAL (new) -->
@@ -321,11 +325,77 @@
             </div>
 
             <footer class="kpi-actions">
-              <button id="kpiTHExport">Export CSV</button>
-              <button id="kpiTotalHoursCloseFooter">Close</button>
-            </footer>
+          <button id="kpiTHExport">Export CSV</button>
+          <button id="kpiTotalHoursCloseFooter">Close</button>
+        </footer>
+      </div>
+    </div>
+
+      <div id="kpiDaysWorkedModal" class="kpi-modal" role="dialog" aria-modal="true" aria-labelledby="kpiDaysWorkedTitle" hidden>
+        <div class="kpi-modal-card">
+          <header class="kpi-modal-header">
+            <h2 id="kpiDaysWorkedTitle">Days Worked — Unique Session Days</h2>
+            <button class="kpi-close" id="kpiDaysWorkedClose" aria-label="Close">✕</button>
+          </header>
+
+          <div class="kpi-controls">
+            <label>
+              Year
+              <select id="kpiDWYearSelect"></select>
+            </label>
+            <label>
+              Farm
+              <select id="kpiDWFarmSelect">
+                <option value="__ALL__">All farms</option>
+              </select>
+            </label>
+            <small id="kpiDWOfflineNote" class="kpi-note" hidden>Offline data may be incomplete.</small>
           </div>
+
+          <div class="kpi-sections">
+            <section>
+              <h3>Summary</h3>
+              <table class="kpi-table">
+                <thead><tr><th>Metric</th><th>Count</th></tr></thead>
+                <tbody id="kpiDWSummary"></tbody>
+              </table>
+              <small class="kpi-note">
+                <strong>Days Worked</strong> counts unique session dates (1 per calendar day).<br>
+                Per-person days are also unique per date — working multiple farms in one day still counts as 1.
+              </small>
+            </section>
+
+            <section>
+              <h3>By Farm</h3>
+              <table class="kpi-table" id="kpiDWByFarm">
+                <thead><tr><th>Farm</th><th>Days Worked</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </section>
+
+            <section>
+              <h3>By Person</h3>
+              <table class="kpi-table" id="kpiDWByPerson">
+                <thead><tr><th>Name</th><th>Role</th><th>Days Worked</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </section>
+
+            <section>
+              <h3>By Month</h3>
+              <table class="kpi-table" id="kpiDWByMonth">
+                <thead><tr><th>Month</th><th>Days Worked</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </section>
+          </div>
+
+          <footer class="kpi-actions">
+            <button id="kpiDWExport">Export CSV</button>
+            <button id="kpiDaysWorkedCloseFooter">Close</button>
+          </footer>
         </div>
+      </div>
 
         <div id="siq-widgets-grid">
         <!-- BEGIN: Top 5 Shearers Widget -->

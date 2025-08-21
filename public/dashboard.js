@@ -2825,3 +2825,168 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   fillYearsSelect(yearSel);
   refresh();
 })();
+
+// === KPI: Days Worked (unique session-days) ===
+(function setupKpiDaysWorked(){
+  const pill = document.getElementById('kpiDaysWorked');
+  const pillVal = document.getElementById('kpiDaysWorkedValue');
+  const modal = document.getElementById('kpiDaysWorkedModal');
+  const closeX = document.getElementById('kpiDaysWorkedClose');
+  const closeFooter = document.getElementById('kpiDaysWorkedCloseFooter');
+
+  const yearSel = document.getElementById('kpiDWYearSelect');
+  const farmSel = document.getElementById('kpiDWFarmSelect');
+  const offlineNote = document.getElementById('kpiDWOfflineNote');
+
+  const tbodySummary = document.getElementById('kpiDWSummary');
+  const tblByFarm = document.querySelector('#kpiDWByFarm tbody');
+  const tblByPerson = document.querySelector('#kpiDWByPerson tbody');
+  const tblByMonth = document.querySelector('#kpiDWByMonth tbody');
+  const exportBtn = document.getElementById('kpiDWExport');
+
+  const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+
+  function yearBounds(y){
+    const start = new Date(Date.UTC(y,0,1,0,0,0));
+    const end = new Date(Date.UTC(y,11,31,23,59,59));
+    return {start, end};
+  }
+  function toDayIso(ts){
+    const d = ts?.toDate ? ts.toDate() : new Date(ts || Date.now());
+    const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function monthKeyFromDay(dayStr){
+    return dayStr.slice(0,7); // YYYY-MM
+  }
+
+  async function fetchSessionsForYear(year){
+    const { start, end } = yearBounds(year);
+    if (window.__DASHBOARD_SESSIONS && Array.isArray(window.__DASHBOARD_SESSIONS)) {
+      return window.__DASHBOARD_SESSIONS.filter(s=>{
+        const ts = s.date || s.savedAt || s.updatedAt;
+        const t = ts?.toDate ? ts.toDate() : new Date(ts);
+        return t >= start && t <= end;
+      });
+    }
+    if (!contractorId || !window.firebase?.firestore) return [];
+    const db = firebase.firestore();
+    const ref = db.collection('contractors').doc(contractorId).collection('sessions');
+    const snap = await ref.where('savedAt', '>=', start).where('savedAt', '<=', end).get();
+    return snap.docs.map(d=>({id:d.id,...d.data()}));
+  }
+
+  function aggregate(sessions, farmFilter){
+    const daySet = new Set();
+    const farmDayMap = new Map();   // farm -> Set(days)
+    const personDayMap = new Map(); // person|role -> Set(days)
+    const monthDayMap = new Map();  // month -> Set(days)
+    const farmsSet = new Set();
+
+    sessions.forEach(s=>{
+      const farm = s.farmName || 'Unknown Farm';
+      if (farmFilter && farmFilter !== '__ALL__' && farm !== farmFilter) return;
+
+      farmsSet.add(farm);
+      const dayStr = toDayIso(s.date || s.savedAt || s.updatedAt);
+      daySet.add(dayStr);
+
+      if (!farmDayMap.has(farm)) farmDayMap.set(farm, new Set());
+      farmDayMap.get(farm).add(dayStr);
+
+      function addPerson(name, role){
+        const key = `${name}|${role}`;
+        if (!personDayMap.has(key)) personDayMap.set(key, new Set());
+        personDayMap.get(key).add(dayStr);
+      }
+      (s.shearers || []).forEach(sh => addPerson(sh.name || sh.shearerName || 'Unknown', 'Shearer'));
+      (s.shedStaff || []).forEach(ss => addPerson(ss.name || ss.staffName || 'Unknown', 'Shed Staff'));
+
+      const mKey = monthKeyFromDay(dayStr);
+      if (!monthDayMap.has(mKey)) monthDayMap.set(mKey, new Set());
+      monthDayMap.get(mKey).add(dayStr);
+    });
+
+    const farmRows = Array.from(farmDayMap.entries())
+      .map(([farm,set])=>({farm, days:set.size}))
+      .sort((a,b)=>b.days-a.days);
+
+    const personRows = Array.from(personDayMap.entries())
+      .map(([key,set])=>{
+        const [name,role] = key.split('|');
+        return {name, role, days:set.size};
+      })
+      .sort((a,b)=>b.days-a.days || a.name.localeCompare(b.name));
+
+    const monthRows = Array.from(monthDayMap.entries())
+      .map(([month,set])=>({month, days:set.size}))
+      .sort((a,b)=>a.month.localeCompare(b.month));
+
+    return { total: daySet.size, farmRows, personRows, monthRows, farms:Array.from(farmsSet).sort() };
+  }
+
+  function renderPill(val){ pillVal.textContent = val>0 ? val : '—'; }
+  function renderSummary(val){ tbodySummary.innerHTML = `<tr><td>Days Worked</td><td>${val}</td></tr>`; }
+  function renderByFarm(rows){ tblByFarm.innerHTML = rows.map(r=>`<tr><td>${r.farm}</td><td>${r.days}</td></tr>`).join(''); }
+  function renderByPerson(rows){ tblByPerson.innerHTML = rows.map(r=>`<tr><td>${r.name}</td><td>${r.role}</td><td>${r.days}</td></tr>`).join(''); }
+  function renderByMonth(rows){ tblByMonth.innerHTML = rows.map(r=>`<tr><td>${r.month}</td><td>${r.days}</td></tr>`).join(''); }
+
+  async function refresh(){
+    const year = Number(yearSel.value||new Date().getFullYear());
+    const farm = farmSel.value||'__ALL__';
+    const sessions = await fetchSessionsForYear(year);
+    const agg = aggregate(sessions, farm);
+
+    const farms = Array.from(new Set(sessions.map(s=>s.farmName||'Unknown Farm'))).sort();
+    farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + farms.map(f=>`<option value="${f}">${f}</option>`).join('');
+    if (farms.includes(farm)) farmSel.value = farm;
+
+    offlineNote.hidden = navigator.onLine;
+
+    renderPill(agg.total);
+    renderSummary(agg.total);
+    renderByFarm(agg.farmRows);
+    renderByPerson(agg.personRows);
+    renderByMonth(agg.monthRows);
+  }
+
+  function openModal(){ modal.hidden=false; refresh(); }
+  function closeModal(){ modal.hidden=true; }
+
+  pill?.addEventListener('click', openModal);
+  closeX?.addEventListener('click', closeModal);
+  closeFooter?.addEventListener('click', closeModal);
+  yearSel?.addEventListener('change', refresh);
+  farmSel?.addEventListener('change', refresh);
+  exportBtn?.addEventListener('click',()=>{
+    const rows=[["Metric","Count"]];
+    rows.push(["Days Worked (total)",pillVal.textContent]);
+    tblByFarm.querySelectorAll('tr').forEach(tr=>{
+      const c=[...tr.children].map(td=>td.textContent);
+      rows.push(["Farm",...c]);
+    });
+    tblByPerson.querySelectorAll('tr').forEach(tr=>{
+      const c=[...tr.children].map(td=>td.textContent);
+      rows.push(["Person",...c]);
+    });
+    tblByMonth.querySelectorAll('tr').forEach(tr=>{
+      const c=[...tr.children].map(td=>td.textContent);
+      rows.push(["Month",...c]);
+    });
+    const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+    const blob=new Blob([csv],{type:'text/csv'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`DaysWorked_${yearSel.value}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  function fillYearsSelect(sel){
+    const thisYear=new Date().getFullYear();
+    const years=[]; for(let y=thisYear;y>=thisYear-6;y--) years.push(y);
+    sel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    sel.value=String(thisYear);
+  }
+  fillYearsSelect(yearSel);
+  refresh();
+})();
