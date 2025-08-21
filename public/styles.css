@@ -1361,7 +1361,12 @@ button {
 }
 .kpi-pill:active { transform: translateY(1px); }
 .kpi-label { opacity: .8; font-size: .9rem; }
-.kpi-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+.kpi-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.25rem;
+  color: var(--kpi-value-color, #ffd700);
+}
 .kpi-meta { font-size: .75rem; opacity: .7; }
 
 /* Modal */
