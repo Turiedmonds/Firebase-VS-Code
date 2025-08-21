@@ -140,8 +140,9 @@ function normalizeName(input) {
     else if (input.name) input = input.name;
     else if (typeof input.id === 'string') input = input.id;
     else if (input.ref && typeof input.ref.id === 'string') input = input.ref.id;
-  }
+  } 
   const t = String(input).trim().replace(/\s+/g, ' ');
+  if (!/[a-zA-Z]/.test(t)) return '';
   const parts = t.split(' ');
   return parts.map(p => (p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : '')).join(' ');
 }
