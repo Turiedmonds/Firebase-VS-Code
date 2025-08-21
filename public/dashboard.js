@@ -1678,6 +1678,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const steps = [
     { sel: '#top5-shearers', text: 'Top 5 Shearers — tap “View Full List” to see rankings.' },
+    { sel: '#top5-shedstaff', text: 'Top 5 Shed Staff — track hours worked; open “View Full List”.' },
+    { sel: '#top5-farms', text: 'Top 5 Farms — view leading farms; open “View All”.' },
     { sel: '#btnManageStaff', text: 'Manage Staff — add/remove users and see online status.' },
     { sel: '#btnViewSavedSessions', text: 'Saved Sessions — reopen previous tally days.' },
     { sel: '#btnReturnToActive', text: 'Return to Active Session — jump back into an unfinished tally (shown only when a session exists).', optional: true },
