@@ -422,7 +422,7 @@ function updateSyncStatusBanner() {
 
 async function tryFlushQueue() {
     if (!navigator.onLine || typeof firebase === 'undefined' || !firebase.firestore || !firebase.auth) return;
-    const contractorId = localStorage.getItem('contractor_id');
+    const contractorId = localStorage.getItem('contractor_id') || firebase.auth().currentUser?.uid || null;
     if (!contractorId) return;
     const pending = getPending();
     for (const item of pending) {
@@ -2643,10 +2643,10 @@ async function saveSessionToFirestore(showStatus = false) {
     firestoreSessionId = `${station}_${date}_${leader}`;
   }
 
-  // ✅ Use contractorId from localStorage
-  const contractorId = localStorage.getItem('contractor_id');
+  // ✅ Use contractorId from localStorage, fallback to current user UID
+  const contractorId = localStorage.getItem('contractor_id') || firebase.auth().currentUser?.uid || null;
   if (!contractorId) {
-    console.error('Missing contractor_id in localStorage');
+    console.error('Missing contractor_id');
     return;
   }
 
@@ -2681,7 +2681,7 @@ async function listSessionsFromFirestore() {
         return [];
     }
 
-    const contractorId = localStorage.getItem('contractor_id');
+    const contractorId = localStorage.getItem('contractor_id') || firebase.auth().currentUser?.uid || null;
     if (!contractorId) {
         console.error('Missing contractor_id');
         return [];
@@ -2722,7 +2722,7 @@ async function loadSessionFromFirestore(id) {
         return null;
     }
 
-    const contractorId = localStorage.getItem('contractor_id');
+    const contractorId = localStorage.getItem('contractor_id') || firebase.auth().currentUser?.uid || null;
     if (!contractorId) {
         console.error('Missing contractor_id');
         return null;
