@@ -2479,3 +2479,322 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   SessionStore.onChange(()=>{ refresh(); });
   if (SessionStore.getAll().length) refresh();
 })();
+
+// === KPI: Total Hours (Session Hours for the year) ===
+(function setupKpiTotalHours(){
+  const pill = document.getElementById('kpiTotalHours');
+  const pillVal = document.getElementById('kpiTotalHoursValue');
+  const modal = document.getElementById('kpiTotalHoursModal');
+  const closeX = document.getElementById('kpiTotalHoursClose');
+  const closeFooter = document.getElementById('kpiTotalHoursCloseFooter');
+
+  const yearSel = document.getElementById('kpiTHYearSelect');
+  const farmSel = document.getElementById('kpiTHFarmSelect');
+  const offlineNote = document.getElementById('kpiTHOfflineNote');
+
+  const tbodySummary = document.getElementById('kpiTHSummary');
+  const tblByFarm = document.querySelector('#kpiTHByFarm tbody');
+  const tblByPerson = document.querySelector('#kpiTHByPerson tbody');
+  const tblByMonth = document.querySelector('#kpiTHByMonth tbody');
+  const exportBtn = document.getElementById('kpiTHExport');
+
+  const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+
+  // Prefer existing parser if available
+  const parseHours = (typeof window.parseHoursToDecimal === 'function')
+    ? window.parseHoursToDecimal
+    : function basicParseHours(input){
+        if (!input) return 0;
+        const s = String(input).trim().toLowerCase();
+        const m = s.match(/^(\d+):(\d{1,2})$/); // H:MM
+        if (m) return (+m[1]) + (+m[2]/60);
+        const hm = s.match(/^(\d+)\s*h(?:ours?)?\s*(\d+)\s*m/i) || s.match(/^(\d+)h(\d+)m$/);
+        if (hm) return (+hm[1]) + (+hm[2]/60);
+        const hOnly = s.match(/^(\d+(?:\.\d+)?)\s*h/);
+        if (hOnly) return +hOnly[1];
+        const minOnly = s.match(/^(\d+)\s*m/);
+        if (minOnly) return (+minOnly[1])/60;
+        if (/^\d+(\.\d+)?$/.test(s)) return +s;
+        return 0;
+      };
+
+  function yearBounds(y){
+    const start = new Date(Date.UTC(y,0,1,0,0,0));
+    const end = new Date(Date.UTC(y,11,31,23,59,59));
+    return {start, end};
+  }
+
+  function monthKey(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    return `${y}-${m}`; // YYYY-MM
+  }
+
+  // Compute a single session's "session hours" (shed operating time, not sum of people)
+  function getSessionHours(session){
+    // 1) Explicit field (preferred)
+    const explicit = session.sessionHours || session.sessionLength || session.dayHours || null;
+    if (explicit) return parseHours(explicit);
+
+    // 2) Start/finish times (if present)
+    const st = session.startTime || session.start || null;
+    const ft = session.finishTime || session.finish || null;
+    if (st && ft) {
+      const start = new Date(st);
+      const finish = new Date(ft);
+      let hours = (finish - start) / 3600000;
+      if (!isNaN(hours) && hours > 0) {
+        // If break length is stored, subtract it
+        const lunch = parseHours(session.lunchBreak || session.lunch || 0);
+        const smoko1 = parseHours(session.morningSmoko || 0);
+        const smoko2 = parseHours(session.afternoonSmoko || 0);
+        hours = Math.max(0, hours - (lunch + smoko1 + smoko2));
+        return hours;
+      }
+    }
+
+    // 3) Derive from people’s hours: use the **max** individual hours in the session
+    //    (safe proxy for the day's operating time; avoids inflated sums)
+    let maxH = 0;
+
+    if (Array.isArray(session?.shearers)) {
+      session.shearers.forEach(sh => {
+        maxH = Math.max(maxH, parseHours(sh.hoursWorked || sh.totalHours || sh.hours));
+      });
+    }
+    if (Array.isArray(session?.shedStaff)) {
+      session.shedStaff.forEach(ss => {
+        maxH = Math.max(maxH, parseHours(ss.hoursWorked || ss.totalHours || ss.hours));
+      });
+    }
+    return maxH || 0;
+  }
+
+  // Gather per-person hours and roles
+  function eachPersonInSession(session, push){
+    const dayKey = (session.date && session.date.toDate) ? session.date.toDate() : new Date(session.date || session.savedAt || session.updatedAt || Date.now());
+    const dayStr = dayKey.toISOString().slice(0,10); // YYYY-MM-DD
+
+    if (Array.isArray(session?.shearers)) {
+      session.shearers.forEach(sh => {
+        const hours = parseHours(sh.hoursWorked || sh.totalHours || sh.hours);
+        if (hours > 0) push({ name: sh.name || sh.shearerName || 'Unknown', role: 'Shearer', dateKey: dayStr, hours });
+      });
+    }
+    if (Array.isArray(session?.shedStaff)) {
+      session.shedStaff.forEach(ss => {
+        const hours = parseHours(ss.hoursWorked || ss.totalHours || ss.hours);
+        if (hours > 0) push({ name: ss.name || ss.staffName || 'Unknown', role: 'Shed Staff', dateKey: dayStr, hours });
+      });
+    }
+  }
+
+  // Use dashboard cache if present; else Firestore query
+  async function fetchSessionsForYear(year){
+    const { start, end } = yearBounds(year);
+    if (window.__DASHBOARD_SESSIONS && Array.isArray(window.__DASHBOARD_SESSIONS)) {
+      const filtered = window.__DASHBOARD_SESSIONS.filter(s => {
+        const ts = s.date || s.savedAt || s.updatedAt;
+        const t = ts?.toDate ? ts.toDate() : new Date(ts);
+        return t >= start && t <= end;
+      });
+      offlineNote.hidden = !(!navigator.onLine);
+      return filtered;
+    }
+    if (!contractorId || !window.firebase?.firestore) {
+      offlineNote.hidden = false;
+      return [];
+    }
+    try {
+      const db = firebase.firestore();
+      const ref = db.collection('contractors').doc(contractorId).collection('sessions');
+      const snap = await ref.where('savedAt', '>=', start).where('savedAt', '<=', end).get();
+      offlineNote.hidden = true;
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+      console.warn('Total Hours KPI fetch failed (maybe offline)', e);
+      offlineNote.hidden = false;
+      return [];
+    }
+  }
+
+  function fillYearsSelect(sel){
+    const thisYear = new Date().getFullYear();
+    const years = [];
+    for (let y = thisYear; y >= thisYear - 6; y--) years.push(y);
+    sel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+    sel.value = String(thisYear);
+  }
+
+  function renderPill(hours){
+    pillVal.textContent = isFinite(hours) && hours > 0 ? (Math.round(hours*10)/10).toFixed(1) + ' h' : '—';
+  }
+
+  function renderSummary(sessionHours, shedStaffHours, shearerHours){
+    tbodySummary.innerHTML = `
+      <tr><td>Session Hours (pill metric)</td><td>${sessionHours.toFixed(1)}</td></tr>
+      <tr><td>Shed Staff Hours (combined)</td><td>${shedStaffHours.toFixed(1)}</td></tr>
+      <tr><td>Shearers Hours (combined)</td><td>${shearerHours.toFixed(1)}</td></tr>
+    `;
+  }
+
+  function renderByFarm(rows){
+    tblByFarm.innerHTML = '';
+    rows.sort((a,b)=>b.sessionHours - a.sessionHours);
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.farm}</td>
+        <td>${r.sessionHours.toFixed(1)}</td>
+        <td>${r.shedStaffHours.toFixed(1)}</td>
+      `;
+      tblByFarm.appendChild(tr);
+    });
+  }
+
+  function renderByPerson(rows){
+    tblByPerson.innerHTML = '';
+    rows.sort((a,b)=>b.totalHours - a.totalHours);
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.name}</td>
+        <td>${r.role}</td>
+        <td>${r.daysWorked}</td>
+        <td>${r.totalHours.toFixed(1)}</td>
+        <td>${r.daysWorked ? (r.totalHours / r.daysWorked).toFixed(2) : '—'}</td>
+      `;
+      tblByPerson.appendChild(tr);
+    });
+  }
+
+  function renderByMonth(map){
+    // map: key YYYY-MM -> hours
+    const entries = Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
+    tblByMonth.innerHTML = '';
+    entries.forEach(([k, hours])=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${k}</td><td>${hours.toFixed(1)}</td>`;
+      tblByMonth.appendChild(tr);
+    });
+  }
+
+  function aggregate(sessions, farmFilter){
+    let totalSessionHours = 0;
+    let totalShedStaffHours = 0;
+    let totalShearerHours = 0;
+
+    const byFarm = new Map();   // farm -> { sessionHours, shedStaffHours }
+    const byPerson = new Map(); // name|role -> { name, role, days:Set, totalHours }
+    const byMonth = new Map();  // YYYY-MM -> hours
+    const farmsSet = new Set();
+
+    sessions.forEach(s=>{
+      const farm = pickFarmName(s) || 'Unknown Farm';
+      if (farmFilter && farmFilter !== '__ALL__' && farm !== farmFilter) return;
+
+      farmsSet.add(farm);
+
+      // Session date (for monthly)
+      const ts = s.date || s.savedAt || s.updatedAt;
+      const d = ts?.toDate ? ts.toDate() : new Date(ts || Date.now());
+      const mKey = monthKey(d);
+
+      // Compute sessionHours safely
+      const sessionHours = getSessionHours(s);
+      totalSessionHours += sessionHours;
+      byMonth.set(mKey, (byMonth.get(mKey) || 0) + sessionHours);
+
+      // Sum crew hours by role (for reference)
+      let shedStaffHours = 0;
+      let shearerHours = 0;
+
+      const addPerson = (name, role, dayKey, hours) => {
+        const key = `${name}|${role}`;
+        if (!byPerson.has(key)) byPerson.set(key, { name, role, days:new Set(), totalHours:0 });
+        const rec = byPerson.get(key);
+        rec.days.add(dayKey);
+        rec.totalHours += hours;
+      };
+
+      // By person (and role totals)
+      eachPersonInSession(s, ({name, role, dateKey, hours})=>{
+        addPerson(name, role, dateKey, hours);
+        if (role === 'Shed Staff') shedStaffHours += hours;
+        if (role === 'Shearer') shearerHours += hours;
+      });
+
+      totalShedStaffHours += shedStaffHours;
+      totalShearerHours += shearerHours;
+
+      // By farm rollup
+      const f = byFarm.get(farm) || { sessionHours:0, shedStaffHours:0 };
+      f.sessionHours += sessionHours;
+      f.shedStaffHours += shedStaffHours;
+      byFarm.set(farm, f);
+    });
+
+    const farmRows = Array.from(byFarm.entries()).map(([farm, v]) => ({
+      farm,
+      sessionHours: v.sessionHours || 0,
+      shedStaffHours: v.shedStaffHours || 0
+    }));
+
+    const personRows = Array.from(byPerson.values()).map(v => ({
+      name: v.name,
+      role: v.role,
+      daysWorked: v.days.size,
+      totalHours: v.totalHours
+    }));
+
+    return {
+      totalSessionHours,
+      totalShedStaffHours,
+      totalShearerHours,
+      farmRows,
+      personRows,
+      monthMap: byMonth,
+      farms: Array.from(farmsSet).sort()
+    };
+  }
+
+  async function refresh(){
+    const year = Number(yearSel.value || new Date().getFullYear());
+    const farm = farmSel.value || '__ALL__';
+
+    const { start, end } = yearBounds(year);
+    const sessions = await fetchSessionsForYear(year);
+    offlineNote.hidden = !( !navigator.onLine );
+
+    // Populate farms select
+    const farms = Array.from(new Set(sessions.map(s=>pickFarmName(s) || 'Unknown Farm'))).sort();
+    const current = farmSel.value;
+    farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + farms.map(f=>`<option value="${f}">${f}</option>`).join('');
+    if (farms.includes(current)) farmSel.value = current;
+
+    const agg = aggregate(sessions, farm);
+
+    // Update pill immediately
+    renderPill(agg.totalSessionHours);
+
+    // Render modal tables
+    renderSummary(agg.totalSessionHours, agg.totalShedStaffHours, agg.totalShearerHours);
+    renderByFarm(agg.farmRows);
+    renderByPerson(agg.personRows);
+    renderByMonth(agg.monthMap);
+  }
+
+  function openModal(){ modal.hidden = false; refresh(); }
+  function closeModal(){ modal.hidden = true; }
+
+  // Wire events
+  pill?.addEventListener('click', openModal);
+  closeX?.addEventListener('click', closeModal);
+  closeFooter?.addEventListener('click', closeModal);
+  yearSel?.addEventListener('change', refresh);
+  farmSel?.addEventListener('change', refresh);
+
+  // Init: fill years and render immediately
+  fillYearsSelect(yearSel);
+  refresh();
+})();
