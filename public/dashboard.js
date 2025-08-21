@@ -2375,7 +2375,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   // displayText prefers the original user-entered string if available.
   // hours always returns a decimal for math (via parseHours or derived).
   function normalizeSessionHoursDisplay(raw) {
-    if (!raw) return { hours: 0, displayText: '0:00' };
+    if (!raw) return { hours: 0, displayText: '0h' };
     const s = String(raw).trim();
     const hours = parseHours ? parseHours(s) : parseFloat(s) || 0;
 
@@ -2383,17 +2383,17 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const looksLikeTime = /[:h]|m\b/i.test(s);
     if (looksLikeTime) return { hours, displayText: s };
 
-    // Fallback: convert decimal -> H:MM for display
-    return { hours, displayText: hoursToHMM(hours) };
+    // Fallback: convert decimal -> Hh Mm for display
+    return { hours, displayText: hoursToHM(hours) };
   }
 
-  // Convert decimal hours to H:MM (e.g., 7.5 -> "7:30")
-  function hoursToHMM(dec) {
-    if (!dec || isNaN(dec)) return '0:00';
+  // Convert decimal hours to "Hh Mm" (e.g., 7.5 -> "7h 30m")
+  function hoursToHM(dec) {
+    if (!dec || isNaN(dec)) return '0h';
     const totalMins = Math.round(dec * 60);
     const h = Math.floor(totalMins / 60);
     const m = totalMins % 60;
-    return `${h}:${String(m).padStart(2, '0')}`;
+    return m ? `${h}h ${m}m` : `${h}h`;
   }
 
   function parseHours(input){
@@ -2488,8 +2488,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       return n;
     }
 
-    // 3) Fallback: decimal only -> H:MM for display
-    return { hours: derivedDec, displayText: hoursToHMM(derivedDec) };
+    // 3) Fallback: decimal only -> Hh Mm for display
+    return { hours: derivedDec, displayText: hoursToHM(derivedDec) };
   }
 
   // Redefine getSessionHours to delegate to new info function
@@ -2639,7 +2639,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       });
     });
 
-    window.aggDisplayHours = sessionCount === 1 ? (lastDisplay || hoursToHMM((window.aggTotalMins||0)/60)) : hoursToHMM((window.aggTotalMins||0)/60);
+    window.aggDisplayHours = sessionCount === 1 ? (lastDisplay || hoursToHM((window.aggTotalMins||0)/60)) : hoursToHM((window.aggTotalMins||0)/60);
 
     const shearerRows = Array.from(shearerMap.entries())
       .map(([name,data])=>({ name, sheep:data.sheep, hours:data.hours, rate: data.hours>0 ? data.sheep/data.hours : 0 }));
@@ -2680,7 +2680,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       tr.innerHTML =
         `<td>${name}</td>`+
         `<td>${r.sheep.toLocaleString()}</td>`+
-        `<td>${r.hours.toFixed(1)}</td>`+
+        `<td>${hoursToHM(r.hours)}</td>`+
         `<td>${r.rate.toFixed(1)}</td>`;
       tblBody.appendChild(tr);
     });
@@ -2689,8 +2689,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   function updatePill(stats){
     const rate = stats.totalHours > 0 ? (stats.totalSheep / stats.totalHours) : 0;
     const rateText = rate > 0 ? rate.toFixed(1) : '—';
-    const displayTotalHMM = window.aggDisplayHours || hoursToHMM((window.aggTotalMins || 0) / 60);
-    const metaHoursText = /[a-z]/i.test(displayTotalHMM) ? displayTotalHMM : `${displayTotalHMM} hours`;
+    const displayTotalHM = window.aggDisplayHours || hoursToHM((window.aggTotalMins || 0) / 60);
+    const metaHoursText = /[a-z]/i.test(displayTotalHM) ? displayTotalHM : `${displayTotalHM} hours`;
     const metaText = `${stats.days} days • ${metaHoursText}`;
     pillVal.textContent = rateText;
     if (pillMeta) pillMeta.textContent = metaText;
