@@ -2146,9 +2146,17 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   // Initial setup
   fillYearsSelect();
-  SessionStore.start(contractorId, { monthsLive: 12 });
-  SessionStore.onChange(() => {
+
+  function updateFromStore() {
     window.__DASHBOARD_SESSIONS = SessionStore.getAll().map(d => ({ id: d.id, ...d.data() }));
     refresh();
-  });
+  }
+
+  SessionStore.onChange(updateFromStore);
+
+  if (SessionStore.getAll().length) {
+    updateFromStore();
+  }
+
+  SessionStore.start(contractorId, { monthsLive: 12 });
 })();
