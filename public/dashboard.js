@@ -2241,21 +2241,19 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     return parts.map(p => p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : '').join(' ');
   }
 
-  function* iterateStaff(session){
+  function* iterateShearers(session){
     let arr = [];
-    if (Array.isArray(session?.shedStaff)) arr = session.shedStaff;
-    else if (Array.isArray(session?.shedstaff)) arr = session.shedstaff;
-    else if (Array.isArray(session?.staff)) arr = session.staff;
-    else if (Array.isArray(session?.staffHours)) arr = session.staffHours;
-    else if (Array.isArray(session?.staffhours)) arr = session.staffhours;
-    else if (session?.staffHours && typeof session.staffHours === 'object') {
-      for (const [name, hrs] of Object.entries(session.staffHours)) {
+    if (Array.isArray(session?.shearers)) arr = session.shearers;
+    else if (Array.isArray(session?.shearerHours)) arr = session.shearerHours;
+    else if (Array.isArray(session?.shearerhours)) arr = session.shearerhours;
+    else if (session?.shearerHours && typeof session.shearerHours === 'object') {
+      for (const [name, hrs] of Object.entries(session.shearerHours)) {
         arr.push({ name, hoursWorked: hrs });
       }
     }
     for (const entry of arr){
       if (!entry) continue;
-      const name = normalizeName(entry.name || entry.staffName || entry.displayName || entry.id || entry[0]);
+      const name = normalizeName(entry.name || entry.shearerName || entry.displayName || entry.id || entry[0]);
       const hours = parseHoursToDecimal(entry.hoursWorked ?? entry.hours ?? entry.total ?? entry.time ?? entry[1]);
       if (!name || !hours) continue;
       yield { name, hours };
@@ -2404,9 +2402,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       if (farmFilter && farmFilter !== '__ALL__' && farm !== farmFilter) continue;
       farmsSet.add(farm);
 
-      const staffByIndex = [];
-      for (const st of iterateStaff(data)) {
-        staffByIndex.push(st);
+      const shearersByIndex = [];
+      for (const sh of iterateShearers(data)) {
+        shearersByIndex.push(sh);
       }
 
       const sheepByName = new Map();
@@ -2421,10 +2419,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         }
       }
 
-      for (let i=0; i<staffByIndex.length; i++) {
-        const st = staffByIndex[i];
-        const name = st.name;
-        const hours = st.hours;
+      for (let i=0; i<shearersByIndex.length; i++) {
+        const sh = shearersByIndex[i];
+        const name = sh.name;
+        const hours = sh.hours;
         let sheep = sheepByName.get(name) || 0;
         if (!sheep && sheepByIndex[i]) sheep = sheepByIndex[i];
         if (sheep > 0 && hours > 0) {
