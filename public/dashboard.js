@@ -2350,7 +2350,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 (function setupKpiSheepPerHour(){
   const pill = document.getElementById('kpiSheepPerHour');
   const pillVal = document.getElementById('kpiSheepPerHourValue');
-  const pillMeta = document.getElementById('kpiSheepPerHourMeta');
   const modal = document.getElementById('kpiSheepPerHourModal');
   const closeX = document.getElementById('kpiSheepPerHourClose');
   const closeFooter = document.getElementById('kpiSheepPerHourCloseFooter');
@@ -2364,9 +2363,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   if (dashCache.kpiSheepPerHourRate != null) {
     pillVal.textContent = dashCache.kpiSheepPerHourRate;
-    if (pillMeta && dashCache.kpiSheepPerHourMeta) {
-      pillMeta.textContent = dashCache.kpiSheepPerHourMeta;
-    }
   }
 
   const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
@@ -2689,13 +2685,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   function updatePill(stats){
     const rate = stats.totalHours > 0 ? (stats.totalSheep / stats.totalHours) : 0;
     const rateText = rate > 0 ? rate.toFixed(1) : '—';
-    const displayTotalHM = window.aggDisplayHours || hoursToHM((window.aggTotalMins || 0) / 60);
-    const metaHoursText = /[a-z]/i.test(displayTotalHM) ? displayTotalHM : `${displayTotalHM} hours`;
-    const metaText = `${stats.days} days • ${metaHoursText}`;
     pillVal.textContent = rateText;
-    if (pillMeta) pillMeta.textContent = metaText;
     dashCache.kpiSheepPerHourRate = rateText;
-    dashCache.kpiSheepPerHourMeta = metaText;
     saveDashCache();
   }
 
