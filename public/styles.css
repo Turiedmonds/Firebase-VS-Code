@@ -1348,6 +1348,7 @@ button {
 .kpi-pill:active { transform: translateY(1px); }
 .kpi-label { opacity: .8; font-size: .9rem; }
 .kpi-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+.kpi-meta { font-size: .75rem; opacity: .7; }
 
 /* Modal */
 .kpi-modal[hidden] { display: none; }
