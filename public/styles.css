@@ -1136,6 +1136,12 @@ button {
 }
 .siq-tour-btn.primary { background: #2a6df4; border-color: #2a6df4; }
 
+.tt-highlight {
+  outline: 3px solid rgba(255,255,255,0.5);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
 /* Shed Staff widget: keep hours on one line and size sanely on all screens */
 #top5-shedstaff .lb-value {
   white-space: nowrap;                 /* never wrap */
