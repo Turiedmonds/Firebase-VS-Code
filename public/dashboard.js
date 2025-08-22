@@ -3030,7 +3030,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         <td>${r.farm}</td>
         <td>${hoursToHM(r.sessionHours)}</td>
         <td>${hoursToHM(r.shedStaffHours)}</td>
-        <td>${r.sessionCount ? formatHoursHM(r.sessionHours / r.sessionCount) : '—'}</td>
+        <td>${r.sessionCount ? hoursToHM(r.sessionHours / r.sessionCount) : '—'}</td>
       `;
       tblByFarm.appendChild(tr);
     });
