@@ -1411,4 +1411,12 @@ button {
 .kpi-trend { margin: 8px 0 12px; }
 .kpi-badges { display:flex; gap:8px; flex-wrap:wrap; }
 .kpi-badge { font-size:12px; padding:2px 8px; border-radius:999px; background:#1f2937; }
+.kpi-modal .kpi-pill {
+  background-color: #f0f8ff;
+  border-radius: 20px;
+  padding: 6px 12px;
+  margin: 4px;
+  font-weight: bold;
+  display: inline-block;
+}
 .kpi-spark { height:36px; }
