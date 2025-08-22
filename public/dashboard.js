@@ -2021,7 +2021,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const cbTourM   = document.getElementById('dw-enable-tour');
   const btnSaveM  = document.getElementById('dw-save');
   const btnStartM = document.getElementById('dw-start');
-  const btnChangePwM = document.getElementById('dw-change-password');
 
   // Help menu elements
   const helpMenu  = document.getElementById('dash-help-menu');
@@ -2129,13 +2128,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     startDashboardTour();
   });
-
-  // Change Password from modal
-  btnChangePwM?.addEventListener('click', () => {
-    persistFromModal({lockDone:true});
-    window.location.href = 'change-password.html';
-  });
-
   // Keep “first-visit” rule intact elsewhere in your code:
   // shouldShowWelcome() must check welcomeEnabled && !welcomeDone
   // If you want "Got it" to also mark done when “Don’t show again” is ticked,
