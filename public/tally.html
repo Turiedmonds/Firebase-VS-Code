@@ -414,7 +414,8 @@
   </label>
 
   <span style="display:inline-flex;align-items:center;gap:6px;margin-left:10px;">
-    <input id="lastNDaysInput" class="small-input" type="number" min="1" value="7" style="width:60px;" data-help="Number of days for the preset." />
+    <label for="lastNDaysInput">Days Back:</label>
+    <input id="lastNDaysInput" class="small-input" type="number" min="1" value="7" placeholder="e.g. 7 = last 7 days" style="width:60px;" data-help="Days back for the preset (e.g., 7 = last 7 days)." />
     <button id="summaryApplyLastN" type="button" title="Quickly set Start/End to the last N days" data-help="Use Quick Range to instantly fill Start and End dates with the last N days. Adjust the number as needed, then click this button.">Quick Range</button>
   </span>
 
