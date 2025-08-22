@@ -291,7 +291,12 @@
                 <h3>By Farm</h3>
                 <table class="kpi-table" id="kpiTHByFarm">
                   <thead>
-                    <tr><th>Farm</th><th>Session Hours</th><th>Shed Staff Hours</th></tr>
+                    <tr>
+                      <th>Farm</th>
+                      <th>Session Hours</th>
+                      <th>Shed Staff Hours</th>
+                      <th>Avg Session Length</th><!-- NEW -->
+                    </tr>
                   </thead>
                   <tbody></tbody>
                 </table>
@@ -309,6 +314,14 @@
 
               <section>
                 <h3>By Month</h3>
+                <!-- Add this directly above the existing #kpiTHByMonth table -->
+                <div id="kpiTHMonthTrend" class="kpi-trend">
+                  <div class="kpi-badges" id="kpiTHPeaks" aria-live="polite">
+                    <span class="kpi-badge" id="kpiTHBusiestBadge" hidden>Busiest: —</span>
+                    <span class="kpi-badge" id="kpiTHQuietestBadge" hidden>Quietest: —</span>
+                  </div>
+                  <div id="kpiTHMonthSpark" class="kpi-spark" role="img" aria-label="Monthly session-hours trend"></div>
+                </div>
                 <table class="kpi-table" id="kpiTHByMonth">
                   <thead>
                     <tr><th>Month</th><th>Session Hours</th></tr>

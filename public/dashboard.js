@@ -194,6 +194,92 @@ function hoursToHM(dec) {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
+// Convert decimal hours to "H:MM" (zero-padded minutes)
+function formatHoursHM(decHours) {
+  if (!Number.isFinite(decHours)) return '0:00';
+  const totalMins = Math.round(decHours * 60);
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+
+// Render a simple sparkline SVG inside containerEl
+function renderSparkline(containerEl, valuesArray) {
+  if (!containerEl) return;
+  containerEl.innerHTML = '';
+  if (!Array.isArray(valuesArray) || valuesArray.length === 0) {
+    containerEl.textContent = 'No data';
+    return;
+  }
+
+  const max = Math.max(...valuesArray);
+  const min = Math.min(...valuesArray);
+  const width = containerEl.clientWidth || 120;
+  const height = containerEl.clientHeight || 36;
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2');
+
+  if (valuesArray.length === 1 || max === min) {
+    const y = height / 2;
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', '0');
+    line.setAttribute('y1', y);
+    line.setAttribute('x2', String(width));
+    line.setAttribute('y2', y);
+    svg.appendChild(line);
+    containerEl.appendChild(svg);
+    return;
+  }
+
+  const scaleX = width / (valuesArray.length - 1);
+  const range = max - min || 1;
+  const points = valuesArray.map((v, i) => {
+    const x = i * scaleX;
+    const y = height - ((v - min) / range) * height;
+    return { x, y };
+  });
+
+  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`).join(' ');
+  const path = document.createElementNS(svgNS, 'path');
+  path.setAttribute('d', pathD);
+  svg.appendChild(path);
+
+  const minIdx = valuesArray.indexOf(min);
+  const maxIdx = valuesArray.indexOf(max);
+  [minIdx, maxIdx].forEach(idx => {
+    if (idx < 0) return;
+    const c = document.createElementNS(svgNS, 'circle');
+    c.setAttribute('cx', points[idx].x);
+    c.setAttribute('cy', points[idx].y);
+    c.setAttribute('r', '2');
+    svg.appendChild(c);
+  });
+
+  containerEl.appendChild(svg);
+}
+
+// Determine busiest and quietest labels/values
+function calcPeaks(valuesArray, labelsArray) {
+  if (!Array.isArray(valuesArray) || valuesArray.length === 0) return null;
+  if (valuesArray.every(v => v === 0)) return null;
+  let maxVal = -Infinity, minVal = Infinity;
+  let maxIdx = -1, minIdx = -1;
+  valuesArray.forEach((v, i) => {
+    if (v > maxVal) { maxVal = v; maxIdx = i; }
+    if (v < minVal) { minVal = v; minIdx = i; }
+  });
+  return {
+    busiest: maxIdx >= 0 ? { label: labelsArray?.[maxIdx] || '', value: maxVal, index: maxIdx } : null,
+    quietest: minIdx >= 0 ? { label: labelsArray?.[minIdx] || '', value: minVal, index: minIdx } : null
+  };
+}
+
 // Populate a <select> with year options from the current year backwards.
 // Defaults to 6 years and sets the select's value to the current year.
 function fillYearsSelect(sel, yearsBack = 6) {
@@ -2944,6 +3030,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         <td>${r.farm}</td>
         <td>${hoursToHM(r.sessionHours)}</td>
         <td>${hoursToHM(r.shedStaffHours)}</td>
+        <td>${r.sessionCount ? formatHoursHM(r.sessionHours / r.sessionCount) : '—'}</td>
       `;
       tblByFarm.appendChild(tr);
     });
@@ -2970,11 +3057,19 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     // map: key YYYY-MM -> hours
     const entries = Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
     tblByMonth.innerHTML = '';
+    const monthTotals = [];
+    const monthLabels = [];
+    const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     entries.forEach(([k, hours])=>{
+      const mIndex = Number(k.slice(5,7)) - 1;
+      const label = names[mIndex] || k;
+      monthTotals.push(hours);
+      monthLabels.push(label);
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${k}</td><td>${hoursToHM(hours)}</td>`;
+      tr.innerHTML = `<td>${label}</td><td>${hoursToHM(hours)}</td>`;
       tblByMonth.appendChild(tr);
     });
+    return { monthTotals, monthLabels };
   }
 
   function aggregate(sessions, farmFilter){
@@ -2982,7 +3077,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     let totalShedStaffHours = 0;
     let totalCrewHours = 0;
 
-    const byFarm = new Map();   // farm -> { sessionHours, shedStaffHours }
+    const byFarm = new Map();   // farm -> { sessionHours, shedStaffHours, sessionCount }
     const byPerson = new Map(); // name|role -> { name, role, days:Set, totalHours }
     const byMonth = new Map();  // YYYY-MM -> hours
     const farmsSet = new Set();
@@ -3026,16 +3121,18 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       totalCrewHours += sessionCrewHours;
 
       // By farm rollup
-      const f = byFarm.get(farm) || { sessionHours:0, shedStaffHours:0 };
+      const f = byFarm.get(farm) || { sessionHours:0, shedStaffHours:0, sessionCount:0 };
       f.sessionHours += sessionHours;
       f.shedStaffHours += shedStaffHours;
+      f.sessionCount += 1;
       byFarm.set(farm, f);
     });
 
     const farmRows = Array.from(byFarm.entries()).map(([farm, v]) => ({
       farm,
       sessionHours: v.sessionHours || 0,
-      shedStaffHours: v.shedStaffHours || 0
+      shedStaffHours: v.shedStaffHours || 0,
+      sessionCount: v.sessionCount || 0
     }));
 
     const personRows = Array.from(byPerson.values()).map(v => ({
@@ -3081,7 +3178,34 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     renderSummary(agg.totalSessionHours, agg.totalCrewHours, agg.totalShedStaffHours);
     renderByFarm(agg.farmRows);
     renderByPerson(agg.personRows);
-    renderByMonth(agg.monthMap);
+    const monthData = renderByMonth(agg.monthMap);
+
+    const sparkHost = document.getElementById('kpiTHMonthSpark');
+    const busiestEl = document.getElementById('kpiTHBusiestBadge');
+    const quietestEl = document.getElementById('kpiTHQuietestBadge');
+
+    if (sparkHost && monthData && Array.isArray(monthData.monthTotals)) {
+      renderSparkline(sparkHost, monthData.monthTotals);
+
+      const peaks = calcPeaks(monthData.monthTotals, monthData.monthLabels);
+      if (peaks && peaks.busiest) {
+        if (busiestEl) {
+          busiestEl.hidden = false;
+          busiestEl.textContent = `Busiest: ${peaks.busiest.label} (${formatHoursHM(peaks.busiest.value)})`;
+        }
+      } else if (busiestEl) {
+        busiestEl.hidden = true;
+      }
+
+      if (peaks && peaks.quietest) {
+        if (quietestEl) {
+          quietestEl.hidden = false;
+          quietestEl.textContent = `Quietest: ${peaks.quietest.label} (${formatHoursHM(peaks.quietest.value)})`;
+        }
+      } else if (quietestEl) {
+        quietestEl.hidden = true;
+      }
+    }
   }
 
   function openModal(){ modal.hidden = false; refresh(); }
