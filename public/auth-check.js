@@ -96,12 +96,31 @@ async function waitForContractorIdAndRedirect(maxWaitMs = 2000) {
 }
 
 function handleOfflineRedirect() {
+  const overlay = document.getElementById('loading-overlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+
   const storedRole = localStorage.getItem('role');
   const contractorId = localStorage.getItem('contractor_id');
+
   if (storedRole && contractorId) {
     console.warn('[auth-check] \u26a0\ufe0f Offline. Using cached data for role:', storedRole);
     window.location.href = 'tally.html';
   } else {
-    alert('You appear to be offline. Please reconnect.');
+    const msg = document.createElement('div');
+    msg.textContent = 'You appear to be offline. Please reconnect.';
+    const retry = document.createElement('button');
+    retry.textContent = 'Retry';
+    retry.addEventListener('click', () => location.reload());
+    const container = document.createElement('div');
+    container.style.marginTop = '20px';
+    container.style.textAlign = 'center';
+    container.appendChild(msg);
+    container.appendChild(retry);
+    document.body.appendChild(container);
   }
 }
+
+// Reload automatically when connection is restored
+window.addEventListener('online', () => location.reload());
