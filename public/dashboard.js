@@ -157,6 +157,8 @@ function escapeHtml(str) {
   })[c]);
 }
 
+function sum(arr){ return (arr || []).reduce((a,b)=>a + (Number(b)||0), 0); }
+
 function sumSheep(session) {
   let total = 0;
   if (Array.isArray(session?.shearerCounts)) {
@@ -3276,8 +3278,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   const mostConsecutiveEl = document.getElementById('kpiDWMostConsecutiveDays');
   const monthTrendEl = document.getElementById('kpiDWMonthTrend');
   const monthSparkEl = document.getElementById('kpiDWMonthSpark');
-  const busiestMonthEl = document.getElementById('kpiDWBusiestMonth');
-  const quietestMonthEl = document.getElementById('kpiDWQuietestMonth');
   const exportBtn = document.getElementById('kpiDWExport');
   let exportExtras = new Map();
 
@@ -3670,22 +3670,58 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const monthTotals = agg.monthRows.map(r=>r.days);
     const monthLabels = agg.monthRows.map(r=> shortMonthNames[Number(r.month.slice(5))-1]);
     monthTrendEl && (monthTrendEl.hidden = agg.allDays.size === 0);
-    busiestMonthEl && (busiestMonthEl.hidden = true);
-    quietestMonthEl && (quietestMonthEl.hidden = true);
     if (agg.allDays.size && monthTotals.length){
       renderSparkline(monthSparkEl, monthTotals);
-      const peaks = calcPeaks(monthTotals, monthLabels);
-      if (peaks.busiest && peaks.busiest.value>0) {
-        busiestMonthEl.textContent = `Busiest: ${peaks.busiest.label} (${peaks.busiest.value})`;
-        busiestMonthEl.hidden = false;
-      }
-      if (peaks.quietest && peaks.quietest.value>0) {
-        quietestMonthEl.textContent = `Quietest: ${peaks.quietest.label} (${peaks.quietest.value})`;
-        quietestMonthEl.hidden = false;
-      }
     } else if (monthSparkEl) {
       monthSparkEl.textContent='';
     }
+
+    // === Fill Busiest/Quietest/Monthly Average pills for Days Worked ===
+    (function updateDWMonthPills(){
+      const busiestEl  = document.getElementById('kpiDWBusiestMonth');
+      const quietestEl = document.getElementById('kpiDWQuietestMonth');
+      const avgEl      = document.getElementById('kpiDWMonthlyAverage');
+
+      if (!busiestEl || !quietestEl || !avgEl) return;
+
+      // Guard: no data
+      if (!Array.isArray(monthTotals) || monthTotals.length === 0) {
+        busiestEl.hidden = quietestEl.hidden = avgEl.hidden = true;
+        return;
+      }
+
+      // Find busiest/quietest using existing helper if you have it
+      const peaks = (typeof calcPeaks === 'function')
+        ? calcPeaks(monthTotals, monthLabels)
+        : null;
+
+      // Busiest Month
+      if (peaks && peaks.busiest && peaks.busiest.value > 0) {
+        busiestEl.textContent = `Busiest Month: ${peaks.busiest.label} (${peaks.busiest.value})`;
+        busiestEl.hidden = false;
+      } else {
+        busiestEl.hidden = true;
+      }
+
+      // Quietest Month
+      if (peaks && peaks.quietest) {
+        quietestEl.textContent = `Quietest Month: ${peaks.quietest.label} (${peaks.quietest.value})`;
+        quietestEl.hidden = false;
+      } else {
+        quietestEl.hidden = true;
+      }
+
+      // Monthly Average (over months that appear in the table)
+      // If you’d rather ignore true zeros, change the filter to > 0.
+      const considered = monthTotals.filter(v => Number.isFinite(v));
+      const avg = considered.length ? Math.round(sum(considered) / considered.length) : 0;
+      if (avg > 0) {
+        avgEl.textContent = `Monthly Average: ${avg}`;
+        avgEl.hidden = false;
+      } else {
+        avgEl.hidden = true;
+      }
+    })();
 
     renderByMonth(agg.monthRows);
   }
