@@ -372,6 +372,13 @@
           <div class="kpi-sections">
             <section>
               <h3>Summary</h3>
+              <div id="kpiDWReliability" class="kpi-trend">
+                <div class="kpi-badges" id="kpiDWBadges" aria-live="polite">
+                  <span class="kpi-badge" id="kpiDWBestAttendance" hidden>Best: —</span>
+                  <span class="kpi-badge" id="kpiDWLowestAttendance" hidden>Lowest: —</span>
+                  <span class="kpi-badge" id="kpiDWLongestContract" hidden>Longest Contract: —</span>
+                </div>
+              </div>
               <table class="kpi-table">
                 <thead><tr><th>Metric</th><th>Count</th></tr></thead>
                 <tbody id="kpiDWSummary"></tbody>
@@ -385,7 +392,15 @@
             <section>
               <h3>By Farm</h3>
               <table class="kpi-table" id="kpiDWByFarm">
-                <thead><tr><th>Farm</th><th>Days Worked</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Farm</th>
+                    <th>Shearers — Days</th>
+                    <th>Shed Staff — Days</th>
+                    <th>Total Days</th>
+                    <th>Avg Days per Worker</th>
+                  </tr>
+                </thead>
                 <tbody></tbody>
               </table>
             </section>
@@ -399,7 +414,26 @@
             </section>
 
             <section>
+              <h3>Streaks (Consecutive Days Worked)</h3>
+              <table class="kpi-table" id="kpiDWStreaks">
+                <thead>
+                  <tr>
+                    <th>#</th><th>Name</th><th>Role</th><th>Longest Streak</th><th>Streak Period</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </section>
+
+            <section>
               <h3>By Month</h3>
+              <div id="kpiDWMonthTrend" class="kpi-trend">
+                <div class="kpi-badges" id="kpiDWMonthPeaks" aria-live="polite">
+                  <span class="kpi-badge" id="kpiDWBusiestMonth" hidden>Busiest: —</span>
+                  <span class="kpi-badge" id="kpiDWQuietestMonth" hidden>Quietest: —</span>
+                </div>
+                <div id="kpiDWMonthSpark" class="kpi-spark" role="img" aria-label="Monthly days-worked trend"></div>
+              </div>
               <table class="kpi-table" id="kpiDWByMonth">
                 <thead><tr><th>Month</th><th>Days Worked</th></tr></thead>
                 <tbody></tbody>

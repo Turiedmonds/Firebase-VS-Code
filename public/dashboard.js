@@ -3260,7 +3260,17 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   const tblByFarm = document.querySelector('#kpiDWByFarm tbody');
   const tblByPerson = document.querySelector('#kpiDWByPerson tbody');
   const tblByMonth = document.querySelector('#kpiDWByMonth tbody');
+  const tblStreaks = document.querySelector('#kpiDWStreaks tbody');
+  const reliabilityEl = document.getElementById('kpiDWReliability');
+  const bestAttendanceEl = document.getElementById('kpiDWBestAttendance');
+  const lowestAttendanceEl = document.getElementById('kpiDWLowestAttendance');
+  const longestContractEl = document.getElementById('kpiDWLongestContract');
+  const monthTrendEl = document.getElementById('kpiDWMonthTrend');
+  const monthSparkEl = document.getElementById('kpiDWMonthSpark');
+  const busiestMonthEl = document.getElementById('kpiDWBusiestMonth');
+  const quietestMonthEl = document.getElementById('kpiDWQuietestMonth');
   const exportBtn = document.getElementById('kpiDWExport');
+  let exportExtras = new Map();
 
   const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
 
@@ -3280,6 +3290,77 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
   function monthKeyFromDay(dayStr){
     return dayStr.slice(0,7); // YYYY-MM
+  }
+
+  const shortMonthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  function renderSparkline(container, values){
+    if(!container) return;
+    const h = container.clientHeight || 36;
+    if(!values || values.length === 0){ container.innerHTML=''; return; }
+    if(values.length === 1){
+      const max = values[0] || 0;
+      const y = h - (max ? (values[0]/max)*h : 0);
+      container.innerHTML = `<svg width="16" height="${h}" viewBox="0 0 16 ${h}"><circle cx="8" cy="${y}" r="2" stroke="currentColor" fill="currentColor"/></svg>`;
+      return;
+    }
+    const max = Math.max(...values);
+    const w = (values.length - 1) * 8;
+    const points = values.map((v,i)=>{
+      const x = i/(values.length-1)*w;
+      const y = h - (max ? (v/max)*h : 0);
+      return `${x},${y}`;
+    }).join(' ');
+    container.innerHTML = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+  }
+
+  function calcPeaks(values, labels){
+    if(!values.length) return {busiest:null, quietest:null};
+    let maxIdx=0, minIdx=0;
+    values.forEach((v,i)=>{ if(v>values[maxIdx]) maxIdx=i; if(v<values[minIdx]) minIdx=i; });
+    return {
+      busiest: { label: labels[maxIdx], value: values[maxIdx] },
+      quietest: { label: labels[minIdx], value: values[minIdx] }
+    };
+  }
+
+  function calcAttendance(personMap, allDays){
+    const total = allDays.size;
+    const arr=[];
+    personMap.forEach((set,key)=>{
+      const [name,role]=key.split('|');
+      const pct = total ? (set.size/total)*100 : 0;
+      arr.push({name,role,days:set.size,attendancePct:pct});
+    });
+    return arr;
+  }
+
+  function calcStreaks(daySet){
+    const days = Array.from(daySet).sort();
+    if(!days.length) return {length:0,startISO:null,endISO:null};
+    let longest={length:1,start:days[0],end:days[0]};
+    let currStart=days[0], prev=days[0], currLen=1;
+    for(let i=1;i<days.length;i++){
+      const d=days[i];
+      const diff=(new Date(d)-new Date(prev))/86400000;
+      if(diff===1){
+        currLen++; prev=d;
+      } else {
+        if(currLen>longest.length) longest={length:currLen,start:currStart,end:prev};
+        currStart=d; prev=d; currLen=1;
+      }
+    }
+    if(currLen>longest.length) longest={length:currLen,start:currStart,end:prev};
+    return {length:longest.length,startISO:longest.start,endISO:longest.end};
+  }
+
+  function formatDate(d){
+    if(!d) return '';
+    const dt=new Date(d);
+    const day=String(dt.getDate()).padStart(2,'0');
+    const month=String(dt.getMonth()+1).padStart(2,'0');
+    const year=dt.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 
   // Map stand index -> shearer name (normalized); adapted from Top 5 Shearers widget
@@ -3368,8 +3449,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   function aggregate(sessions, farmFilter){
-    const daySet = new Set();
-    const farmDayMap = new Map();   // farm -> Set(days)
+    const allDaySet = new Set();
+    const farmsData = new Map();
     const personDayMap = new Map(); // person|role -> Set(days)
     const monthDayMap = new Map();  // month -> Set(days)
     const farmsSet = new Set();
@@ -3380,15 +3461,20 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
       farmsSet.add(farm);
       const dayStr = toDayIso(s.date || s.savedAt || s.updatedAt);
-      daySet.add(dayStr);
+      allDaySet.add(dayStr);
 
-      if (!farmDayMap.has(farm)) farmDayMap.set(farm, new Set());
-      farmDayMap.get(farm).add(dayStr);
+      if(!farmsData.has(farm)) farmsData.set(farm,{workerSet:new Set(), shearer:new Map(), shed:new Map()});
+      const fData = farmsData.get(farm);
 
       function addPerson(name, role){
         const key = `${name}|${role}`;
         if (!personDayMap.has(key)) personDayMap.set(key, new Set());
         personDayMap.get(key).add(dayStr);
+
+        fData.workerSet.add(name);
+        const roleMap = role === 'Shearer' ? fData.shearer : fData.shed;
+        if (!roleMap.has(name)) roleMap.set(name, new Set());
+        roleMap.get(name).add(dayStr);
       }
       const shearerNames = collectShearerNames(s);
       shearerNames.forEach(name => addPerson(name || 'Unknown', 'Shearer'));
@@ -3402,22 +3488,24 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       monthDayMap.get(mKey).add(dayStr);
     });
 
-    const farmRows = Array.from(farmDayMap.entries())
-      .map(([farm,set])=>({farm, days:set.size}))
-      .sort((a,b)=>b.days-a.days);
+    const farmRows = Array.from(farmsData.entries()).map(([farm,data])=>{
+      let shearersDays = 0; data.shearer.forEach(set=>{ shearersDays += set.size; });
+      let shedDays = 0; data.shed.forEach(set=>{ shedDays += set.size; });
+      const totalDays = shearersDays + shedDays;
+      const avg = data.workerSet.size ? totalDays / data.workerSet.size : 0;
+      return {farm, shearersDays, shedDays, totalDays, avg};
+    }).sort((a,b)=>b.totalDays - a.totalDays || a.farm.localeCompare(b.farm));
 
-    const personRows = Array.from(personDayMap.entries())
-      .map(([key,set])=>{
-        const [name,role] = key.split('|');
-        return {name, role, days:set.size};
-      })
-      .sort((a,b)=>b.days-a.days || a.name.localeCompare(b.name));
+    const personRows = Array.from(personDayMap.entries()).map(([key,set])=>{
+      const [name,role] = key.split('|');
+      return {name, role, days:set.size, daySet:set};
+    }).sort((a,b)=>b.days-a.days || a.name.localeCompare(b.name));
 
     const monthRows = Array.from(monthDayMap.entries())
       .map(([month,set])=>({month, days:set.size}))
       .sort((a,b)=>a.month.localeCompare(b.month));
 
-    return { total: daySet.size, farmRows, personRows, monthRows, farms:Array.from(farmsSet).sort() };
+    return { total: allDaySet.size, allDays: allDaySet, farmRows, personRows, monthRows, personDayMap, farms:Array.from(farmsSet).sort() };
   }
 
   function renderPill(val){
@@ -3426,10 +3514,17 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     dashCache.kpiDaysWorked = text;
     saveDashCache();
   }
-  function renderSummary(val){ tbodySummary.innerHTML = `<tr><td>Days Worked</td><td>${val}</td></tr>`; }
-  function renderByFarm(rows){ tblByFarm.innerHTML = rows.map(r=>`<tr><td>${r.farm}</td><td>${r.days}</td></tr>`).join(''); }
+  function renderSummary(total, above, below){
+    tbodySummary.innerHTML = `<tr><td>Days Worked</td><td>${total}</td></tr>`+
+      `<tr><td>People ≥20 above avg</td><td>${above}</td></tr>`+
+      `<tr><td>People ≥20 below avg</td><td>${below}</td></tr>`;
+  }
+  function renderByFarm(rows){
+    tblByFarm.innerHTML = rows.map(r=>`<tr><td>${r.farm}</td><td>${r.shearersDays}</td><td>${r.shedDays}</td><td>${r.totalDays}</td><td>${r.avg.toFixed(1)}</td></tr>`).join('');
+  }
   function renderByPerson(rows){ tblByPerson.innerHTML = rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${r.role}</td><td>${r.days}</td></tr>`).join(''); }
   function renderByMonth(rows){ tblByMonth.innerHTML = rows.map(r=>`<tr><td>${r.month}</td><td>${r.days}</td></tr>`).join(''); }
+  function renderStreaks(rows){ tblStreaks.innerHTML = rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${r.role}</td><td>${r.length}</td><td>${formatDate(r.startISO)}–${formatDate(r.endISO)}</td></tr>`).join(''); }
 
   async function refresh(){
     const year = Number(yearSel.value||new Date().getFullYear());
@@ -3437,18 +3532,77 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const sessions = await fetchSessionsForYear(year);
     const agg = aggregate(sessions, farm);
 
-    const farms = Array.from(new Set(sessions.map(s=>pickFarmName(s) || 'Unknown Farm'))).sort();
-    farmSel.innerHTML =
-      `<option value="__ALL__">All farms</option>` +
-      farms.map(f => `<option value="${f}">${f}</option>`).join('');
+    const farms = agg.farms;
+    farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + farms.map(f=>`<option value="${f}">${f}</option>`).join('');
     if (farms.includes(farm)) farmSel.value = farm;
 
     offlineNote.hidden = navigator.onLine;
 
+    const attendanceArr = calcAttendance(agg.personDayMap, agg.allDays);
+    exportExtras = new Map();
+    attendanceArr.forEach(a=>{ exportExtras.set(`${a.name}|${a.role}`, {attendancePct:a.attendancePct}); });
+
+    reliabilityEl && (reliabilityEl.hidden = agg.allDays.size === 0);
+    bestAttendanceEl && (bestAttendanceEl.hidden = true);
+    lowestAttendanceEl && (lowestAttendanceEl.hidden = true);
+    longestContractEl && (longestContractEl.hidden = true);
+
+    if (agg.allDays.size && attendanceArr.length){
+      const best = attendanceArr.reduce((a,b)=>b.attendancePct>a.attendancePct?b:a);
+      const worst = attendanceArr.reduce((a,b)=>b.attendancePct<a.attendancePct?b:a);
+      if (bestAttendanceEl) { bestAttendanceEl.textContent = `Best: ${best.name} (${best.attendancePct.toFixed(0)}%)`; bestAttendanceEl.hidden = false; }
+      if (lowestAttendanceEl) { lowestAttendanceEl.textContent = `Lowest: ${worst.name} (${worst.attendancePct.toFixed(0)}%)`; lowestAttendanceEl.hidden = false; }
+    }
+
+    const streakRows = [];
+    agg.personDayMap.forEach((set,key)=>{
+      const [name,role]=key.split('|');
+      const st = calcStreaks(set);
+      streakRows.push({name, role, ...st});
+      const ex = exportExtras.get(`${name}|${role}`) || {};
+      ex.longestStreak = st.length;
+      exportExtras.set(`${name}|${role}`, ex);
+    });
+    streakRows.sort((a,b)=>b.length - a.length || a.name.localeCompare(b.name));
+    renderStreaks(streakRows);
+
+    if (agg.allDays.size && streakRows.length){
+      const bestStreak = streakRows.reduce((a,b)=> (b.length>a.length) || (b.length===a.length && b.startISO<a.startISO) ? b : a );
+      if (longestContractEl) {
+        longestContractEl.textContent = `Longest Contract: ${bestStreak.name} (${bestStreak.length} days, ${formatDate(bestStreak.startISO)}–${formatDate(bestStreak.endISO)})`;
+        longestContractEl.hidden = false;
+      }
+    }
+
+    const avgDays = agg.personRows.reduce((sum,p)=>sum+p.days,0)/(agg.personRows.length||1);
+    const aboveN = agg.personRows.filter(p=>p.days - avgDays >= 20).length;
+    const belowN = agg.personRows.filter(p=>avgDays - p.days >= 20).length;
+
     renderPill(agg.total);
-    renderSummary(agg.total);
+    renderSummary(agg.total, aboveN, belowN);
     renderByFarm(agg.farmRows);
     renderByPerson(agg.personRows);
+
+    const monthTotals = agg.monthRows.map(r=>r.days);
+    const monthLabels = agg.monthRows.map(r=> shortMonthNames[Number(r.month.slice(5))-1]);
+    monthTrendEl && (monthTrendEl.hidden = agg.allDays.size === 0);
+    busiestMonthEl && (busiestMonthEl.hidden = true);
+    quietestMonthEl && (quietestMonthEl.hidden = true);
+    if (agg.allDays.size && monthTotals.length){
+      renderSparkline(monthSparkEl, monthTotals);
+      const peaks = calcPeaks(monthTotals, monthLabels);
+      if (peaks.busiest && peaks.busiest.value>0) {
+        busiestMonthEl.textContent = `Busiest: ${peaks.busiest.label} (${peaks.busiest.value})`;
+        busiestMonthEl.hidden = false;
+      }
+      if (peaks.quietest && peaks.quietest.value>0) {
+        quietestMonthEl.textContent = `Quietest: ${peaks.quietest.label} (${peaks.quietest.value})`;
+        quietestMonthEl.hidden = false;
+      }
+    } else if (monthSparkEl) {
+      monthSparkEl.innerHTML='';
+    }
+
     renderByMonth(agg.monthRows);
   }
 
@@ -3469,7 +3623,11 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     });
     tblByPerson.querySelectorAll('tr').forEach(tr=>{
       const c=[...tr.children].map(td=>td.textContent);
-      rows.push(["Person",...c]);
+      const key=`${c[1]}|${c[2]}`;
+      const ex=exportExtras.get(key)||{};
+      const att=ex.attendancePct!=null?ex.attendancePct.toFixed(1)+'%':'';
+      const streak=ex.longestStreak!=null?ex.longestStreak:'';
+      rows.push(["Person",...c,att,streak]);
     });
     tblByMonth.querySelectorAll('tr').forEach(tr=>{
       const c=[...tr.children].map(td=>td.textContent);
