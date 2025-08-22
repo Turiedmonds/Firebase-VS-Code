@@ -233,9 +233,7 @@ function renderSparkline(containerEl, valuesArray) {
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
   svg.setAttribute('width', width);
   svg.setAttribute('height', height);
-  svg.setAttribute('fill', 'none');
-  svg.setAttribute('stroke', 'currentColor');
-  svg.setAttribute('stroke-width', '2');
+  svg.classList.add('sparkline');
 
   if (valuesArray.length === 1 || max === min) {
     const y = height / 2;
@@ -244,6 +242,7 @@ function renderSparkline(containerEl, valuesArray) {
     line.setAttribute('y1', y);
     line.setAttribute('x2', String(width));
     line.setAttribute('y2', y);
+    line.setAttribute('class', 'spark-line');
     svg.appendChild(line);
     containerEl.appendChild(svg);
     return;
@@ -258,8 +257,19 @@ function renderSparkline(containerEl, valuesArray) {
   });
 
   const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`).join(' ');
+
+  // Area fill beneath the spark line
+  const areaD = `M${points[0].x} ${height} ` +
+    points.map((p) => `L${p.x} ${p.y}`).join(' ') +
+    ` L${points[points.length - 1].x} ${height} Z`;
+  const area = document.createElementNS(svgNS, 'path');
+  area.setAttribute('d', areaD);
+  area.setAttribute('class', 'spark-fill');
+  svg.appendChild(area);
+
   const path = document.createElementNS(svgNS, 'path');
   path.setAttribute('d', pathD);
+  path.setAttribute('class', 'spark-line');
   svg.appendChild(path);
 
   const minIdx = valuesArray.indexOf(min);
