@@ -147,6 +147,16 @@ function normalizeName(input) {
   return parts.map(p => (p ? p[0].toUpperCase() + p.slice(1).toLowerCase() : '')).join(' ');
 }
 
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[c]);
+}
+
 function sumSheep(session) {
   let total = 0;
   if (Array.isArray(session?.shearerCounts)) {
@@ -3432,6 +3442,44 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     return Array.from(names);
   }
 
+  // Collect shed staff / crew names from common shapes + merge with shearers
+  function collectAllPeople(sessionDoc) {
+    const s = sessionDoc?.data ? sessionDoc.data() : sessionDoc;
+    const names = new Set();
+
+    // 1) Shearers (reuse existing logic)
+    try {
+      collectShearerNames(sessionDoc).forEach(n => { if (n) names.add(n); });
+    } catch {}
+
+    // 2) Shed staff / crew arrays (best-effort across schema variants)
+    const staffArrays = [
+      s.shedStaff, s.shedstaff, s.staff, s.crew, s.shed_hands, s.shedHands
+    ].filter(Array.isArray);
+
+    staffArrays.forEach(arr => {
+      arr.forEach(item => {
+        let n;
+        if (typeof item === 'string') n = item;
+        else if (item && typeof item === 'object') {
+          n = item.name || item.displayName || item.staffName || item.id;
+        }
+        n = normalizeName(n);
+        if (n) names.add(n);
+      });
+    });
+
+    // 3) Generic people blocks (if present)
+    if (Array.isArray(s.people)) {
+      s.people.forEach(p => {
+        const n = normalizeName(p?.name || p?.displayName || p?.id);
+        if (n) names.add(n);
+      });
+    }
+
+    return Array.from(names);
+  }
+
   async function fetchSessionsForYear(year){
     const { start, end } = yearBounds(year);
     if (window.__DASHBOARD_SESSIONS && Array.isArray(window.__DASHBOARD_SESSIONS)) {
@@ -3450,7 +3498,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   function aggregate(sessions, farmFilter){
     const allDaySet = new Set();
-    const farmsData = new Map();
+    const farmDayMap = new Map(); // farm -> Set(days)
+    const farmWorkersMap = new Map(); // farm -> Set(worker names)
     const personDayMap = new Map(); // person|role -> Set(days)
     const monthDayMap = new Map();  // month -> Set(days)
     const farmsSet = new Set();
@@ -3463,24 +3512,32 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       const dayStr = toDayIso(s.date || s.savedAt || s.updatedAt);
       allDaySet.add(dayStr);
 
-      if(!farmsData.has(farm)) farmsData.set(farm,{workerSet:new Set(), shearer:new Map(), shed:new Map()});
-      const fData = farmsData.get(farm);
+      if(!farmDayMap.has(farm)) farmDayMap.set(farm, new Set());
+      farmDayMap.get(farm).add(dayStr);
+
+      const people = collectAllPeople(s);
+      if(!farmWorkersMap.has(farm)) farmWorkersMap.set(farm, new Set());
+      people.forEach(n => farmWorkersMap.get(farm).add(n));
 
       function addPerson(name, role){
         const key = `${name}|${role}`;
         if (!personDayMap.has(key)) personDayMap.set(key, new Set());
         personDayMap.get(key).add(dayStr);
-
-        fData.workerSet.add(name);
-        const roleMap = role === 'Shearer' ? fData.shearer : fData.shed;
-        if (!roleMap.has(name)) roleMap.set(name, new Set());
-        roleMap.get(name).add(dayStr);
       }
       const shearerNames = collectShearerNames(s);
       shearerNames.forEach(name => addPerson(name || 'Unknown', 'Shearer'));
-      (s.shedStaff || []).forEach(ss => {
-        const n = normalizeName(ss.name || ss.staffName || ss.displayName || ss.id);
-        addPerson(n || 'Unknown', 'Shed Staff');
+
+      const staffArrays = [s.shedStaff, s.shedstaff, s.staff, s.crew, s.shed_hands, s.shedHands].filter(Array.isArray);
+      staffArrays.forEach(arr => {
+        arr.forEach(ss => {
+          let n;
+          if (typeof ss === 'string') n = ss;
+          else if (ss && typeof ss === 'object') {
+            n = ss.name || ss.displayName || ss.staffName || ss.id;
+          }
+          n = normalizeName(n);
+          addPerson(n || 'Unknown', 'Shed Staff');
+        });
       });
 
       const mKey = monthKeyFromDay(dayStr);
@@ -3488,13 +3545,17 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       monthDayMap.get(mKey).add(dayStr);
     });
 
-    const farmRows = Array.from(farmsData.entries()).map(([farm,data])=>{
-      let shearersDays = 0; data.shearer.forEach(set=>{ shearersDays += set.size; });
-      let shedDays = 0; data.shed.forEach(set=>{ shedDays += set.size; });
-      const totalDays = shearersDays + shedDays;
-      const avg = data.workerSet.size ? totalDays / data.workerSet.size : 0;
-      return {farm, shearersDays, shedDays, totalDays, avg};
-    }).sort((a,b)=>b.totalDays - a.totalDays || a.farm.localeCompare(b.farm));
+    const farmRows = Array.from(farmDayMap.entries()).map(([farm, daySet]) => {
+      const teamDays = daySet.size;
+      const uniqueWorkers = (farmWorkersMap.get(farm) || new Set()).size;
+      const avg = uniqueWorkers ? (teamDays / uniqueWorkers) : 0;
+      return {
+        farm,
+        teamDays,
+        uniqueWorkers,
+        avgDaysPerWorker: avg
+      };
+    }).sort((a,b)=> b.teamDays - a.teamDays || a.farm.localeCompare(b.farm));
 
     const personRows = Array.from(personDayMap.entries()).map(([key,set])=>{
       const [name,role] = key.split('|');
@@ -3520,7 +3581,16 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       `<tr><td>People ≥20 below avg</td><td>${below}</td></tr>`;
   }
   function renderByFarm(rows){
-    tblByFarm.innerHTML = rows.map(r=>`<tr><td>${r.farm}</td><td>${r.shearersDays}</td><td>${r.shedDays}</td><td>${r.totalDays}</td><td>${r.avg.toFixed(1)}</td></tr>`).join('');
+    const tbody = document.querySelector('#kpiDWByFarm tbody');
+    if (!tbody) return;
+    tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${escapeHtml(r.farm)}</td>
+      <td>${r.teamDays}</td>
+      <td>${r.uniqueWorkers}</td>
+      <td>${(Math.round(r.avgDaysPerWorker * 10) / 10).toFixed(1)}</td>
+    </tr>
+    `).join('');
   }
   function renderByPerson(rows){ tblByPerson.innerHTML = rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${r.role}</td><td>${r.days}</td></tr>`).join(''); }
   function renderByMonth(rows){ tblByMonth.innerHTML = rows.map(r=>`<tr><td>${r.month}</td><td>${r.days}</td></tr>`).join(''); }
