@@ -3607,6 +3607,10 @@ function initTallyTooltips() {
       return;
     }
     guidedList = Array.from(document.querySelectorAll('#tabNav [data-help], #tallySheetView [data-help], #summaryView [data-help], #stationSummaryView [data-help]')).filter(el => !el.disabled);
+    const tallyContainer = document.getElementById('tallySheetView');
+    if (tallyContainer && tallyContainer.dataset.help) {
+      guidedList.unshift(tallyContainer);
+    }
     if (!guidedList.length) return;
     guidedMode = true;
     guidedIndex = 0;
