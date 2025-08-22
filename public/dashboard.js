@@ -3303,10 +3303,32 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   const shortMonthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
+  function fmtMonthLabel(ym) {
+    // ym may be 'YYYY-MM' or a Date/ISO string. Normalize to 'Mon YYYY'
+    if (!ym) return '';
+    let y = '', m = '';
+    if (typeof ym === 'string' && /^\d{4}-\d{2}$/.test(ym)) {
+      y = ym.slice(0,4);
+      m = ym.slice(5,7);
+    } else {
+      // fallback: try to parse into a Date and reconstruct
+      const d = new Date(ym);
+      if (!isNaN(d)) {
+        y = String(d.getFullYear());
+        m = String(d.getMonth()+1).padStart(2,'0');
+      } else {
+        return ym; // give up, show original
+      }
+    }
+    const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const idx = Math.max(0, Math.min(11, parseInt(m,10)-1));
+    return `${names[idx]} ${y}`;
+  }
+
   function renderSparkline(container, values){
     if(!container) return;
     const h = container.clientHeight || 36;
-    if(!values || values.length === 0){ container.innerHTML=''; return; }
+    if(!values || values.length === 0){ container.textContent=''; return; }
     if(values.length === 1){
       const max = values[0] || 0;
       const y = h - (max ? (values[0]/max)*h : 0);
@@ -3590,7 +3612,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     `).join('');
   }
   function renderByPerson(rows){ tblByPerson.innerHTML = rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${r.role}</td><td>${r.days}</td></tr>`).join(''); }
-  function renderByMonth(rows){ tblByMonth.innerHTML = rows.map(r=>`<tr><td>${r.month}</td><td>${r.days}</td></tr>`).join(''); }
+  function renderByMonth(rows){ tblByMonth.innerHTML = rows.map(r=>`<tr><td>${fmtMonthLabel(r.month)}</td><td>${r.days}</td></tr>`).join(''); }
   function renderStreaks(rows){ tblStreaks.innerHTML = rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.name}</td><td>${r.role}</td><td>${r.length}</td><td>${formatDate(r.startISO)}–${formatDate(r.endISO)}</td></tr>`).join(''); }
 
   async function refresh(){
@@ -3662,7 +3684,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
         quietestMonthEl.hidden = false;
       }
     } else if (monthSparkEl) {
-      monthSparkEl.innerHTML='';
+      monthSparkEl.textContent='';
     }
 
     renderByMonth(agg.monthRows);
