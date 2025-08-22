@@ -1925,6 +1925,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (farmSel && typeof populateStationDropdown === 'function') {
     populateStationDropdown();
   }
+  if (startEl) startEl.addEventListener('change', populateStationDropdown);
+  if (endEl)   endEl.addEventListener('change', populateStationDropdown);
+  if (allEl)   allEl.addEventListener('change', populateStationDropdown);
 
   function showMsg(text) {
     if (!msgEl) return;
@@ -1951,6 +1954,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (startEl) startEl.value = fmt(start);
       if (endEl) endEl.value = fmt(today);
       if (allEl) allEl.checked = false;
+      populateStationDropdown();
       const farm = (farmSel?.value || '').trim();
       if (farm) {
         hideMsg();
@@ -1989,6 +1993,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (startEl) startEl.value = '';
       if (endEl) endEl.value = '';
       if (allEl) allEl.checked = false;
+      populateStationDropdown();
       if (typeof clearStationSummaryView === 'function') clearStationSummaryView();
       showMsg('Select a farm and date range, or tick “All time for this farm”, then press Apply.');
     });
@@ -2107,18 +2112,34 @@ document.addEventListener('DOMContentLoaded', () => {
 }
  
 async function populateStationDropdown() {
-    const select = document.getElementById('stationSelect');
+    const select   = document.getElementById('stationSelect');
+    const startEl  = document.getElementById('summaryStart');
+    const endEl    = document.getElementById('summaryEnd');
+    const allEl    = document.getElementById('summaryAllTime');
     if (!select) return;
     const current = select.value;
+
+    const start = startEl?.value || '';
+    const end   = endEl?.value || '';
+    const all   = !!allEl?.checked;
+    let startDate = start ? new Date(start) : null;
+    let endDate   = end ? new Date(end) : null;
+    const filterByDate = !all && startDate && endDate;
+    if (filterByDate && endDate) endDate.setHours(23,59,59,999);
+
     const sessions = await listSessionsFromFirestore();
     const nameMap = new Map();
     sessions.forEach(s => {
         const trimmed = (s.stationName || '').trim();
         if (!trimmed) return;
+        if (filterByDate) {
+            const d = new Date(s.date);
+            if ((startDate && d < startDate) || (endDate && d > endDate)) return;
+        }
         const key = trimmed.toLowerCase();
         if (!nameMap.has(key)) nameMap.set(key, trimmed);
     });
-    const names = Array.from(nameMap.values());
+    const names = Array.from(nameMap.values()).sort((a, b) => a.localeCompare(b));
     select.innerHTML = '';
     const blank = document.createElement('option');
     blank.value = '';
