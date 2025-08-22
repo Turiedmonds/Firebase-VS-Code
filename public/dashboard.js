@@ -215,75 +215,39 @@ function formatHoursHM(decHours) {
   return `${h}:${String(m).padStart(2, '0')}`;
 }
 
-// Render a simple sparkline SVG inside containerEl
+// Render a minimalist sparkline used by KPI modals.
+// Mirrors the implementation used for the Days Worked graph.
 function renderSparkline(containerEl, valuesArray) {
   if (!containerEl) return;
   containerEl.innerHTML = '';
   if (!Array.isArray(valuesArray) || valuesArray.length === 0) {
-    containerEl.textContent = 'No data';
+    containerEl.textContent = '';
+    return;
+  }
+
+  const height = containerEl.clientHeight || 36;
+
+  // Single value: render a centered dot
+  if (valuesArray.length === 1) {
+    const max = valuesArray[0] || 0;
+    const y = height - (max ? (valuesArray[0]/max) * height : 0);
+    containerEl.innerHTML =
+      `<svg width="16" height="${height}" viewBox="0 0 16 ${height}">` +
+      `<circle cx="8" cy="${y}" r="2" stroke="currentColor" fill="currentColor"/></svg>`;
     return;
   }
 
   const max = Math.max(...valuesArray);
-  const min = Math.min(...valuesArray);
-  const width = containerEl.clientWidth || 120;
-  const height = containerEl.clientHeight || 36;
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(svgNS, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.setAttribute('width', width);
-  svg.setAttribute('height', height);
-  svg.classList.add('sparkline');
-
-  if (valuesArray.length === 1 || max === min) {
-    const y = height / 2;
-    const line = document.createElementNS(svgNS, 'line');
-    line.setAttribute('x1', '0');
-    line.setAttribute('y1', y);
-    line.setAttribute('x2', String(width));
-    line.setAttribute('y2', y);
-    line.setAttribute('class', 'spark-line');
-    svg.appendChild(line);
-    containerEl.appendChild(svg);
-    return;
-  }
-
-  const scaleX = width / (valuesArray.length - 1);
-  const range = max - min || 1;
+  const width = (valuesArray.length - 1) * 8; // consistent spacing
   const points = valuesArray.map((v, i) => {
-    const x = i * scaleX;
-    const y = height - ((v - min) / range) * height;
-    return { x, y };
-  });
+    const x = (i / (valuesArray.length - 1)) * width;
+    const y = height - (max ? (v / max) * height : 0);
+    return `${x},${y}`;
+  }).join(' ');
 
-  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`).join(' ');
-
-  // Area fill beneath the spark line
-  const areaD = `M${points[0].x} ${height} ` +
-    points.map((p) => `L${p.x} ${p.y}`).join(' ') +
-    ` L${points[points.length - 1].x} ${height} Z`;
-  const area = document.createElementNS(svgNS, 'path');
-  area.setAttribute('d', areaD);
-  area.setAttribute('class', 'spark-fill');
-  svg.appendChild(area);
-
-  const path = document.createElementNS(svgNS, 'path');
-  path.setAttribute('d', pathD);
-  path.setAttribute('class', 'spark-line');
-  svg.appendChild(path);
-
-  const minIdx = valuesArray.indexOf(min);
-  const maxIdx = valuesArray.indexOf(max);
-  [minIdx, maxIdx].forEach(idx => {
-    if (idx < 0) return;
-    const c = document.createElementNS(svgNS, 'circle');
-    c.setAttribute('cx', points[idx].x);
-    c.setAttribute('cy', points[idx].y);
-    c.setAttribute('r', '2');
-    svg.appendChild(c);
-  });
-
-  containerEl.appendChild(svg);
+  containerEl.innerHTML =
+    `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
+    `<polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
 // Determine busiest and quietest labels/values
@@ -3335,25 +3299,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     return `${names[idx]} ${y}`;
   }
 
-  function renderSparkline(container, values){
-    if(!container) return;
-    const h = container.clientHeight || 36;
-    if(!values || values.length === 0){ container.textContent=''; return; }
-    if(values.length === 1){
-      const max = values[0] || 0;
-      const y = h - (max ? (values[0]/max)*h : 0);
-      container.innerHTML = `<svg width="16" height="${h}" viewBox="0 0 16 ${h}"><circle cx="8" cy="${y}" r="2" stroke="currentColor" fill="currentColor"/></svg>`;
-      return;
-    }
-    const max = Math.max(...values);
-    const w = (values.length - 1) * 8;
-    const points = values.map((v,i)=>{
-      const x = i/(values.length-1)*w;
-      const y = h - (max ? (v/max)*h : 0);
-      return `${x},${y}`;
-    }).join(' ');
-    container.innerHTML = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
-  }
 
   function calcPeaks(values, labels){
     if(!values.length) return {busiest:null, quietest:null};
