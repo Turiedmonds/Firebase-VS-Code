@@ -1866,6 +1866,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // === SIMPLE DASHBOARD TOUR ===
   // Minimal, self-contained tour with overlay + tooltip.
   let tourIndex = 0;
+  let tourCurrent = null;
   const tourOverlay = document.createElement('div');
   tourOverlay.className = 'siq-tour-overlay';
   document.body.appendChild(tourOverlay);
@@ -1929,6 +1930,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.querySelector(step.sel);
     if (!el) return finishTour();
 
+    if (tourCurrent) {
+      tourCurrent.classList.remove('tt-highlight');
+    }
+    tourCurrent = el;
+    tourCurrent.classList.add('tt-highlight');
+
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     tourOverlay.classList.add('active');
     tourTip.style.display = 'block';
@@ -1941,6 +1948,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function finishTour() {
     tourOverlay.classList.remove('active');
     tourTip.style.display = 'none';
+    if (tourCurrent) {
+      tourCurrent.classList.remove('tt-highlight');
+      tourCurrent = null;
+    }
     localStorage.setItem('dashboard_welcome_done','true');
   }
 
