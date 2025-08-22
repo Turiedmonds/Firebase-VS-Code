@@ -10,5 +10,13 @@
 
   if (typeof firebase !== 'undefined' && (!firebase.apps || !firebase.apps.length)) {
     firebase.initializeApp(firebaseConfig);
+    if (firebase.firestore) {
+      firebase
+        .firestore()
+        .enableIndexedDbPersistence()
+        .catch(function (err) {
+          console.warn('Failed to enable persistence', err);
+        });
+    }
   }
 })();
