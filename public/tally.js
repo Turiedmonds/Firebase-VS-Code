@@ -2604,7 +2604,7 @@ function buildExportRows(data) {
 
 function updateUIForRole(role) {
     const admin = role === 'admin';
-    const ids = ['saveCloudBtn', 'saveBothBtn', 'loadCloudBtn', 'exportFarmSummaryBtn'];
+    const ids = ['saveCloudBtn', 'saveBothBtn', 'loadCloudBtn'];
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
