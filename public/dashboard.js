@@ -2846,6 +2846,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   const tbodySummary = document.getElementById('kpiTHSummary');
   const tblByFarm = document.querySelector('#kpiTHByFarm tbody');
   const tblByPerson = document.querySelector('#kpiTHByPerson tbody');
+  const tblByStaff = document.querySelector('#kpiTHByStaff tbody');
   const tblByMonth = document.querySelector('#kpiTHByMonth tbody');
   const exportBtn = document.getElementById('kpiTHExport');
 
@@ -3053,6 +3054,23 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     });
   }
 
+  function renderByStaff(rows){
+    tblByStaff.innerHTML = '';
+    const staff = rows.filter(r => r.role === 'Shed Staff');
+    staff.sort((a,b)=>b.totalHours - a.totalHours);
+    staff.forEach((r,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td>${r.name}</td>
+        <td>${r.daysWorked}</td>
+        <td>${hoursToHM(r.totalHours)}</td>
+        <td>${r.daysWorked ? hoursToHM(r.totalHours / r.daysWorked) : '—'}</td>
+      `;
+      tblByStaff.appendChild(tr);
+    });
+  }
+
   function renderByMonth(map){
     // map: key YYYY-MM -> hours
     const entries = Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
@@ -3178,6 +3196,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     renderSummary(agg.totalSessionHours, agg.totalCrewHours, agg.totalShedStaffHours);
     renderByFarm(agg.farmRows);
     renderByPerson(agg.personRows);
+    renderByStaff(agg.personRows);
     const monthData = renderByMonth(agg.monthMap);
 
     const sparkHost = document.getElementById('kpiTHMonthSpark');
