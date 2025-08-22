@@ -103,5 +103,6 @@ function handleOfflineRedirect() {
     window.location.href = 'tally.html';
   } else {
     alert('You appear to be offline. Please reconnect.');
+    window.location.href = 'login.html';
   }
 }

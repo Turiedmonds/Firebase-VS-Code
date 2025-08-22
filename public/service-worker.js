@@ -7,7 +7,7 @@ const FILES_TO_CACHE = [
   'auth-check.html',
   'dashboard.html',
   'tally.html',
-  'login.html',
+  'login.html', // cache login page for offline redirect
 
   // App assets (keep existing names; do NOT rename)
   'styles.css',
