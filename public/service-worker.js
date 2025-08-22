@@ -1,5 +1,5 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v10';
+const CACHE_NAME = 'sheariq-pwa-v11';
 const FIREBASE_CDN_CACHE = 'firebase-cdn';
 
 const FILES_TO_CACHE = [
@@ -7,6 +7,7 @@ const FILES_TO_CACHE = [
   'auth-check.html',
   'dashboard.html',
   'tally.html',
+  // ✅ Explicitly cache the login page so it is available offline
   'login.html',
 
   // App assets (keep existing names; do NOT rename)
