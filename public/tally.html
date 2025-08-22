@@ -46,7 +46,10 @@
   <style id="tt-tooltip-fix">
     #tt-root {
       position: fixed;
+      width: calc(100vw - 20px);
       max-width: 280px;
+      max-height: calc(100vh - 20px);
+      overflow-y: auto;
       pointer-events: none;
       z-index: 900;
     }
@@ -66,7 +69,10 @@
   <style id="tt-tooltip-override">
     #tt-root {
       position: fixed;
+      width: calc(100vw - 20px);
       max-width: 280px;
+      max-height: calc(100vh - 20px);
+      overflow-y: auto;
       pointer-events: none;
       z-index: 900;
     }
@@ -709,7 +715,10 @@ document.addEventListener('DOMContentLoaded', function () {
 <style>
     #tt-root {
       position: fixed;
+      width: calc(100vw - 20px);
       max-width: 280px;
+      max-height: calc(100vh - 20px);
+      overflow-y: auto;
       padding: 10px 12px;
       background: rgba(20,20,20,0.95);
       color: #fff;
