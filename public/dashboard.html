@@ -374,19 +374,15 @@
               <h3>Summary</h3>
               <div id="kpiDWReliability" class="kpi-trend">
                 <div class="kpi-badges" id="kpiDWBadges" aria-live="polite">
-                  <span class="kpi-badge" id="kpiDWBestAttendance" hidden>Best: —</span>
-                  <span class="kpi-badge" id="kpiDWLowestAttendance" hidden>Lowest: —</span>
-                  <span class="kpi-badge" id="kpiDWLongestContract" hidden>Longest Contract: —</span>
+                  <span class="kpi-badge kpi-pill" id="kpiDWHighestAttendance" hidden>Highest Attendance: —</span>
+                  <span class="kpi-badge kpi-pill" id="kpiDWMostConsecutiveDays" hidden>Most Consecutive Days: —</span>
                 </div>
               </div>
               <table class="kpi-table">
                 <thead><tr><th>Metric</th><th>Count</th></tr></thead>
                 <tbody id="kpiDWSummary"></tbody>
               </table>
-              <small class="kpi-note">
-                <strong>Days Worked</strong> counts unique session dates (1 per calendar day).<br>
-                Per-person days are also unique per date — working multiple farms in one day still counts as 1.
-              </small>
+              <p class="kpi-note">Each work day is only counted once, even if multiple teams worked that day.</p>
             </section>
 
             <section>
@@ -428,8 +424,8 @@
               <h3>By Month</h3>
               <div id="kpiDWMonthTrend" class="kpi-trend">
                 <div class="kpi-badges" id="kpiDWMonthPeaks" aria-live="polite">
-                  <span class="kpi-badge" id="kpiDWBusiestMonth" hidden>Busiest: —</span>
-                  <span class="kpi-badge" id="kpiDWQuietestMonth" hidden>Quietest: —</span>
+                  <span class="kpi-badge kpi-pill" id="kpiDWBusiestMonth" hidden>Busiest: —</span>
+                  <span class="kpi-badge kpi-pill" id="kpiDWQuietestMonth" hidden>Quietest: —</span>
                 </div>
                 <div id="kpiDWMonthSpark" class="kpi-spark" role="img" aria-label="Monthly days-worked trend"></div>
               </div>

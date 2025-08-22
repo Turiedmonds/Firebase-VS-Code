@@ -3272,9 +3272,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   const tblByMonth = document.querySelector('#kpiDWByMonth tbody');
   const tblStreaks = document.querySelector('#kpiDWStreaks tbody');
   const reliabilityEl = document.getElementById('kpiDWReliability');
-  const bestAttendanceEl = document.getElementById('kpiDWBestAttendance');
-  const lowestAttendanceEl = document.getElementById('kpiDWLowestAttendance');
-  const longestContractEl = document.getElementById('kpiDWLongestContract');
+  const highestAttendanceEl = document.getElementById('kpiDWHighestAttendance');
+  const mostConsecutiveEl = document.getElementById('kpiDWMostConsecutiveDays');
   const monthTrendEl = document.getElementById('kpiDWMonthTrend');
   const monthSparkEl = document.getElementById('kpiDWMonthSpark');
   const busiestMonthEl = document.getElementById('kpiDWBusiestMonth');
@@ -3575,10 +3574,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     dashCache.kpiDaysWorked = text;
     saveDashCache();
   }
-  function renderSummary(total, above, below){
-    tbodySummary.innerHTML = `<tr><td>Days Worked</td><td>${total}</td></tr>`+
-      `<tr><td>People ≥20 above avg</td><td>${above}</td></tr>`+
-      `<tr><td>People ≥20 below avg</td><td>${below}</td></tr>`;
+  function renderSummary(total){
+    tbodySummary.innerHTML = `<tr><td>Days Worked</td><td>${total}</td></tr>`;
   }
   function renderByFarm(rows){
     const tbody = document.querySelector('#kpiDWByFarm tbody');
@@ -3613,15 +3610,15 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     attendanceArr.forEach(a=>{ exportExtras.set(`${a.name}|${a.role}`, {attendancePct:a.attendancePct}); });
 
     reliabilityEl && (reliabilityEl.hidden = agg.allDays.size === 0);
-    bestAttendanceEl && (bestAttendanceEl.hidden = true);
-    lowestAttendanceEl && (lowestAttendanceEl.hidden = true);
-    longestContractEl && (longestContractEl.hidden = true);
+    highestAttendanceEl && (highestAttendanceEl.hidden = true);
+    mostConsecutiveEl && (mostConsecutiveEl.hidden = true);
 
     if (agg.allDays.size && attendanceArr.length){
       const best = attendanceArr.reduce((a,b)=>b.attendancePct>a.attendancePct?b:a);
-      const worst = attendanceArr.reduce((a,b)=>b.attendancePct<a.attendancePct?b:a);
-      if (bestAttendanceEl) { bestAttendanceEl.textContent = `Best: ${best.name} (${best.attendancePct.toFixed(0)}%)`; bestAttendanceEl.hidden = false; }
-      if (lowestAttendanceEl) { lowestAttendanceEl.textContent = `Lowest: ${worst.name} (${worst.attendancePct.toFixed(0)}%)`; lowestAttendanceEl.hidden = false; }
+      if (highestAttendanceEl) {
+        highestAttendanceEl.textContent = `Highest Attendance: ${best.name} (${best.attendancePct.toFixed(0)}%)`;
+        highestAttendanceEl.hidden = false;
+      }
     }
 
     const streakRows = [];
@@ -3638,18 +3635,13 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
     if (agg.allDays.size && streakRows.length){
       const bestStreak = streakRows.reduce((a,b)=> (b.length>a.length) || (b.length===a.length && b.startISO<a.startISO) ? b : a );
-      if (longestContractEl) {
-        longestContractEl.textContent = `Longest Contract: ${bestStreak.name} (${bestStreak.length} days, ${formatDate(bestStreak.startISO)}–${formatDate(bestStreak.endISO)})`;
-        longestContractEl.hidden = false;
+      if (mostConsecutiveEl) {
+        mostConsecutiveEl.textContent = `Most Consecutive Days: ${bestStreak.name} (${bestStreak.length} days, ${formatDate(bestStreak.startISO)}–${formatDate(bestStreak.endISO)})`;
+        mostConsecutiveEl.hidden = false;
       }
     }
-
-    const avgDays = agg.personRows.reduce((sum,p)=>sum+p.days,0)/(agg.personRows.length||1);
-    const aboveN = agg.personRows.filter(p=>p.days - avgDays >= 20).length;
-    const belowN = agg.personRows.filter(p=>avgDays - p.days >= 20).length;
-
     renderPill(agg.total);
-    renderSummary(agg.total, aboveN, belowN);
+    renderSummary(agg.total);
     renderByFarm(agg.farmRows);
     renderByPerson(agg.personRows);
 
