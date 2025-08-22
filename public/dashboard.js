@@ -2010,6 +2010,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cbTourM   = document.getElementById('dw-enable-tour');
   const btnSaveM  = document.getElementById('dw-save');
   const btnStartM = document.getElementById('dw-start');
+  const btnChangePwM = document.getElementById('dw-change-password');
 
   // Help menu elements
   const helpMenu  = document.getElementById('dash-help-menu');
@@ -2116,6 +2117,12 @@ document.addEventListener('DOMContentLoaded', () => {
       syncHelpFromPrefs();
     }
     startDashboardTour();
+  });
+
+  // Change Password from modal
+  btnChangePwM?.addEventListener('click', () => {
+    persistFromModal({lockDone:true});
+    window.location.href = 'change-password.html';
   });
 
   // Keep “first-visit” rule intact elsewhere in your code:
