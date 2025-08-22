@@ -1373,6 +1373,13 @@ button {
   font-size: 0.8rem;
   color: #39ff14;
 }
+
+@media (max-width: 480px) {
+  #kpiBar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 .kpi-meta { font-size: .75rem; opacity: .7; }
 
 /* Modal */
