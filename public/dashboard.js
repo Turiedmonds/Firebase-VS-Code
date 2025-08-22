@@ -3569,12 +3569,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const farmRows = Array.from(farmDayMap.entries()).map(([farm, daySet]) => {
       const teamDays = daySet.size;
       const uniqueWorkers = (farmWorkersMap.get(farm) || new Set()).size;
-      const avg = uniqueWorkers ? (teamDays / uniqueWorkers) : 0;
       return {
         farm,
         teamDays,
-        uniqueWorkers,
-        avgDaysPerWorker: avg
+        uniqueWorkers
       };
     }).sort((a,b)=> b.teamDays - a.teamDays || a.farm.localeCompare(b.farm));
 
@@ -3607,7 +3605,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       <td>${escapeHtml(r.farm)}</td>
       <td>${r.teamDays}</td>
       <td>${r.uniqueWorkers}</td>
-      <td>${(Math.round(r.avgDaysPerWorker * 10) / 10).toFixed(1)}</td>
     </tr>
     `).join('');
   }
