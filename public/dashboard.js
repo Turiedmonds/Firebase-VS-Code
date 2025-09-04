@@ -43,6 +43,117 @@ function markDashboardWelcomeSeen(){
   });
 })();
 
+function isForcedOffline(){ return localStorage.getItem('force_offline') === '1'; }
+function isReallyOffline(){ return !navigator.onLine || isForcedOffline(); }
+
+function removeOverlayGate() {
+  // Remove common blocking overlays if present
+  const candidates = [
+    '#boot-gate', '.boot-gate', '.boot-overlay',
+    '#loading-overlay', '.loading-overlay',
+    '#dashboardOverlay', '#blocker', '.blocker',
+    '.boot-hiding'
+  ];
+  candidates.forEach(sel=>{
+    document.querySelectorAll(sel).forEach(el=>{
+      el.classList.remove('boot-hiding');
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0';
+      el.style.display = 'none';
+      el.removeAttribute('aria-hidden');
+    });
+  });
+  // Ensure main app area is clickable
+  const root = document.getElementById('app') || document.body;
+  root.style.pointerEvents = 'auto';
+  root.style.opacity = '1';
+}
+
+function showOfflineToastOnce(msg){
+  if (showOfflineToastOnce._shown) return;
+  showOfflineToastOnce._shown = true;
+  const t=document.createElement('div');
+  t.textContent = msg || 'Offline: cached navigation enabled';
+  t.style.position='fixed'; t.style.bottom='16px'; t.style.left='50%';
+  t.style.transform='translateX(-50%)';
+  t.style.background='rgba(20,20,20,0.95)'; t.style.color='#fff';
+  t.style.padding='8px 12px'; t.style.borderRadius='6px';
+  t.style.font='14px system-ui'; t.style.zIndex='2147483647';
+  document.body.appendChild(t); setTimeout(()=>t.remove(),2200);
+}
+
+function bindOfflineNav() {
+  // Bind Start New Day → /tally.html regardless of data
+  const candidates = [
+    '#btnStartNewDay', '[data-action="start-new-day"]',
+    'a[href="/tally.html"]', 'a[data-nav="tally"]'
+  ];
+  let bound = false;
+  candidates.forEach(sel=>{
+    document.querySelectorAll(sel).forEach(el=>{
+      if (el._offlineBound) return;
+      el.addEventListener('click', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        location.href = '/tally.html';
+      }, { passive:false });
+      el._offlineBound = true;
+      bound = true;
+    });
+  });
+  // Add a tiny visible fallback link if nothing was bound
+  if (!document.getElementById('offlineOpenTally')) {
+    const role = localStorage.getItem('user_role');
+    if (role === 'contractor') {
+      const bar=document.createElement('div');
+      bar.id='offlineOpenTally';
+      bar.innerHTML = '<a href="/tally.html" style="color:#ffd86b;text-decoration:underline">Open Tally (Offline)</a>';
+      bar.style.position='fixed'; bar.style.top='10px'; bar.style.right='10px';
+      bar.style.zIndex='2147483647'; bar.style.font='13px system-ui'; bar.style.background='rgba(0,0,0,.6)';
+      bar.style.padding='6px 8px'; bar.style.borderRadius='6px';
+      document.body.appendChild(bar);
+      // ensure anchor works even if JS elsewhere blocks
+      bar.querySelector('a').addEventListener('click', (e)=>{
+        e.preventDefault(); e.stopPropagation();
+        location.href = '/tally.html';
+      }, { passive:false });
+    }
+  }
+  return bound;
+}
+
+function throttle(ms, fn){
+  let t=0; return (...a)=>{ const now=Date.now(); if (now-t>ms){ t=now; return fn(...a); } };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const role = localStorage.getItem('user_role');
+  if (role === 'contractor' && isReallyOffline()) {
+    // Mark offline mode on <body> for CSS helpers
+    document.body.classList.add('offline-mode');
+    // Safety unhide & remove any overlay/gate that might block taps
+    removeOverlayGate();
+    // Bind Start New Day and other nav right away
+    const didBind = bindOfflineNav();
+    // Inform the user
+    showOfflineToastOnce('Offline mode: cached navigation ready');
+    console.log('[Dashboard] Offline Safe Mode active. Buttons bound:', didBind);
+  }
+
+  // Also react if the OS flips connectivity while the page is open
+  window.addEventListener('online', throttle(800, ()=>{
+    document.body.classList.remove('offline-mode');
+  }));
+  window.addEventListener('offline', throttle(800, ()=>{
+    if (localStorage.getItem('user_role') === 'contractor'){
+      document.body.classList.add('offline-mode');
+      removeOverlayGate();
+      bindOfflineNav();
+      showOfflineToastOnce('Offline mode: cached navigation ready');
+    }
+  }));
+});
+
 // Auto-open on first dashboard load (only once)
 document.addEventListener('DOMContentLoaded', function(){
   try {
@@ -1715,30 +1826,37 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
 
-        SessionStore.start(user.uid, { monthsLive: 12 });
-        if (!localStorage.getItem('savedAtBackfilled') && typeof backfillSavedAtForSessions === 'function') {
-          backfillSavedAtForSessions().finally(() => {
-            try { localStorage.setItem('savedAtBackfilled', 'true'); } catch {}
-          });
+        if (!isReallyOffline()) {
+          SessionStore.start(user.uid, { monthsLive: 12 });
+          if (!localStorage.getItem('savedAtBackfilled') && typeof backfillSavedAtForSessions === 'function') {
+            backfillSavedAtForSessions().finally(() => {
+              try { localStorage.setItem('savedAtBackfilled', 'true'); } catch {}
+            });
+          }
         }
         document.addEventListener('visibilitychange', () => {
           if (document.hidden) {
             SessionStore.stop();
-          } else {
+          } else if (!isReallyOffline()) {
             SessionStore.start(user.uid, { monthsLive: 12 });
           }
         });
         window.addEventListener('beforeunload', () => { SessionStore.stop(); });
 
         // After setting contractor_id and after showing the page content:
-      if (typeof initTop5ShearersWidget === 'function') {
-        try { initTop5ShearersWidget(); } catch (e) { console.error('[Dashboard] initTop5ShearersWidget failed:', e); }
-      }
-      if (typeof initTop5ShedStaffWidget === 'function') {
-        try { initTop5ShedStaffWidget(); } catch (e) { console.error('[Dashboard] initTop5ShedStaffWidget failed:', e); }
-      }
-      if (typeof initTop5FarmsWidget === 'function') {
-        try { initTop5FarmsWidget(); } catch (e) { console.error('[Dashboard] initTop5FarmsWidget failed:', e); }
+      if (isReallyOffline()) {
+        try { window.renderCachedTop5Widgets && window.renderCachedTop5Widgets(); } catch(_){ }
+        console.info('[Dashboard] Skipping live widget init offline.');
+      } else {
+        if (typeof initTop5ShearersWidget === 'function') {
+          try { initTop5ShearersWidget(); } catch (e) { console.error('[Dashboard] initTop5ShearersWidget failed:', e); }
+        }
+        if (typeof initTop5ShedStaffWidget === 'function') {
+          try { initTop5ShedStaffWidget(); } catch (e) { console.error('[Dashboard] initTop5ShedStaffWidget failed:', e); }
+        }
+        if (typeof initTop5FarmsWidget === 'function') {
+          try { initTop5FarmsWidget(); } catch (e) { console.error('[Dashboard] initTop5FarmsWidget failed:', e); }
+        }
       }
     } catch (err) {
       console.error('Failed to fetch contractor profile', err);
@@ -2194,6 +2312,11 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     pillVal.textContent = Number(dashCache.kpiSheepCount).toLocaleString();
   }
 
+  if (isReallyOffline()) {
+    console.info('[Dashboard] Skipping live widget init offline.');
+    return;
+  }
+
   // Find contractor id (same logic you already use)
   const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
 
@@ -2450,7 +2573,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     updateFromStore();
   }
 
-  SessionStore.start(contractorId, { monthsLive: 12 });
+  if (!isReallyOffline()) {
+    SessionStore.start(contractorId, { monthsLive: 12 });
+  }
 })();
 
 // === KPI: Sheep Per Hour ===
@@ -2470,6 +2595,11 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   if (dashCache.kpiSheepPerHourRate != null) {
     pillVal.textContent = dashCache.kpiSheepPerHourRate;
+  }
+
+  if (isReallyOffline()) {
+    console.info('[Dashboard] Skipping live widget init offline.');
+    return;
   }
 
   const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
@@ -2892,6 +3022,11 @@ document.addEventListener('DOMContentLoaded', () => {
     pillVal.textContent = dashCache.kpiTotalHours;
   }
 
+  if (isReallyOffline()) {
+    console.info('[Dashboard] Skipping live widget init offline.');
+    return;
+  }
+
   // Prefer existing parser if available
   const parseHours = (typeof window.parseHoursToDecimal === 'function')
     ? window.parseHoursToDecimal
@@ -3309,6 +3444,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (dashCache.kpiDaysWorked != null && pillVal) {
     pillVal.textContent = dashCache.kpiDaysWorked;
+  }
+
+  if (isReallyOffline()) {
+    console.info('[Dashboard] Skipping live widget init offline.');
+    return;
   }
 
   function yearBounds(y){
