@@ -1,31 +1,10 @@
 (function(){
   const page = /tally\.html/i.test(location.pathname) ? 'TALLY' : 'DASHBOARD';
-  const banner = document.createElement('div');
-  banner.id = 'boot-banner';
-  Object.assign(banner.style, {
-    background: '#ff69b4',
-    color: '#000',
-    fontWeight: 'bold',
-    padding: '4px 6px',
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    zIndex: '2147483647'
-  });
-  function update(extra){
-    banner.textContent = page + ' | __REAL_OFFLINE__=' + window.__REAL_OFFLINE__ + (extra? ' | ' + extra : '');
-  }
-  window.__BOOT_BANNER__ = banner;
-  window.bootBannerAppend = function(msg){
-    if (banner.textContent) banner.textContent += ' | ' + msg;
-    else banner.textContent = msg;
-  };
+  function update(extra){}
+  window.bootBannerAppend = function(msg){};
   document.addEventListener('DOMContentLoaded', function(){
-    document.body.insertBefore(banner, document.body.firstChild);
-    update();
     const prev = sessionStorage.getItem('debug_redirect');
     if (prev){
-      bootBannerAppend(prev);
       sessionStorage.removeItem('debug_redirect');
     }
   });
