@@ -149,6 +149,18 @@
       transform: translateX(20px);
     }
   </style>
+  <style>
+    body.offline-mode .loading-overlay,
+    body.offline-mode .boot-overlay,
+    body.offline-mode .boot-gate,
+    body.offline-mode #loading-overlay,
+    body.offline-mode #dashboardOverlay,
+    body.offline-mode .blocker {
+      pointer-events: none !important;
+      opacity: 0 !important;
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
   <script>
