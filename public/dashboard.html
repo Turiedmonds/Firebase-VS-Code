@@ -237,10 +237,6 @@
       // Keep killing blockers briefly in case other code flips them back
       var n=0, t=setInterval(function(){ hideBlockers(); if (++n>12) clearInterval(t); }, 600);
       addFallbackLink();
-      // Expose a flag so dashboard.js can check it too
-      window.__REAL_OFFLINE__ = true;
-    } else {
-      window.__REAL_OFFLINE__ = false;
     }
   })();
 })();

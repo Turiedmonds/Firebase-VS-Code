@@ -1741,9 +1741,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('loading-overlay');
 
   // ---- OFFLINE GUARD: do not re-show overlay or start auth when offline
-  const _isReallyOffline = (typeof isReallyOffline === 'function')
-    ? isReallyOffline()
-    : (window.__REAL_OFFLINE__ === true || !navigator.onLine || localStorage.getItem('force_offline')==='1');
+  const _isReallyOffline = isReallyOffline();
 
   if (_isReallyOffline) {
     // Hide/remove any blocking overlay so taps work

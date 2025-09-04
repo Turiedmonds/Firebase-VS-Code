@@ -19,7 +19,6 @@
   }
 
   realOffline().then(off=>{
-    window.__REAL_OFFLINE__ = off;
     update();
     const role = (localStorage.getItem('user_role')||'').toLowerCase();
     if (role === 'contractor' && off && !/tally\.html$/i.test(location.pathname)){
