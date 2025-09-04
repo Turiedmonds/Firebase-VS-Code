@@ -107,16 +107,17 @@ function showOfflineToastOnce(msg){
 function handleStartNewDayClick(e){
   e.preventDefault();
   e.stopPropagation();
+  if (e.stopImmediatePropagation) e.stopImmediatePropagation();
   if (isReallyOffline()) {
     caches.match('/tally.html').then(res => {
       if (res) {
-        location.href = '/tally.html';
+        location.assign('/tally.html');
       } else {
         alert('Tally page not available offline. Please connect to the internet at least once to cache this page.');
       }
     });
   } else {
-    location.href = '/tally.html';
+    location.assign('/tally.html');
   }
 }
 
@@ -1866,10 +1867,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const btnStartNewDay = document.getElementById('btnStartNewDay');
-      if (btnStartNewDay) {
+      if (btnStartNewDay && !isReallyOffline()) {
         btnStartNewDay.addEventListener('click', () => {
           sessionStorage.setItem('launch_override', 'tally');
-          window.location.href = 'tally.html?newDay=true';
+          window.location.href = '/tally.html?newDay=true';
         });
       }
 

@@ -58,17 +58,20 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.mode === 'navigate') {
     event.respondWith((async () => {
-      const path = new URL(event.request.url).pathname;
+      const url = new URL(event.request.url);
+      const path = url.pathname;
+      const isTally = path.endsWith('/tally.html');
+      const isDash = path.endsWith('/dashboard.html');
       try {
         const net = await fetch(event.request);
-        if (path.endsWith('/tally.html')) {
+        if (isTally) {
           const cache = await caches.open(CACHE_NAME);
           cache.put('/tally.html', net.clone());
         }
         return net;
       } catch (err) {
         const cache = await caches.open(CACHE_NAME);
-        if (path.endsWith('/tally.html')) {
+        if (isTally) {
           const cachedTally = await cache.match('/tally.html');
           if (cachedTally) {
             console.log('[service-worker] Offline: serving cached tally.html');
@@ -76,7 +79,7 @@ self.addEventListener('fetch', event => {
           }
           return new Response('<!doctype html><meta charset="utf-8"><title>Offline</title><body style="background:#000;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;"><div>Tally page not available offline.</div></body>', { headers: { 'Content-Type': 'text/html' }});
         }
-        if (path.endsWith('/dashboard.html')) {
+        if (isDash) {
           const cachedDash = await cache.match('/dashboard.html');
           if (cachedDash) {
             console.log('[service-worker] Offline: serving cached dashboard.html');
