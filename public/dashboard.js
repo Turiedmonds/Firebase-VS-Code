@@ -2993,46 +2993,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   if (SessionStore.getAll().length) refresh();
 })();
 
-// === Temporary Force Offline Toggle ===
-function showDashboardToast(msg) {
-  let toast = document.getElementById('dash-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'dash-toast';
-    toast.style.position = 'fixed';
-    toast.style.bottom = '20px';
-    toast.style.left = '50%';
-    toast.style.transform = 'translateX(-50%)';
-    toast.style.background = 'rgba(20,20,20,0.95)';
-    toast.style.color = '#fff';
-    toast.style.padding = '8px 12px';
-    toast.style.borderRadius = '6px';
-    toast.style.fontSize = '14px';
-    toast.style.zIndex = '2147483647';
-    toast.style.display = 'none';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = msg;
-  toast.style.display = 'block';
-  clearTimeout(showDashboardToast._t);
-  showDashboardToast._t = setTimeout(() => { toast.style.display = 'none'; }, 4000);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  const forceToggle = document.getElementById('forceOfflineToggle');
-  if (!forceToggle) return;
-  forceToggle.checked = localStorage.getItem('force_offline') === '1';
-  forceToggle.addEventListener('change', () => {
-    if (forceToggle.checked) {
-      localStorage.setItem('force_offline', '1');
-      showDashboardToast('Force Offline on. Close the app, enable airplane mode, and open from the home-screen icon to test.');
-    } else {
-      localStorage.removeItem('force_offline');
-      showDashboardToast('Force Offline off.');
-    }
-  });
-});
-
 // === KPI: Total Hours (Session Hours for the year) ===
 (function setupKpiTotalHours(){
   const pill = document.getElementById('kpiTotalHours');
