@@ -1,126 +1,171 @@
-firebase.auth().onAuthStateChanged(async function (user) {
-  if (!user) {
-    window.location.href = "login.html";
-    return;
-  }
+// Offline-first boot logic for role-based routing
+function isForcedOffline() {
+  return localStorage.getItem('force_offline') === '1';
+}
 
+function isReallyOffline() {
+  return !navigator.onLine || isForcedOffline();
+}
+
+const ROLE_KEY = 'user_role'; // 'contractor' | 'staff'
+const CONTRACTOR_KEY = 'contractor_id'; // string
+
+function withTimeout(promise, ms = 1200) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ]);
+}
+
+async function resolveRoleOfflineFirst(user) {
   const db = firebase.firestore();
-  const userUid = user.uid;
+  const uid = user.uid;
+  const cachedRole = localStorage.getItem(ROLE_KEY);
+  const cachedContractor = localStorage.getItem(CONTRACTOR_KEY);
 
-  console.log("[auth-check] \ud83d\udd0d Checking user role for UID:", userUid);
+  if (cachedRole && cachedContractor) {
+    return { role: cachedRole, contractorId: cachedContractor, source: 'localStorage' };
+  }
 
-  // Step 1: Check if user is a contractor
-  const contractorRef = db.collection("contractors").doc(userUid);
-  let contractorSnap;
   try {
-    contractorSnap = await contractorRef.get();
+    const contractorSnap = await withTimeout(
+      db.collection('contractors').doc(uid).get({ source: 'cache' })
+    );
+    if (contractorSnap.exists) {
+      return { role: 'contractor', contractorId: uid, source: 'cache' };
+    }
   } catch (err) {
-    console.error("[auth-check] \u274c Failed to fetch contractor record:", err);
-    handleOfflineRedirect();
-    return;
+    console.warn('[auth-check] contractor cache lookup failed', err);
   }
 
-  if (contractorSnap.exists && contractorSnap.data().role === "contractor") {
-    console.log("[auth-check] \u2705 User is a contractor");
-    localStorage.setItem("contractor_id", userUid);
-    localStorage.setItem("role", "contractor");
-    await waitForContractorIdAndRedirect();
-    return;
+  if (cachedRole === 'staff' && cachedContractor) {
+    try {
+      const staffSnap = await withTimeout(
+        db
+          .collection('contractors')
+          .doc(cachedContractor)
+          .collection('staff')
+          .doc(uid)
+          .get({ source: 'cache' })
+      );
+      if (staffSnap.exists) {
+        return { role: 'staff', contractorId: cachedContractor, source: 'cache' };
+      }
+    } catch (err) {
+      console.warn('[auth-check] staff cache lookup failed', err);
+    }
   }
 
-  // Step 2: Search all contractor/staff subcollections for this staff UID
-  console.log("[auth-check] \ud83d\udd0d Not a contractor, searching staff subcollections...");
+  if (isReallyOffline()) {
+    return {
+      role: cachedRole || 'unknown',
+      contractorId: cachedContractor || null,
+      source: 'offline',
+    };
+  }
 
-  let staffQuery;
+  return { role: 'unknown', contractorId: null, source: 'unknown' };
+}
+
+async function refreshRoleOnline(user) {
+  if (!navigator.onLine || isForcedOffline()) return null;
+  const db = firebase.firestore();
+  const uid = user.uid;
+
   try {
-    staffQuery = await db
-      .collectionGroup("staff")
-      .where(firebase.firestore.FieldPath.documentId(), "==", userUid)
-      .get();
+    const contractorSnap = await withTimeout(db.collection('contractors').doc(uid).get());
+    if (contractorSnap.exists) {
+      localStorage.setItem(ROLE_KEY, 'contractor');
+      localStorage.setItem(CONTRACTOR_KEY, uid);
+      return { role: 'contractor', contractorId: uid, source: 'server' };
+    }
   } catch (err) {
-    console.error("[auth-check] \u274c Failed to fetch staff record:", err);
-    handleOfflineRedirect();
-    return;
+    console.warn('[auth-check] contractor server lookup failed', err);
   }
 
-  if (!staffQuery.empty) {
-    const docSnap = staffQuery.docs[0];
-    const role = docSnap.data().role;
-
-      if (role === "staff") {
-        const data = docSnap.data();
-        console.log("[auth-check] \u2705 Found staff record:", data);
-
-        const contractorId = data.contractorId;
-        console.log("contractorId:", contractorId);
-
-        if (contractorId) {
-          try {
-            localStorage.setItem("contractor_id", contractorId);
-            localStorage.setItem("role", role);
-            window.location.href = "tally.html";
-          } catch (e) {
-            console.error("\u274c Failed to set contractor_id in localStorage:", e);
-            await firebase.auth().signOut();
-            window.location.href = "login.html";
-          }
-        } else {
-          console.warn("\u26a0\ufe0f contractorId is missing in staff record");
-          await firebase.auth().signOut();
-          window.location.href = "login.html";
-        }
-    } else {
-      console.error("[auth-check] \u274c Staff user not found in any subcollection");
-      await firebase.auth().signOut();
-      window.location.href = "login.html";
+  const knownId = localStorage.getItem(CONTRACTOR_KEY);
+  if (knownId) {
+    try {
+      const staffSnap = await withTimeout(
+        db.collection('contractors').doc(knownId).collection('staff').doc(uid).get()
+      );
+      if (staffSnap.exists) {
+        localStorage.setItem(ROLE_KEY, 'staff');
+        localStorage.setItem(CONTRACTOR_KEY, knownId);
+        return { role: 'staff', contractorId: knownId, source: 'server' };
+      }
+    } catch (err) {
+      console.warn('[auth-check] staff server lookup failed', err);
     }
   } else {
-    console.error("[auth-check] \u274c Staff user not found in any subcollection");
-    await firebase.auth().signOut();
-    window.location.href = "login.html";
-  }
-});
-
-async function waitForContractorIdAndRedirect(maxWaitMs = 2000) {
-  const start = Date.now();
-  while (Date.now() - start < maxWaitMs) {
-    if (localStorage.getItem('contractor_id')) {
-      console.log('[auth-check.js] \uD83D\uDE80 Redirecting to tally.html');
-      window.location.href = 'tally.html';
-      return;
+    try {
+      const staffQuery = await withTimeout(
+        db
+          .collectionGroup('staff')
+          .where(firebase.firestore.FieldPath.documentId(), '==', uid)
+          .get()
+      );
+      if (!staffQuery.empty) {
+        const docSnap = staffQuery.docs[0];
+        const contractorId = docSnap.ref.parent.parent.id;
+        localStorage.setItem(ROLE_KEY, 'staff');
+        localStorage.setItem(CONTRACTOR_KEY, contractorId);
+        return { role: 'staff', contractorId, source: 'server' };
+      }
+    } catch (err) {
+      console.warn('[auth-check] staff collectionGroup lookup failed', err);
     }
-    await new Promise(resolve => setTimeout(resolve, 100));
   }
-  console.error('[auth-check.js] \u23F3 Timeout waiting for contractor_id');
-  window.location.href = 'login.html';
+
+  return null;
 }
+
+firebase.auth().onAuthStateChanged(async function (user) {
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  const result = await resolveRoleOfflineFirst(user);
+
+  if (result.role === 'contractor') {
+    if (isReallyOffline()) {
+      window.location.href = 'tally.html';
+    } else {
+      window.location.href = 'dashboard.html';
+    }
+  } else if (result.role === 'staff') {
+    window.location.href = 'tally.html';
+  } else {
+    if (isReallyOffline()) {
+      sessionStorage.setItem('offline_banner', 'Offline mode (role not verified)');
+      window.location.href = 'tally.html';
+    } else {
+      handleOfflineRedirect();
+    }
+  }
+
+  refreshRoleOnline(user);
+});
 
 function handleOfflineRedirect() {
   const overlay = document.getElementById('loading-overlay');
   if (overlay) {
     overlay.style.display = 'none';
   }
-
-  const storedRole = localStorage.getItem('role');
-  const contractorId = localStorage.getItem('contractor_id');
-
-  if (storedRole && contractorId) {
-    console.warn('[auth-check] \u26a0\ufe0f Offline. Using cached data for role:', storedRole);
-    window.location.href = 'tally.html';
-  } else {
-    const msg = document.createElement('div');
-    msg.textContent = 'You appear to be offline. Please reconnect.';
-    const retry = document.createElement('button');
-    retry.textContent = 'Retry';
-    retry.addEventListener('click', () => location.reload());
-    const container = document.createElement('div');
-    container.style.marginTop = '20px';
-    container.style.textAlign = 'center';
-    container.appendChild(msg);
-    container.appendChild(retry);
-    document.body.appendChild(container);
-  }
+  const msg = document.createElement('div');
+  msg.textContent = 'You appear to be offline. Please reconnect.';
+  const retry = document.createElement('button');
+  retry.textContent = 'Retry';
+  retry.addEventListener('click', () => location.reload());
+  const container = document.createElement('div');
+  container.style.marginTop = '20px';
+  container.style.textAlign = 'center';
+  container.appendChild(msg);
+  container.appendChild(retry);
+  document.body.appendChild(container);
 }
 
 // Reload automatically when connection is restored
 window.addEventListener('online', () => location.reload());
+
