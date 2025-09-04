@@ -1,8 +1,9 @@
  <!DOCTYPE html>
 
 <html lang="en">
-<head>
-<script src="/sw-init.js"></script>
+  <head>
+  <script src="/sw-init.js"></script>
+  <script src="boot-router.js"></script>
 <!-- First paint: dark background + no-flash gate -->
 <style>
   /* Match the app's dark theme color */
@@ -198,6 +199,7 @@
 </script>
 </head>
 <body>
+  <div id="boot-banner"></div>
 <script>
   // Safety: if CSS hides the page at boot (e.g. .boot-hiding), unhide after 1200ms no matter what.
   setTimeout(() => { document.documentElement.classList.remove('boot-hiding'); }, 1200);

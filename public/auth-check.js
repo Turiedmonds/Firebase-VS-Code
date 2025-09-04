@@ -128,22 +128,27 @@ firebase.auth().onAuthStateChanged(async function (user) {
 
   const result = await resolveRoleOfflineFirst(user);
 
-  if (result.role === 'contractor') {
-    if (isReallyOffline()) {
+    if (result.role === 'contractor') {
+      if (isReallyOffline()) {
+        if (window.bootBannerAppend) window.bootBannerAppend('auth-check.js: contractor+OFFLINE -> /tally.html');
+        window.location.href = 'tally.html';
+      } else {
+        if (window.bootBannerAppend) window.bootBannerAppend('auth-check.js: contractor+ONLINE -> /dashboard.html');
+        window.location.href = 'dashboard.html';
+      }
+    } else if (result.role === 'staff') {
+      if (window.bootBannerAppend) window.bootBannerAppend('auth-check.js: staff -> /tally.html');
       window.location.href = 'tally.html';
     } else {
-      window.location.href = 'dashboard.html';
+      if (isReallyOffline()) {
+        if (window.bootBannerAppend) window.bootBannerAppend('auth-check.js: unknown+OFFLINE -> /tally.html');
+        sessionStorage.setItem('offline_banner', 'Offline mode (role not verified)');
+        window.location.href = 'tally.html';
+      } else {
+        if (window.bootBannerAppend) window.bootBannerAppend('auth-check.js: unknown+ONLINE -> handleOfflineRedirect');
+        handleOfflineRedirect();
+      }
     }
-  } else if (result.role === 'staff') {
-    window.location.href = 'tally.html';
-  } else {
-    if (isReallyOffline()) {
-      sessionStorage.setItem('offline_banner', 'Offline mode (role not verified)');
-      window.location.href = 'tally.html';
-    } else {
-      handleOfflineRedirect();
-    }
-  }
 
   refreshRoleOnline(user);
 });
