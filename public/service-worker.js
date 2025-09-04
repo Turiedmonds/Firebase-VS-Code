@@ -1,5 +1,5 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v13';
+const CACHE_NAME = 'sheariq-pwa-v14';
 const FIREBASE_CDN_CACHE = 'firebase-cdn';
 
 self.addEventListener('install', e => { self.skipWaiting(); });
@@ -63,8 +63,21 @@ self.addEventListener('fetch', event => {
         return net;
       } catch (err) {
         const cache = await caches.open(CACHE_NAME);
-        const cachedTally = await cache.match('/tally.html');
-        if (cachedTally) return cachedTally;
+        const path = new URL(event.request.url).pathname;
+        if (path.endsWith('/tally.html')) {
+          const cachedTally = await cache.match('/tally.html');
+          if (cachedTally) {
+            console.log('[service-worker] Offline: serving cached tally.html');
+            return cachedTally;
+          }
+        }
+        if (path.endsWith('/dashboard.html')) {
+          const cachedDash = await cache.match('/dashboard.html');
+          if (cachedDash) {
+            console.log('[service-worker] Offline: serving cached dashboard.html');
+            return cachedDash;
+          }
+        }
         const cachedOffline = await cache.match('/offline.html');
         if (cachedOffline) return cachedOffline;
         return new Response('<!doctype html><meta charset="utf-8"><title>Offline</title><body style="background:#000;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;"><div>Offline. Open once while online to cache pages.</div></body>', { headers: { 'Content-Type': 'text/html' }});
