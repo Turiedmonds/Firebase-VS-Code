@@ -1,6 +1,9 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v11';
+const CACHE_NAME = 'sheariq-pwa-v12';
 const FIREBASE_CDN_CACHE = 'firebase-cdn';
+
+self.addEventListener('install', event => { self.skipWaiting(); });
+self.addEventListener('activate', event => { event.waitUntil(self.clients.claim()); });
 
 const FILES_TO_CACHE = [
   // HTML entry points (include the start_url from manifest)
@@ -26,7 +29,14 @@ const FILES_TO_CACHE = [
   'icon-192.png',
   'icon-512.png',   // ✅ new for Android install
   'serviceworker.js', // optional but OK to cache
-  'logo.png'
+  'logo.png',
+
+  // Firebase compat scripts
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js',
+  'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js'
 ];
 
 // Install: cache core files
@@ -34,17 +44,19 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(FILES_TO_CACHE))
   );
-  self.skipWaiting(); // activate new SW ASAP after install
 });
 
 // Activate: remove old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter(k => ![CACHE_NAME, FIREBASE_CDN_CACHE].includes(k))
+          .map(k => caches.delete(k))
+      )
     )
   );
-  self.clients.claim(); // control pages immediately
 });
 
 // Fetch: handle GETs and runtime caching
@@ -76,17 +88,21 @@ self.addEventListener('fetch', event => {
 
   if (event.request.mode === 'navigate') {
     event.respondWith((async () => {
-      const cachedPage = await caches.match(event.request);
-      if (cachedPage) return cachedPage;
       try {
-        return await fetch(event.request);
+        const networkResponse = await fetch(event.request);
+        if (networkResponse.ok) return networkResponse;
+        throw new Error('Network error');
       } catch (err) {
-        return await caches.match('dashboard.html') || Response.error();
+        const fallback = await caches.match('tally.html');
+        return fallback || new Response('Offline — open the app once online to pre-cache pages', {
+          headers: { 'Content-Type': 'text/html' }
+        });
       }
     })());
-  } else {
-    event.respondWith(
-      caches.match(event.request).then(resp => resp || fetch(event.request))
-    );
+    return;
   }
+
+  event.respondWith(
+    caches.match(event.request).then(resp => resp || fetch(event.request))
+  );
 });
