@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="/sw-init.js"></script>
   <!-- First paint: dark background + no-flash gate -->
   <style>
     /* Match the app's dark theme color */
@@ -150,6 +151,10 @@
   </style>
 </head>
 <body>
+  <script>
+    // Safety: if CSS hides the page at boot (e.g. .boot-hiding), unhide after 1200ms no matter what.
+    setTimeout(() => { document.documentElement.classList.remove('boot-hiding'); }, 1200);
+  </script>
 <!-- DASHBOARD HELP BUTTON -->
 <button id="help-btn" aria-haspopup="true" aria-expanded="false" aria-controls="dash-help-menu" title="Help">?</button>
 
@@ -715,7 +720,6 @@
     </div>
   </div>
 </div>
-  <script src="serviceworker.js"></script>
   <script src="/pwa-suppress-install.js" defer></script>
   <script src="app-launch-guard.js" defer></script>
   <script>

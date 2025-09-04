@@ -1,37 +1,32 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v12';
+const CACHE_NAME = 'sheariq-pwa-v13';
 const FIREBASE_CDN_CACHE = 'firebase-cdn';
 
-self.addEventListener('install', event => { self.skipWaiting(); });
-self.addEventListener('activate', event => { event.waitUntil(self.clients.claim()); });
+self.addEventListener('install', e => { self.skipWaiting(); });
+self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
 
 const FILES_TO_CACHE = [
-  // HTML entry points (include the start_url from manifest)
-  'auth-check.html',
-  'dashboard.html',
-  'tally.html',
-  // ✅ Explicitly cache the login page so it is available offline
-  'login.html',
+  '/offline.html',
+  '/tally.html',
+  '/dashboard.html',
+  '/styles.css',
+  '/tally.js',
+  '/dashboard.js',
+  '/auth-check.js',
 
-  // App assets (keep existing names; do NOT rename)
-  'styles.css',
-  'tally.js',
-  'dashboard.js',
-  'auth.js',
-  'export.js',
-  'login.js',
-  'auth-check.js',
-  'firebase-init.js',
-  'xlsx.full.min.js',
+  '/auth-check.html',
+  '/login.html',
+  '/auth.js',
+  '/export.js',
+  '/login.js',
+  '/firebase-init.js',
+  '/xlsx.full.min.js',
 
-  // PWA essentials
-  'manifest.json',
-  'icon-192.png',
-  'icon-512.png',   // ✅ new for Android install
-  'serviceworker.js', // optional but OK to cache
-  'logo.png',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/logo.png',
 
-  // Firebase compat scripts
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js',
@@ -59,8 +54,25 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: handle GETs and runtime caching
+// Fetch: handle navigations and runtime caching
 self.addEventListener('fetch', event => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const net = await fetch(event.request);
+        return net;
+      } catch (err) {
+        const cache = await caches.open(CACHE_NAME);
+        const cachedTally = await cache.match('/tally.html');
+        if (cachedTally) return cachedTally;
+        const cachedOffline = await cache.match('/offline.html');
+        if (cachedOffline) return cachedOffline;
+        return new Response('<!doctype html><meta charset="utf-8"><title>Offline</title><body style="background:#000;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;"><div>Offline. Open once while online to cache pages.</div></body>', { headers: { 'Content-Type': 'text/html' }});
+      }
+    })());
+    return;
+  }
+
   const url = new URL(event.request.url);
 
   // Runtime cache for Firebase CDN scripts
@@ -85,22 +97,6 @@ self.addEventListener('fetch', event => {
   }
 
   if (event.request.method !== 'GET') return;
-
-  if (event.request.mode === 'navigate') {
-    event.respondWith((async () => {
-      try {
-        const networkResponse = await fetch(event.request);
-        if (networkResponse.ok) return networkResponse;
-        throw new Error('Network error');
-      } catch (err) {
-        const fallback = await caches.match('tally.html');
-        return fallback || new Response('Offline — open the app once online to pre-cache pages', {
-          headers: { 'Content-Type': 'text/html' }
-        });
-      }
-    })());
-    return;
-  }
 
   event.respondWith(
     caches.match(event.request).then(resp => resp || fetch(event.request))
