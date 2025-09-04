@@ -2,6 +2,7 @@
 
 <html lang="en">
 <head>
+<script src="/sw-init.js"></script>
 <!-- First paint: dark background + no-flash gate -->
 <style>
   /* Match the app's dark theme color */
@@ -197,6 +198,10 @@
 </script>
 </head>
 <body>
+<script>
+  // Safety: if CSS hides the page at boot (e.g. .boot-hiding), unhide after 1200ms no matter what.
+  setTimeout(() => { document.documentElement.classList.remove('boot-hiding'); }, 1200);
+</script>
 
 
    <div id="tabNav" class="tabs">
@@ -897,7 +902,6 @@ document.addEventListener('DOMContentLoaded', function () {
 })();
 </script>
 <div id="syncStatusBanner"></div>
-<script src="serviceworker.js"></script>
   <script src="/pwa-suppress-install.js" defer></script>
   <script src="app-launch-guard.js" defer></script>
   <script>
