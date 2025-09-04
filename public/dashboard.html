@@ -728,5 +728,22 @@
       localStorage.setItem('preferred_start', 'dashboard');
     } catch(e) {}
   </script>
+  <script>
+    (function(){
+      const role = (localStorage.getItem('user_role') || '').toLowerCase();
+      if (role === 'contractor' && !navigator.onLine) {
+        console.log('[offline-nav] Serving cached dashboard/tally pages');
+        const toast = document.createElement('div');
+        toast.textContent = 'Offline mode: cached pages active';
+        Object.assign(toast.style, {
+          position: 'fixed', bottom: '10px', left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '8px 12px',
+          borderRadius: '4px', zIndex: 1000
+        });
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+      }
+    })();
+  </script>
 </body>
 </html>
