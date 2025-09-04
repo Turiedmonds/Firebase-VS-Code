@@ -1,6 +1,6 @@
 # SHEAR iQ Tally Processor
 
-A simple Progressive Web App (PWA) for recording shearing tallies. The app tracks runs, sheds staff hours and sheep type totals and lets you export the results.
+A Firebase-backed Progressive Web App (PWA) for recording shearing tallies. The app tracks runs, shed staff hours and sheep type totals and lets you export the results.
 
 ## Setup
 
@@ -10,7 +10,7 @@ A simple Progressive Web App (PWA) for recording shearing tallies. The app track
    - `python3 -m http.server public`
    The service worker requires the app to be served over `http://` or `https://` for full functionality.
 
-Open **tally.html** in your browser to use the app. You must sign in through Firebase Authentication before you can access it.
+Visit **login.html** to sign in with Firebase Authentication. After sign‑in you’ll land on the **dashboard**, which links to the tally, staff manager and session viewer.
 
 ## Running Offline
 
@@ -22,8 +22,8 @@ There is no build step. All files live inside the `public/` folder, so just serv
 
 ## Firestore Structure
 
-Each contractor document has a `users` subcollection used to manage worker
-accounts. Documents in `contractors/{contractorId}/users` contain:
+Each contractor document has a `staff` subcollection used to manage worker
+accounts. Documents in `contractors/{contractorId}/staff` contain:
 
 - `email` – the worker's login email
 - `name` – their display name
@@ -31,6 +31,8 @@ accounts. Documents in `contractors/{contractorId}/users` contain:
 
 After sign‑in the app confirms the current email exists in that subcollection
 and signs out if it does not.
+
+Tally sessions are stored in `contractors/{contractorId}/sessions`, and deleted staff entries are logged to `contractors/{contractorId}/logs` for possible restoration.
 
 ## User Roles
 
@@ -60,6 +62,10 @@ user has a missing or unknown role the app alerts them and signs out.
 - Sheep type totals with times shown as `xh ym`.
 - Shed staff tracking.
 - Dark mode design with SHEΔR iQ branding.
+- Dashboard navigation with links to tally, staff management and session history.
+- Manage staff accounts (create, delete and restore) via Firebase Cloud Functions with email invitations.
+- Change or reset passwords and contractor PINs.
+- Browse and restore previous tally sessions.
 
 ## Export Options
 
