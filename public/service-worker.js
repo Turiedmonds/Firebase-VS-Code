@@ -1,9 +1,7 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v14';
+const CACHE_NAME = 'sheariq-pwa-v15';
 const FIREBASE_CDN_CACHE = 'firebase-cdn';
 
-self.addEventListener('install', e => { self.skipWaiting(); });
-self.addEventListener('activate', e => { e.waitUntil(self.clients.claim()); });
 
 const FILES_TO_CACHE = [
   '/offline.html',
@@ -37,20 +35,26 @@ const FILES_TO_CACHE = [
 // Install: cache core files
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(FILES_TO_CACHE))
+    caches
+      .open(CACHE_NAME)
+      .then(cache => cache.addAll(FILES_TO_CACHE))
+      .then(() => self.skipWaiting())
   );
 });
 
 // Activate: remove old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(k => ![CACHE_NAME, FIREBASE_CDN_CACHE].includes(k))
-          .map(k => caches.delete(k))
+    caches
+      .keys()
+      .then(keys =>
+        Promise.all(
+          keys
+            .filter(k => ![CACHE_NAME, FIREBASE_CDN_CACHE].includes(k))
+            .map(k => caches.delete(k))
+        )
       )
-    )
+      .then(() => self.clients.claim())
   );
 });
 

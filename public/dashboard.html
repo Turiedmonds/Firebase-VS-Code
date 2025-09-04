@@ -225,27 +225,6 @@
     document.body.appendChild(a);
   }
 
-  // CSS guard so overlays can’t trap taps when offline-mode is on
-  (function injectCss(){
-    if (document.getElementById('offlineGuardCSS')) return;
-    var s=document.createElement('style'); s.id='offlineGuardCSS';
-    s.textContent = `
-      body.offline-mode #loading-overlay,
-      body.offline-mode .loading-overlay,
-      body.offline-mode .boot-overlay,
-      body.offline-mode .boot-hiding,
-      body.offline-mode #dashboardOverlay,
-      body.offline-mode .modal-backdrop,
-      body.offline-mode .blocker,
-      body.offline-mode .page-mask {
-        display: none !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        visibility: hidden !important;
-      }`;
-    document.head.appendChild(s);
-  })();
-
   // Run detection ASAP
   (async function(){
     var role = localStorage.getItem('user_role');
@@ -265,61 +244,6 @@
     }
   })();
 })();
-  </script>
-  <script>
-    // Ensure this runs immediately, even offline
-    (function() {
-      const isOffline = !navigator.onLine || localStorage.getItem('force_offline') === '1';
-      const role = localStorage.getItem('user_role');
-
-      if (isOffline && role === 'contractor') {
-        // Remove any overlay that might block clicks
-        document.querySelectorAll('.boot-hiding, .loading-overlay, .boot-overlay, #dashboardOverlay').forEach(el => {
-          el.style.display = 'none';
-          el.style.pointerEvents = 'none';
-          el.classList.remove('boot-hiding');
-        });
-
-        // Show a fallback link if Start New Day doesn't respond
-        if (!document.getElementById('offlineTallyLink')) {
-          const link = document.createElement('a');
-          link.id = 'offlineTallyLink';
-          link.href = '/tally.html';
-          link.textContent = 'Open Tally (Offline)';
-          link.style.position = 'fixed';
-          link.style.top = '10px';
-          link.style.right = '10px';
-          link.style.zIndex = '9999';
-          link.style.background = 'rgba(0,0,0,0.7)';
-          link.style.color = '#fff';
-          link.style.padding = '6px 10px';
-          link.style.borderRadius = '4px';
-          link.style.textDecoration = 'none';
-          document.body.appendChild(link);
-        }
-
-        // Log the offline mode activation
-        console.log('[Offline Mode] Contractor offline mode active. Navigation is enabled.');
-
-        // Show a simple toast message
-        const toast = document.createElement('div');
-        toast.textContent = 'Offline mode: navigation ready';
-        toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
-        toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)';
-        toast.style.background = 'rgba(0,0,0,0.8)';
-        toast.style.color = '#fff';
-        toast.style.padding = '8px 12px';
-        toast.style.borderRadius = '5px';
-        toast.style.zIndex = '10000';
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-          document.body.removeChild(toast);
-        }, 2500);
-      }
-    })();
   </script>
   <script>
     // Safety: if CSS hides the page at boot (e.g. .boot-hiding), unhide after 1200ms no matter what.
