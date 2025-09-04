@@ -85,10 +85,12 @@
 
       // One-time bypass set by buttons before navigating
       var launchOverride = (sessionStorage.getItem('launch_override') || '').toLowerCase();
+      var bootRedirected = sessionStorage.getItem('boot_router_redirect') === 'tally';
+      if (bootRedirected) sessionStorage.removeItem('boot_router_redirect');
       if (hasExplicitIntent || launchOverride === 'tally' || launchOverride === 'any') {
         // consume the one-time bypass so it doesn't affect later launches
         sessionStorage.removeItem('launch_override');
-      } else if (cold && want && here && want !== here) {
+      } else if (!bootRedirected && cold && want && here && want !== here) {
         // Mark pre-redirect to prevent any visual flash
         document.documentElement.setAttribute('data-pre-redirect','1');
         // Redirect immediately before anything renders
