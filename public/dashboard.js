@@ -1,3 +1,25 @@
+window.DBG = window.DBG || {};
+window.DBG.jsLoaded = true;
+if (window.DBG.addMessage) {
+  window.DBG.addMessage('dashboard.js loaded');
+} else if (window.DBG.banner) {
+  window.DBG.banner.textContent += ' | dashboard.js loaded';
+}
+if (window.DBG.update) window.DBG.update();
+
+window.addEventListener('error', function(e){
+  if (window.DBG && window.DBG.addMessage) {
+    window.DBG.addMessage('error: ' + (e.message || e));
+  }
+});
+
+window.addEventListener('unhandledrejection', function(e){
+  if (window.DBG && window.DBG.addMessage) {
+    var msg = e.reason && e.reason.message ? e.reason.message : e.reason;
+    window.DBG.addMessage('unhandled: ' + msg);
+  }
+});
+
 // ===== Dashboard welcome modal: show ONCE EVER =====
 
 // Returns true if we should show the dashboard welcome on this visit
