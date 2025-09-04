@@ -58,10 +58,10 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.mode === 'navigate') {
     event.respondWith((async () => {
-      const url = new URL(event.request.url);
-      const path = url.pathname;
-      const isTally = path.endsWith('/tally.html');
-      const isDash = path.endsWith('/dashboard.html');
+        const url = new URL(event.request.url);
+        const path = url.pathname.toLowerCase(); // ignores query/hash
+        const isTally = path.endsWith('/tally.html');
+        const isDash = path.endsWith('/dashboard.html');
       try {
         const net = await fetch(event.request);
         if (isTally) {
