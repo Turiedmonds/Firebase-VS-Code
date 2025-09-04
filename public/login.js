@@ -2,6 +2,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const auth = firebase.auth();
   const db = firebase.firestore ? firebase.firestore() : null;
+  const CACHE_NAME = 'sheariq-pwa-v12';
+
+  async function finalizeLogin(role, contractorId, uid) {
+    localStorage.setItem('user_role', role);
+    localStorage.setItem('contractor_id', contractorId);
+    localStorage.setItem('role_cached_at', String(Date.now()));
+
+    if (navigator.serviceWorker?.controller) {
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.addAll([
+          '/tally.html',
+          '/dashboard.html',
+          '/styles.css',
+          '/tally.js',
+          '/dashboard.js',
+          '/auth-check.js'
+        ]);
+      } catch (err) {
+        console.warn('Cache pre-warm failed', err);
+      }
+    }
+
+    if (db) {
+      try {
+        if (role === 'contractor') {
+          await db.collection('contractors').doc(uid).get();
+        } else if (role === 'staff' && contractorId) {
+          await db
+            .collection('contractors').doc(contractorId)
+            .collection('staff').doc(uid)
+            .get();
+        }
+      } catch (err) {
+        console.warn('Firestore pre-warm failed', err);
+      }
+    }
+  }
 
   const emailInput = document.getElementById('email');
   if (emailInput) {
@@ -71,8 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // at contractors/{UID}
       const contractorDoc = await db.collection('contractors').doc(uid).get();
       if (contractorDoc.exists) {
-        localStorage.setItem('contractor_id', uid);
-        localStorage.setItem('user_role', 'contractor');
+        await finalizeLogin('contractor', uid, uid);
         // Use replace to ensure a hard reload after login
         window.location.href = 'dashboard.html';
         return;
@@ -97,8 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (foundContractorId) {
-        localStorage.setItem('contractor_id', foundContractorId);
-        localStorage.setItem('user_role', 'staff');
+        await finalizeLogin('staff', foundContractorId, uid);
         console.log('[login] 💾 contractor_id stored in localStorage:', foundContractorId);
         window.location.href = 'tally.html';
       } else {
