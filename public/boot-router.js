@@ -44,6 +44,7 @@
     update();
     const role = (localStorage.getItem('user_role')||'').toLowerCase();
     if (role === 'contractor' && off && !/tally\.html$/i.test(location.pathname)){
+      sessionStorage.setItem('boot_router_redirect','tally');
       sessionStorage.setItem('debug_redirect','boot-router.js→/tally.html');
       bootBannerAppend('redirect→/tally.html (boot-router.js)');
       location.replace('/tally.html');
