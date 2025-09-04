@@ -1742,10 +1742,33 @@ document.addEventListener('DOMContentLoaded', () => {
   if (dashboardInitRan) return; // avoid duplicate init if script executed twice
   dashboardInitRan = true;
   SessionStore.ensureYearFilter();
+
   const overlay = document.getElementById('loading-overlay');
+
+  // ---- OFFLINE GUARD: do not re-show overlay or start auth when offline
+  const _isReallyOffline = (typeof isReallyOffline === 'function')
+    ? isReallyOffline()
+    : (!navigator.onLine || localStorage.getItem('force_offline') === '1');
+
+  if (_isReallyOffline) {
+    // Hide/remove any blocking overlay so taps work
+    if (typeof removeOverlayGate === 'function') {
+      try { removeOverlayGate(); } catch(_) {}
+    }
+    if (overlay) {
+      overlay.style.display = 'none';
+      overlay.style.pointerEvents = 'none';
+      overlay.classList && overlay.classList.remove('boot-hiding');
+    }
+    // Skip the late auth boot entirely when offline
+    return;
+  }
+  // ---- END OFFLINE GUARD
+
+  // Online path (unchanged)
   if (overlay) overlay.style.display = 'flex';
   if (!(window.firebase && typeof firebase.auth === 'function')) {
-    showOfflineNotice();
+    showOfflineNotice && showOfflineNotice();
     if (overlay) overlay.style.display = 'none';
     return;
   }
