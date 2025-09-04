@@ -168,58 +168,100 @@
   </head>
 <body>
   <script>
-  (function(){
-    var isForced = localStorage.getItem('force_offline') === '1';
-    var offline = !navigator.onLine || isForced;
-    var role = localStorage.getItem('user_role');
-    if (!(offline && role === 'contractor')) return;
-
-    // Mark offline mode so CSS guard applies
-    document.addEventListener('DOMContentLoaded', function(){ document.body.classList.add('offline-mode'); });
-    document.body.classList.add('offline-mode');
-
-    function hideBlockers(){
-      [
-        '#loading-overlay','.loading-overlay','.boot-overlay','.boot-hiding',
-        '#dashboardOverlay','.modal-backdrop','.blocker','.page-mask'
-      ].forEach(function(sel){
-        document.querySelectorAll(sel).forEach(function(el){
-          el.style.display = 'none';
-          el.style.opacity = '0';
-          el.style.pointerEvents = 'none';
-          if (el.classList) el.classList.remove('boot-hiding');
-          el.removeAttribute && el.removeAttribute('aria-hidden');
-        });
-      });
-      // Ensure root remains interactive
-      var root = document.getElementById('app') || document.body;
-      root.style.pointerEvents = 'auto';
-      root.style.opacity = '1';
+(function(){
+  // ---- Robust offline detector ----
+  function timeout(ms){ return new Promise((_,rej)=>setTimeout(()=>rej(new Error('probe-timeout')), ms)); }
+  async function probeOnline() {
+    // Use a small, cacheable asset that should exist. Prefer '/manifest.json'; fallback to '/tally.html'
+    const url = '/manifest.json?probe=' + Date.now();
+    try {
+      const res = await Promise.race([
+        fetch(url, { method:'HEAD', cache:'no-store', mode:'no-cors' }),
+        timeout(1200)
+      ]);
+      // If fetch resolves, consider it online (even if opaque)
+      return true;
+    } catch (_) {
+      return false;
     }
+  }
 
-    // Run immediately
-    hideBlockers();
+  async function detectRealOffline() {
+    if (localStorage.getItem('force_offline') === '1') return true;
+    // don't trust navigator.onLine alone
+    const ok = await probeOnline();
+    return !ok;
+  }
 
-    // Watch for anything trying to re-add or restyle overlays
-    var mo = new MutationObserver(function(){
-      hideBlockers();
+  function hideBlockers(){
+    [
+      '#loading-overlay','.loading-overlay','.boot-overlay','.boot-hiding',
+      '#dashboardOverlay','.modal-backdrop','.blocker','.page-mask'
+    ].forEach(function(sel){
+      document.querySelectorAll(sel).forEach(function(el){
+        el.style.display = 'none';
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        el.classList && el.classList.remove('boot-hiding');
+        el.removeAttribute && el.removeAttribute('aria-hidden');
+      });
     });
-    mo.observe(document.documentElement, { childList:true, subtree:true, attributes:true, attributeFilter:['class','style','aria-hidden'] });
+    var root = document.getElementById('app') || document.body;
+    root.style.pointerEvents = 'auto';
+    root.style.opacity = '1';
+  }
 
-    // Belt & braces: re-apply every 600ms for a few seconds
-    var n=0, t=setInterval(function(){ hideBlockers(); if (++n>12) clearInterval(t); }, 600);
+  function addFallbackLink(){
+    if (document.getElementById('offlineTallyLink')) return;
+    var a=document.createElement('a');
+    a.id='offlineTallyLink';
+    a.href='/tally.html';
+    a.textContent='Open Tally (Offline)';
+    a.style.cssText='position:fixed;top:10px;right:10px;z-index:2147483647;background:rgba(0,0,0,.7);color:#fff;padding:6px 10px;border-radius:6px;font:13px system-ui;text-decoration:none';
+    a.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); location.href='/tally.html'; }, {passive:false});
+    document.body.appendChild(a);
+  }
 
-    // Visible fallback link to Tally (works even if other JS fails)
-    if (!document.getElementById('offlineTallyLink')) {
-      var a=document.createElement('a');
-      a.id='offlineTallyLink';
-      a.href='/tally.html';
-      a.textContent='Open Tally (Offline)';
-      a.style.cssText='position:fixed;top:10px;right:10px;z-index:2147483647;background:rgba(0,0,0,.7);color:#fff;padding:6px 10px;border-radius:6px;font:13px system-ui;text-decoration:none';
-      a.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); location.href='/tally.html'; }, {passive:false});
-      document.body.appendChild(a);
+  // CSS guard so overlays can’t trap taps when offline-mode is on
+  (function injectCss(){
+    if (document.getElementById('offlineGuardCSS')) return;
+    var s=document.createElement('style'); s.id='offlineGuardCSS';
+    s.textContent = `
+      body.offline-mode #loading-overlay,
+      body.offline-mode .loading-overlay,
+      body.offline-mode .boot-overlay,
+      body.offline-mode .boot-hiding,
+      body.offline-mode #dashboardOverlay,
+      body.offline-mode .modal-backdrop,
+      body.offline-mode .blocker,
+      body.offline-mode .page-mask {
+        display: none !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
+      }`;
+    document.head.appendChild(s);
+  })();
+
+  // Run detection ASAP
+  (async function(){
+    var role = localStorage.getItem('user_role');
+    if (role !== 'contractor') return;
+
+    var reallyOffline = await detectRealOffline();
+    if (reallyOffline) {
+      document.body.classList.add('offline-mode');
+      hideBlockers();
+      // Keep killing blockers briefly in case other code flips them back
+      var n=0, t=setInterval(function(){ hideBlockers(); if (++n>12) clearInterval(t); }, 600);
+      addFallbackLink();
+      // Expose a flag so dashboard.js can check it too
+      window.__REAL_OFFLINE__ = true;
+    } else {
+      window.__REAL_OFFLINE__ = false;
     }
   })();
+})();
   </script>
   <script>
     (function(){
