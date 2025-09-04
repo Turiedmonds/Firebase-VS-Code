@@ -104,6 +104,22 @@ function showOfflineToastOnce(msg){
   document.body.appendChild(t); setTimeout(()=>t.remove(),2200);
 }
 
+function handleStartNewDayClick(e){
+  e.preventDefault();
+  e.stopPropagation();
+  if (isReallyOffline()) {
+    caches.match('/tally.html').then(res => {
+      if (res) {
+        location.href = '/tally.html';
+      } else {
+        alert('Tally page not available offline. Please connect to the internet at least once to cache this page.');
+      }
+    });
+  } else {
+    location.href = '/tally.html';
+  }
+}
+
 function bindOfflineNav() {
   // Bind Start New Day → /tally.html regardless of data
   const candidates = [
@@ -114,11 +130,7 @@ function bindOfflineNav() {
   candidates.forEach(sel=>{
     document.querySelectorAll(sel).forEach(el=>{
       if (el._offlineBound) return;
-      el.addEventListener('click', (e)=>{
-        e.preventDefault();
-        e.stopPropagation();
-        location.href = '/tally.html';
-      }, { passive:false });
+      el.addEventListener('click', handleStartNewDayClick, { passive:false });
       el._offlineBound = true;
       bound = true;
     });
@@ -135,10 +147,7 @@ function bindOfflineNav() {
       bar.style.padding='6px 8px'; bar.style.borderRadius='6px';
       document.body.appendChild(bar);
       // ensure anchor works even if JS elsewhere blocks
-      bar.querySelector('a').addEventListener('click', (e)=>{
-        e.preventDefault(); e.stopPropagation();
-        location.href = '/tally.html';
-      }, { passive:false });
+      bar.querySelector('a').addEventListener('click', handleStartNewDayClick, { passive:false });
     }
   }
   return bound;
@@ -682,11 +691,14 @@ function renderEmptyLeaderboard(container, modalTbody, message) {
 }
 
 function renderCachedTop5Widgets() {
+  const offline = isReallyOffline();
   const shearersEl = document.querySelector('#top5-shearers #top5-shearers-list');
   if (shearersEl) {
     if (dashCache.top5Shearers && dashCache.top5Shearers.length) {
       renderTop5Shearers(dashCache.top5Shearers, shearersEl);
       dashCacheRendered.shearers = true;
+    } else if (offline) {
+      renderEmptyLeaderboard(shearersEl, null, 'Data not available offline');
     } else {
       // No cache yet: show fixed-height skeleton rows to avoid layout jump
       renderSkeletonRows(shearersEl);
@@ -697,6 +709,8 @@ function renderCachedTop5Widgets() {
     if (dashCache.top5ShedStaff && dashCache.top5ShedStaff.length) {
       renderTop5ShedStaff(dashCache.top5ShedStaff, shedStaffEl);
       dashCacheRendered.shedstaff = true;
+    } else if (offline) {
+      renderEmptyLeaderboard(shedStaffEl, null, 'Data not available offline');
     } else {
       renderSkeletonRows(shedStaffEl);
     }
@@ -706,6 +720,8 @@ function renderCachedTop5Widgets() {
     if (dashCache.top5Farms && dashCache.top5Farms.length) {
       renderTop5Farms(dashCache.top5Farms, farmsEl);
       dashCacheRendered.farms = true;
+    } else if (offline) {
+      renderEmptyLeaderboard(farmsEl, null, 'Data not available offline');
     } else {
       renderSkeletonRows(farmsEl);
     }
@@ -2355,9 +2371,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   if (dashCache.kpiSheepCount != null) {
     pillVal.textContent = Number(dashCache.kpiSheepCount).toLocaleString();
-  }
-
-  if (isReallyOffline()) {
+  } else if (isReallyOffline()) {
+    pillVal.textContent = 'Data not available offline';
     console.info('[Dashboard] Skipping live widget init offline.');
     return;
   }
@@ -2640,9 +2655,8 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   if (dashCache.kpiSheepPerHourRate != null) {
     pillVal.textContent = dashCache.kpiSheepPerHourRate;
-  }
-
-  if (isReallyOffline()) {
+  } else if (isReallyOffline()) {
+    pillVal.textContent = 'Data not available offline';
     console.info('[Dashboard] Skipping live widget init offline.');
     return;
   }
@@ -3065,9 +3079,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (dashCache.kpiTotalHours != null && pillVal) {
     pillVal.textContent = dashCache.kpiTotalHours;
-  }
-
-  if (isReallyOffline()) {
+  } else if (isReallyOffline()) {
+    if (pillVal) pillVal.textContent = 'Data not available offline';
     console.info('[Dashboard] Skipping live widget init offline.');
     return;
   }
@@ -3489,9 +3502,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (dashCache.kpiDaysWorked != null && pillVal) {
     pillVal.textContent = dashCache.kpiDaysWorked;
-  }
-
-  if (isReallyOffline()) {
+  } else if (isReallyOffline()) {
+    if (pillVal) pillVal.textContent = 'Data not available offline';
     console.info('[Dashboard] Skipping live widget init offline.');
     return;
   }
