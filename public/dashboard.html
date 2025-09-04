@@ -170,7 +170,6 @@
     </style>
   </head>
 <body>
-  <div id="boot-banner"></div>
   <script>
 (function(){
   // ---- Robust offline detector ----
@@ -266,65 +265,6 @@
     }
   })();
 })();
-  </script>
-  <script>
-    (function(){
-      var banner = document.createElement('div');
-      banner.id = 'dbg-banner';
-      Object.assign(banner.style, {
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        background: '#ff1493',
-        color: '#000',
-        fontWeight: 'bold',
-        padding: '4px 8px',
-        zIndex: '2147483647'
-      });
-      document.body.appendChild(banner);
-
-      window.DBG = window.DBG || {};
-      var DBG = window.DBG;
-      DBG.banner = banner;
-      DBG.messages = [];
-
-      DBG.update = function(){
-        var parts = [];
-        parts.push('onLine:' + navigator.onLine);
-        parts.push('jsLoaded:' + (DBG.jsLoaded ? 'true' : 'false'));
-        var ov = document.getElementById('loading-overlay');
-        if (ov) {
-          var st = getComputedStyle(ov);
-          parts.push('overlay:' + st.display + ',' + st.pointerEvents);
-        } else {
-          parts.push('overlay:none');
-        }
-        if (DBG.domContentLoadedTS) parts.push('DOMContentLoaded:' + DBG.domContentLoadedTS);
-        if (DBG.windowLoadTS) parts.push('load:' + DBG.windowLoadTS);
-        if (DBG.messages.length) parts = parts.concat(DBG.messages);
-        banner.textContent = parts.join(' | ');
-      };
-
-      DBG.addMessage = function(msg){
-        DBG.messages.push(msg);
-        DBG.update();
-      };
-
-      document.addEventListener('DOMContentLoaded', function(){
-        DBG.domContentLoadedTS = Date.now();
-        DBG.update();
-      });
-
-      window.addEventListener('load', function(){
-        DBG.windowLoadTS = Date.now();
-        DBG.update();
-      });
-
-      window.addEventListener('online', DBG.update);
-      window.addEventListener('offline', DBG.update);
-
-      DBG.update();
-    })();
   </script>
   <script>
     // Ensure this runs immediately, even offline
