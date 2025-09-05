@@ -1,5 +1,12 @@
 // Firebase is initialized in firebase-init.js
 
+// Track whether we're working with a previously loaded session
+// These globals must be available across modules
+window.isLoadedSession = false; // visible everywhere
+
+// Optional: track if PIN was already validated this run
+window.pinValidated = false;
+
 function formatHoursWorked(decimal) {
   if (isNaN(decimal)) return "";
   const hours = Math.floor(decimal);
@@ -852,36 +859,24 @@ function removeLockFromContainer(container) {
 function lockSession() {
   window.sessionLocked = true;
   const view = document.querySelector('#tallySheetView');
-  applyLockToContainer(view);
+  if (view) applyLockToContainer(view);
 }
 
 function unlockSession() {
   window.sessionLocked = false;
   const view = document.querySelector('#tallySheetView');
-  removeLockFromContainer(view);
-
-  // Ensure a Firestore document ID exists when unlocking a view-only session
-  if (!firestoreSessionId &&
-      document.getElementById('stationName') &&
-      document.getElementById('date') &&
-      document.getElementById('teamLeader')) {
-      const station = document.getElementById('stationName').value.trim().replace(/\s+/g, '_');
-      const date = document.getElementById('date').value;
-      const leader = document.getElementById('teamLeader').value.trim().replace(/\s+/g, '_');
-      if (station && date && leader) {
-          firestoreSessionId = `${station}_${date}_${leader}`;
-      }
-  }
+  if (view) removeLockFromContainer(view);
 }
 
 function promptForPinUnlock() {
     const pin = prompt('\uD83D\uDD10 Enter Contractor PIN to unlock editing:');
     const correctPIN = localStorage.getItem('contractor_pin') || '1234';
     if (pin === correctPIN) {
-        unlockSession();
+        return true;
     } else if (pin !== null) {
         alert('Incorrect PIN');
     }
+    return false;
 }
 
 function enforceSessionLock(dateStr) {
@@ -3036,24 +3031,27 @@ function loadSessionObject(session) {
     const now = Date.now();
     lastLocalSave = now;
     lastCloudSave = now;
-    
-    const viewOnlyFlag = localStorage.getItem('viewOnlyMode');
 
-    if (typeof isLoadedSession !== 'undefined' && isLoadedSession && viewOnlyFlag === null) {
-        unlockSession();
+    const viewOnlyMode = (localStorage.getItem('viewOnlyMode') || '').toLowerCase();
+    const today = new Date().toISOString().split('T')[0];
+    const shouldUnlock = (session.date === today) &&
+      (viewOnlyMode === 'false' || window.pinValidated === true);
+    if (shouldUnlock) {
+      unlockSession();
     } else {
-        // Always enforce locking first so any subsequent DOM manipulation
-        // doesn't accidentally trigger focus events while unlocked
-        enforceSessionLock(session.date);
-        if (session.viewOnly) {
-           lockSession(); // Let focusin listener handle PIN prompt if needed
-        }
+      lockSession();
     }
+
     populateSessionData(session);
     rebuildRowsFromSession(session);
-    const _view = document.querySelector('#tallySheetView');
-    if (window.sessionLocked && _view) {
-      applyLockToContainer(_view);
+    try {
+      const container = document.querySelector('#tallySheetView');
+      if (container && window.sessionLocked) {
+        // Re-assert lock on any newly created inputs
+        applyLockToContainer(container);
+      }
+    } catch (e) {
+      console.warn('Reapply lock failed:', e);
     }
     layoutBuilt = true;
 
@@ -3123,10 +3121,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 500); // Add slight delay to help visibility and ensure DOM is ready
     }
 
-    const isLoadedSession = params.get('loadedSession') === 'true';
+    window.isLoadedSession = params.get('loadedSession') === 'true';
     const isNewDay = params.get('newDay') === 'true';
 
-    if (isLoadedSession) {
+    const viewOnlyMode = (localStorage.getItem('viewOnlyMode') || '').toLowerCase();
+    // If explicitly 'false', we allow editing (unlocked). Otherwise lock.
+    if (viewOnlyMode === 'false' || window.pinValidated === true) {
+      unlockSession();
+    } else {
+      lockSession();
+    }
+
+    if (window.isLoadedSession) {
         const json = localStorage.getItem('active_session');
         if (json) {
             try {
@@ -3263,22 +3269,47 @@ const interceptReset = (full) => (e) => {
         exportFarmSummaryCSV();
     });
 
-    document.addEventListener('focusin', (e) => {
+    document.addEventListener('focusin', async (e) => {
         const t = e.target;
-        if (!t) return;
+        if (!t || !t.matches) return;
 
-        if (window.sessionLocked) {
-            if (t.getAttribute && t.getAttribute('data-locked') === '1') {
-                t.blur();
-                e.preventDefault();
-                e.stopPropagation();
-                return;
-            }
+        // Only care about fields inside the tally sheet
+        const inTally = t.matches('#tallySheetView input, #tallySheetView textarea, #tallySheetView select');
+        if (!inTally) return;
 
-            if (t.matches && t.matches('#tallySheetView input, #tallySheetView textarea, #tallySheetView select')) {
+        // If already unlocked, do nothing
+        if (!window.sessionLocked) return;
+
+        // Prevent typing/focus action while we decide
+        e.preventDefault();
+        e.stopPropagation();
+
+        // If this element slipped through without lock attributes, lock it now
+        if (!t.getAttribute('data-locked')) {
+            applyLockToElement(t);
+        }
+
+        // Show PIN prompt instead of silently returning
+        try {
+            const ok = await promptForPinUnlock(); // your existing function that resolves true/false
+            if (ok) {
+                window.pinValidated = true;
+                localStorage.setItem('viewOnlyMode', 'false');
+                unlockSession();
+
+                // Refocus where the user tapped (now editable)
+                setTimeout(() => { t.focus && t.focus(); }, 0);
+            } else {
+                // Stay locked — ensure element remains non-editable
                 applyLockToElement(t);
-                promptForPinUnlock();
+                // Optionally give a small nudge:
+                // alert('Editing requires contractor PIN.');
+                t.blur && t.blur();
             }
+        } catch (err) {
+            console.warn('PIN prompt failed:', err);
+            applyLockToElement(t);
+            t.blur && t.blur();
         }
     }, true);
 
