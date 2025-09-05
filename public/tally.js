@@ -801,30 +801,77 @@ updateTotals();
     layoutBuilt = true;
 }
 
-let sessionLocked = false;
+window.sessionLocked = false;
+
+/* === [LOCK-HELPERS START] =============================================== */
+function applyLockToElement(el) {
+  if (!el) return;
+  const tag = (el.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea') {
+    el.readOnly = true;
+    el.setAttribute('data-locked', '1');
+  }
+  if (tag === 'select') {
+    el.disabled = true;
+    el.setAttribute('data-locked', '1');
+  }
+  // Also stop virtual keyboards on mobile focusing locked fields
+  el.addEventListener('keydown', function(e){
+    if (window.sessionLocked && el.getAttribute('data-locked') === '1') {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, { passive: false });
+}
+
+function removeLockFromElement(el) {
+  if (!el) return;
+  const tag = (el.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea') {
+    el.readOnly = false;
+  }
+  if (tag === 'select') {
+    el.disabled = false;
+  }
+  el.removeAttribute('data-locked');
+}
+
+function applyLockToContainer(container) {
+  if (!container) return;
+  const nodes = container.querySelectorAll('input, textarea, select');
+  nodes.forEach(applyLockToElement);
+}
+
+function removeLockFromContainer(container) {
+  if (!container) return;
+  const nodes = container.querySelectorAll('input, textarea, select');
+  nodes.forEach(removeLockFromElement);
+}
+/* === [LOCK-HELPERS END] ================================================= */
+
 function lockSession() {
-    sessionLocked = true;
-    document.querySelectorAll('#tallySheetView input').forEach(inp => inp.readOnly = true);
-    document.querySelectorAll('#tallySheetView select').forEach(sel => sel.disabled = true);
+  window.sessionLocked = true;
+  const view = document.querySelector('#tallySheetView');
+  applyLockToContainer(view);
 }
 
 function unlockSession() {
-    sessionLocked = false;
-    document.querySelectorAll('#tallySheetView input').forEach(inp => inp.readOnly = false);
-    document.querySelectorAll('#tallySheetView select').forEach(sel => sel.disabled = false);
+  window.sessionLocked = false;
+  const view = document.querySelector('#tallySheetView');
+  removeLockFromContainer(view);
 
-    // Ensure a Firestore document ID exists when unlocking a view-only session
-    if (!firestoreSessionId &&
-        document.getElementById('stationName') &&
-        document.getElementById('date') &&
-        document.getElementById('teamLeader')) {
-        const station = document.getElementById('stationName').value.trim().replace(/\s+/g, '_');
-        const date = document.getElementById('date').value;
-        const leader = document.getElementById('teamLeader').value.trim().replace(/\s+/g, '_');
-        if (station && date && leader) {
-            firestoreSessionId = `${station}_${date}_${leader}`;
-        }
-    }
+  // Ensure a Firestore document ID exists when unlocking a view-only session
+  if (!firestoreSessionId &&
+      document.getElementById('stationName') &&
+      document.getElementById('date') &&
+      document.getElementById('teamLeader')) {
+      const station = document.getElementById('stationName').value.trim().replace(/\s+/g, '_');
+      const date = document.getElementById('date').value;
+      const leader = document.getElementById('teamLeader').value.trim().replace(/\s+/g, '_');
+      if (station && date && leader) {
+          firestoreSessionId = `${station}_${date}_${leader}`;
+      }
+  }
 }
 
 function promptForPinUnlock() {
@@ -1276,41 +1323,51 @@ function buildDatePreview(datesSet, limit = 3) {
  }
  
  
- function createRow(runIndex) {
-     const row = document.createElement("tr");
-     row.innerHTML = `<td>Count ${runIndex + 1}</td>`;
-     for (let i = 0; i < numStands; i++) {
-        row.innerHTML += `<td><input type="number" value=""></td>`; 
-     }
-     row.innerHTML += `<td class="run-total">0</td>`;
-     row.innerHTML += `<td class="sheep-type"><input type="text" list="sheepTypes" placeholder="Sheep Type"></td>`;
-     const sheepInput = row.querySelector('.sheep-type input');
-    if (sheepInput) {
-         adjustSheepTypeWidth(sheepInput);
-         applyInputHistory(sheepInput);
-     }
-     return row;
- }
+function createRow(runIndex) {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>Count ${runIndex + 1}</td>`;
+    for (let i = 0; i < numStands; i++) {
+       row.innerHTML += `<td><input type="number" value=""></td>`;
+    }
+    row.innerHTML += `<td class="run-total">0</td>`;
+    row.innerHTML += `<td class="sheep-type"><input type="text" list="sheepTypes" placeholder="Sheep Type"></td>`;
+    const sheepInput = row.querySelector('.sheep-type input');
+   if (sheepInput) {
+        adjustSheepTypeWidth(sheepInput);
+        applyInputHistory(sheepInput);
+    }
+    if (window.sessionLocked) {
+        row.querySelectorAll('input, textarea, select').forEach(applyLockToElement);
+    }
+    return row;
+}
  
- function addStand() {
-     numStands++;
-     const header = document.getElementById("headerRow");
-     const newHeader = document.createElement("th");
-     newHeader.innerHTML = `Stand ${numStands}<br><input type="text" placeholder="Name">`;
-     const input = newHeader.querySelector('input');
-    if (input) {
-         adjustStandNameWidth(input);
-         applyInputHistory(input);
-     }
-     header.insertBefore(newHeader, header.children[header.children.length - 2]);
- 
-     const tallyBody = document.getElementById("tallyBody");
-     for (let i = 0; i < runs; i++) {
-         const row = tallyBody.children[i];
-         const cell = document.createElement("td");
-         cell.innerHTML = `<input type="number" value="">`;
-         row.insertBefore(cell, row.children[row.children.length - 2]);
-     }
+function addStand() {
+    numStands++;
+    const header = document.getElementById("headerRow");
+    const newHeader = document.createElement("th");
+    newHeader.innerHTML = `Stand ${numStands}<br><input type="text" placeholder="Name">`;
+    const input = newHeader.querySelector('input');
+   if (input) {
+        adjustStandNameWidth(input);
+        applyInputHistory(input);
+        if (window.sessionLocked) {
+            applyLockToElement(input);
+        }
+    }
+    header.insertBefore(newHeader, header.children[header.children.length - 2]);
+
+    const tallyBody = document.getElementById("tallyBody");
+    for (let i = 0; i < runs; i++) {
+        const row = tallyBody.children[i];
+        const cell = document.createElement("td");
+        cell.innerHTML = `<input type="number" value="">`;
+        row.insertBefore(cell, row.children[row.children.length - 2]);
+        const newInput = cell.querySelector('input');
+        if (window.sessionLocked) {
+            applyLockToElement(newInput);
+        }
+    }
  
      const subtotalRow = document.getElementById("subtotalRow");
     const cell = document.createElement("td");
@@ -1693,26 +1750,32 @@ if (e.target.matches('#shedStaffTable td:nth-child(1) input')) {
     }
  });
  
- function addShedStaff() {
-     const body = document.getElementById('shedStaffTable');
-     const row = document.createElement('tr');
-     row.innerHTML = `<td><input placeholder="Staff Name" type="text"/></td><td><input type="text" class="hours-input" data-auto-hours="shed" readonly/></td>`;
-     body.appendChild(row);
-     const hours = document.getElementById('hoursWorked');
-     const nameInput = row.querySelector('td:nth-child(1) input');
-     const hoursInput = row.querySelector('td:nth-child(2) input');
-     if (hours && hoursInput) {
-         hoursInput.value = hours.value;
-     }
-     if (nameInput) {
-         adjustShedStaffNameWidth(nameInput);
-         applyInputHistory(nameInput);
-     }
-     if (hoursInput) {
-         adjustShedStaffHoursWidth(hoursInput);
-         initAutoHoursField(hoursInput);
-     }
- }
+function addShedStaff() {
+    const body = document.getElementById('shedStaffTable');
+    const row = document.createElement('tr');
+    row.innerHTML = `<td><input placeholder="Staff Name" type="text"/></td><td><input type="text" class="hours-input" data-auto-hours="shed" readonly/></td>`;
+    body.appendChild(row);
+    const hours = document.getElementById('hoursWorked');
+    const nameInput = row.querySelector('td:nth-child(1) input');
+    const hoursInput = row.querySelector('td:nth-child(2) input');
+    if (hours && hoursInput) {
+        hoursInput.value = hours.value;
+    }
+    if (nameInput) {
+        adjustShedStaffNameWidth(nameInput);
+        applyInputHistory(nameInput);
+        if (window.sessionLocked) {
+            applyLockToElement(nameInput);
+        }
+    }
+    if (hoursInput) {
+        adjustShedStaffHoursWidth(hoursInput);
+        initAutoHoursField(hoursInput);
+        if (window.sessionLocked) {
+            applyLockToElement(hoursInput);
+        }
+    }
+}
  
  function removeShedStaff() {
      const body = document.getElementById('shedStaffTable');
@@ -2988,6 +3051,10 @@ function loadSessionObject(session) {
     }
     populateSessionData(session);
     rebuildRowsFromSession(session);
+    const _view = document.querySelector('#tallySheetView');
+    if (window.sessionLocked && _view) {
+      applyLockToContainer(_view);
+    }
     layoutBuilt = true;
 
 }
@@ -3197,10 +3264,23 @@ const interceptReset = (full) => (e) => {
     });
 
     document.addEventListener('focusin', (e) => {
-        if (sessionLocked && e.target.matches('#tallySheetView input, #tallySheetView select')) {
-           promptForPinUnlock();
+        const t = e.target;
+        if (!t) return;
+
+        if (window.sessionLocked) {
+            if (t.getAttribute && t.getAttribute('data-locked') === '1') {
+                t.blur();
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
+            if (t.matches && t.matches('#tallySheetView input, #tallySheetView textarea, #tallySheetView select')) {
+                applyLockToElement(t);
+                promptForPinUnlock();
+            }
         }
-    });
+    }, true);
 
     document.addEventListener('input', (e) => {
         if (!hasUserStartedEnteringData && (
