@@ -3640,62 +3640,65 @@ SessionStore.onChange(refresh);
     }
   };
 
-/// --- BEGIN calendar open logic (replace your existing open+render block) ---
-const modal = document.getElementById('calendarModal');
-const calendarEl = document.getElementById('calendar');
+  const modal = document.getElementById('calendarModal');
+  const calendarEl = document.getElementById('calendar');
 
-// keep references global-ish so we can reuse & clean up
-window._fcCalendar = window._fcCalendar || null;
-window._onCalResize = window._onCalResize || null;
+  let fc = window._fcCalendar || null;
+  let onCalResize = null;
 
-function setCalHeight() {
-  const vh = Math.floor((window.visualViewport?.height || window.innerHeight) * 0.88);
-  calendarEl.style.height = vh + 'px';
-}
-
-function openCalendarModal() {
-  // show modal (CSS now relies on [hidden])
-  modal.hidden = false;
-
-  // give calendar a real pixel height BEFORE render
-  setCalHeight();
-
-  // render on next frame so height is applied
-  requestAnimationFrame(() => {
-    if (!window._fcCalendar) {
-      window._fcCalendar = new FullCalendar.Calendar(calendarEl, calendarOptions);
-    }
-    window._fcCalendar.render();
-    window._fcCalendar.updateSize();
-
-    if (!window._onCalResize) {
-      window._onCalResize = () => {
-        setCalHeight();
-        window._fcCalendar.updateSize();
-      };
-      window.addEventListener('resize', window._onCalResize, { passive: true });
-    }
-  });
-}
-
-// hook up the button
-document.getElementById('btnCalendar')?.addEventListener('click', openCalendarModal);
-
-// When closing the modal, remove the resize listener (good hygiene)
-function closeCalendarModal() {
-  modal.hidden = true;
-  if (window._onCalResize) {
-    window.removeEventListener('resize', window._onCalResize);
-    window._onCalResize = null;
+  function getCalHeightPx() {
+    const vh = (window.visualViewport?.height || window.innerHeight);
+    return Math.max(480, Math.floor(vh * 0.88)); // ~88% viewport, min 480px
   }
-  // keep calendar instance for faster re-open; destroy if you prefer:
-  // if (window._fcCalendar) { window._fcCalendar.destroy(); window._fcCalendar = null; }
-}
-/// --- END calendar open logic ---
 
-  closeBtn?.addEventListener('click', closeCalendarModal);
+  function applyCalHeight() {
+    const px = getCalHeightPx();
+    calendarEl.style.height = px + 'px';   // element height
+    if (fc) fc.setOption('height', px);    // FullCalendar height
+    return px;
+  }
+
+  function openCalendarModal() {
+    document.body.classList.add('modal-open');
+    modal.hidden = false;                  // [hidden] → visible
+
+    const px = applyCalHeight();           // set height BEFORE render
+
+    requestAnimationFrame(() => {
+      if (!fc) {
+        fc = new FullCalendar.Calendar(calendarEl, {
+          ...calendarOptions,
+          height: px,
+          expandRows: true,
+          handleWindowResize: false       // we will manage resizing
+        });
+        window._fcCalendar = fc;
+      }
+      fc.render();
+      fc.updateSize();
+
+      // keep sizing correct while modal is open
+      if (!onCalResize) {
+        onCalResize = () => { applyCalHeight(); fc.updateSize(); };
+        window.addEventListener('resize', onCalResize, { passive: true });
+      }
+    });
+  }
+
+  function closeCalendarModal() {
+    modal.hidden = true;
+    document.body.classList.remove('modal-open');
+    if (onCalResize) { window.removeEventListener('resize', onCalResize); onCalResize = null; }
+    // (optional) keep fc instance for faster reopen; or destroy it if preferred
+    // fc?.destroy(); fc = null; window._fcCalendar = null;
+  }
+
+  // Ensure buttons are bound:
+  document.getElementById('btnCalendar')?.addEventListener('click', openCalendarModal);
+  document.getElementById('calendarClose')?.addEventListener('click', closeCalendarModal);
+
   modal.addEventListener('click', e => { if (e.target === modal) closeCalendarModal(); });
-  farmSel.addEventListener('change', () => { window._fcCalendar && window._fcCalendar.refetchEvents(); });
+  farmSel.addEventListener('change', () => { fc && fc.refetchEvents(); });
 })();
 
 // === KPI: Days Worked (unique session-days) ===
