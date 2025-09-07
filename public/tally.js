@@ -2695,12 +2695,12 @@ function buildExportRows(data) {
 }
 
 function updateUIForRole(role) {
-    const admin = role === 'admin';
+    const isContractor = role === 'contractor';
     const ids = ['saveCloudBtn', 'saveBothBtn', 'loadCloudBtn'];
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-            if (admin) el.removeAttribute('disabled');
+            if (isContractor) el.removeAttribute('disabled');
             else el.setAttribute('disabled', 'disabled');
         }
     });
