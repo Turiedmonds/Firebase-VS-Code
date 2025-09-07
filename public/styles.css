@@ -1470,30 +1470,29 @@ button {
   fill:currentColor;
 }
 
-#calendar .fc,
-#calendar .fc-view-harness,
-#calendar .fc-scrollgrid,
-#calendar .fc-scroller-harness,
-#calendar .fc-scroller {
-  height: 100% !important;
-}
-
-/* Visibility control for the calendar modal */
-#calendarModal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* === Calendar modal: fullscreen + clean growth === */
 #calendarModal[hidden] { display: none !important; }
 
-/* Keep the height chain + layout */
-html, body { height: 100%; }
-#calendarModal .calendar-content { display: flex; flex-direction: column; height: 88svh; width: 92vw; max-width: 720px; }
-#calendar { flex: 1; height: 100%; min-height: 0; }
+#calendarModal {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: stretch; justify-content: center;
+  background: rgba(0,0,0,0.6);
+}
+
+/* prevent background scroll when modal is open */
+body.modal-open { overflow: hidden; }
+
+/* inner panel fills viewport height on iOS */
+#calendarModal .calendar-content {
+  box-sizing: border-box;
+  display: flex; flex-direction: column;
+  width: min(920px, 96vw);
+  height: 100svh;           /* stable vh */
+  margin: 0 auto; padding: 12px; border-radius: 12px;
+}
+
+/* calendar box grows; no %/auto fights */
+#calendar {
+  flex: 1;
+  min-height: 0;
+}
