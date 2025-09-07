@@ -3650,7 +3650,6 @@ SessionStore.onChange(refresh);
   const calendarEl = document.getElementById('calendar');
 
   let fc = window._fcCalendar || null;
-  let onCalResize = null;
 
   function getCalHeightPx() {
     const vh = (window.visualViewport?.height || window.innerHeight);
@@ -3664,47 +3663,63 @@ SessionStore.onChange(refresh);
     return px;
   }
 
+  function renderCalendarWhenReady(calendarEl, calendarInstance) {
+    let tries = 0;
+    (function tick() {
+      const h = calendarEl.getBoundingClientRect().height;
+      if (h > 120) {
+        calendarInstance.render();
+        calendarInstance.updateSize();
+        attachObserver();
+      } else if (tries++ < 30) {
+        requestAnimationFrame(() => requestAnimationFrame(tick));
+      } else {
+        calendarInstance.render();
+        calendarInstance.updateSize();
+        attachObserver();
+      }
+    })();
+
+    function attachObserver() {
+      if ('ResizeObserver' in window) {
+        const ro = new ResizeObserver(() => {
+          applyCalHeight();
+          calendarInstance.updateSize();
+        });
+        ro.observe(calendarEl);
+      } else {
+        window.addEventListener('resize', () => {
+          applyCalHeight();
+          calendarInstance.updateSize();
+        });
+      }
+    }
+  }
+
   function openCalendarModal() {
     document.body.classList.add('modal-open');
     modal.hidden = false;                  // [hidden] → visible
 
-    const renderCalendar = () => {
-      const px = applyCalHeight();         // set height AFTER visible
+    const px = applyCalHeight();         // set height after visible
 
-      if (!fc) {
-        fc = new FullCalendar.Calendar(calendarEl, {
-          ...calendarOptions,
-          height: px,
-          expandRows: true,
-          handleWindowResize: false       // we will manage resizing
-        });
-        window._fcCalendar = fc;
-      }
+    if (!fc) {
+      fc = new FullCalendar.Calendar(calendarEl, {
+        ...calendarOptions,
+        height: px,
+        expandRows: true,
+        handleWindowResize: false       // we will manage resizing
+      });
+      window._fcCalendar = fc;
+    } else {
+      fc.setOption('height', px);
+    }
 
-      fc.render();
-      fc.updateSize();
-      // iOS Safari sometimes renders the header but not the grid when the
-      // calendar is initialized in a just-shown modal. A brief delay ensures the
-      // day grid is drawn once the modal is fully visible.
-      setTimeout(() => { fc.updateSize(); }, 50);
-
-      // keep sizing correct while modal is open
-      if (!onCalResize) {
-        onCalResize = () => { applyCalHeight(); fc.updateSize(); };
-        window.addEventListener('resize', onCalResize, { passive: true });
-      }
-    };
-
-    // Wait for the modal to finish any CSS transition before measuring
-    modal.addEventListener('transitionend', renderCalendar, { once: true });
-    // Fallback in case there is no transition
-    requestAnimationFrame(renderCalendar);
+    renderCalendarWhenReady(calendarEl, fc);
   }
 
   function closeCalendarModal() {
     modal.hidden = true;
     document.body.classList.remove('modal-open');
-    if (onCalResize) { window.removeEventListener('resize', onCalResize); onCalResize = null; }
     // (optional) keep fc instance for faster reopen; or destroy it if preferred
     // fc?.destroy(); fc = null; window._fcCalendar = null;
   }
