@@ -3682,61 +3682,82 @@ if (window.visualViewport) {
     btnReady.classList.add('cal-ready');
   }
 
-  // Destroy any existing calendar and recreate once the modal has dimensions
-  function renderCalendarAfterModalVisible() {
-    const el = calendarEl;
+  function renderCalendarWhenVisible() {
+    const el = document.getElementById('calendar');
     if (!el) return;
+
+    // Measure modal body height or fallback to 70% of viewport
+    const modalBody = document.querySelector('.calendar-modal .modal-body') || el.parentElement;
+    const viewportH = window.innerHeight || 700;
+    const bodyH = modalBody ? modalBody.getBoundingClientRect().height : 0;
+    const targetH = Math.max(360, Math.floor(bodyH > 0 ? bodyH : viewportH * 0.7));
+
+    // Apply pixel height so FullCalendar never sees 0
+    el.style.height = targetH + 'px';
+    el.style.minHeight = targetH + 'px';
+    el.style.width = '100%';
 
     const hasSize = () => {
       const r = el.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && el.offsetParent !== null;
     };
 
-    const createAndRender = async () => {
-      try { if (calendar) { calendar.destroy(); calendar = null; } } catch(e) {}
-      await renderCalendar();
+    const doRender = () => {
+      try { if (window.cal) window.cal.destroy(); } catch (e) {}
+
+      window.cal = new FullCalendar.Calendar(el, Object.assign({
+        initialView: 'dayGridMonth',
+        height: '100%',
+        expandRows: true,
+        handleWindowResize: true
+      }, window.calendarOptions || {}));
+
+      // Render after layout commit
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (calendar) {
-            calendar.updateSize();
-            window.dispatchEvent(new Event('resize'));
-            markCalendarReady();
-          }
+          window.cal.render();
+          window.cal.updateSize();
+          // Nudge Safari/Chrome to recalc width
+          window.dispatchEvent(new Event('resize'));
+          // Extra safety: update again shortly after
+          setTimeout(() => window.cal.updateSize(), 50);
         });
       });
     };
 
-    if (hasSize()) {
-      createAndRender();
-    } else {
-      let tries = 0, ro = null;
-      const poll = setInterval(() => {
-        tries++;
-        if (hasSize() || tries >= 30) {
-          clearInterval(poll);
-          if (ro) ro.disconnect();
-          createAndRender();
-        }
-      }, 50);
+    if (hasSize()) return doRender();
 
-      if (typeof ResizeObserver !== 'undefined') {
-        ro = new ResizeObserver(() => {
-          if (hasSize()) {
-            clearInterval(poll);
-            ro.disconnect();
-            createAndRender();
-          }
-        });
-        ro.observe(el);
+    // Fallback: poll + observe until visible
+    let ro = null;
+    const poll = setInterval(() => {
+      if (hasSize()) {
+        clearInterval(poll);
+        if (ro) ro.disconnect();
+        doRender();
       }
+    }, 50);
+
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => {
+        if (hasSize()) {
+          clearInterval(poll);
+          ro.disconnect();
+          doRender();
+        }
+      });
+      ro.observe(el);
     }
   }
 
-  // After modal opens, force calendar to resize
+  // Ensure this runs after modal is visible
   async function showCalendarModal() {
     modal.classList.add('active');
     modal.hidden = false;
-    setTimeout(renderCalendarAfterModalVisible, 0);
+
+    // One frame delay so layout is ready
+    requestAnimationFrame(() => {
+      setTimeout(renderCalendarWhenVisible, 0);
+    });
   }
 
   btn.addEventListener('click', showCalendarModal);

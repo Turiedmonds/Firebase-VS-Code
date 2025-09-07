@@ -1509,3 +1509,25 @@ button {
 #btnCalendar.cal-ready {
   color: #33d17a !important; /* green */
 }
+
+/* Ensure modal content has height in portrait */
+.calendar-modal .modal-content,
+.calendar-modal .modal-body {
+  min-height: 360px;
+}
+
+/* Calendar box must always have width/height */
+#calendar {
+  width: 100%;
+  min-height: 360px;
+  height: auto; /* JS will set exact pixel height */
+}
+
+/* FullCalendar inner wrappers should expand fully */
+#calendar .fc,
+#calendar .fc-view-harness,
+#calendar .fc-scrollgrid,
+#calendar .fc-scroller-harness,
+#calendar .fc-scroller {
+  height: 100% !important;
+}
