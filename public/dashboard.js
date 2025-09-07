@@ -3544,6 +3544,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
         initialView: defaultView,
         headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
         events,
+        displayEventTime: false,
         eventClick: info => {
           info.jsEvent.preventDefault();
           const id = info.event.id;
