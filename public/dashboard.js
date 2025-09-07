@@ -3679,8 +3679,10 @@ SessionStore.onChange(refresh);
         });
         window._fcCalendar = fc;
       }
-      fc.render();
-      fc.updateSize();
+      requestAnimationFrame(() => {
+        fc.render();
+        fc.updateSize();
+      });
 
       // keep sizing correct while modal is open
       if (!onCalResize) {
