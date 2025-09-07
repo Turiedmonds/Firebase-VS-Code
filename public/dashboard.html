@@ -142,9 +142,14 @@
       width: 90%;
       max-width: 1000px;
       height: 90%;
-      overflow: auto;
+      overflow-x: auto;
+      overflow-y: auto;
       border-radius: 8px;
       border: 1px solid var(--border-color, #2c2c2c);
+    }
+
+    #calendarOverlay #calendar {
+      min-width: 700px;
     }
     #calendarClose {
       float: right;
@@ -711,7 +716,7 @@
         </div>
       </div>
     </div>
-  <div id="calendarOverlay" class="calendar-overlay" hidden>
+  <div id="calendarOverlay" class="calendar-overlay">
     <div class="calendar-content">
       <button id="calendarClose" aria-label="Close">&times;</button>
       <select id="calendarFarmFilter"></select>
