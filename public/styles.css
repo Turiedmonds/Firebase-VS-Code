@@ -1464,16 +1464,15 @@ button {
   fill:currentColor;
 }
 
-/* Ensure the calendar always has height so FullCalendar renders */
-#calendar {
-  width: 100%;
-  min-height: 360px;   /* always give it height */
-}
-
 /* Ensure calendar fills available space within modal */
-#calendarModal .calendar-content {
+.calendar-content {
   display: flex;
   flex-direction: column;
+}
+
+#calendar {
+  flex: 1;              /* expand to fill available space */
+  min-height: 70vh;     /* guarantee enough height on portrait */
 }
 
 #calendarModal .calendar-content #calendar,
@@ -1489,36 +1488,7 @@ button {
   min-height: 360px;  /* fallback */
 }
 
-/* Calendar must fill the space */
-#calendar {
-  width: 100%;
-  height: 100%;
-  min-height: 360px;
-}
-
 /* Ensure FullCalendar inner wrappers don't collapse */
-#calendar .fc,
-#calendar .fc-view-harness,
-#calendar .fc-scrollgrid,
-#calendar .fc-scroller-harness,
-#calendar .fc-scroller {
-  height: 100% !important;
-}
-
-/* Ensure modal content has height in portrait */
-.calendar-modal .modal-content,
-.calendar-modal .modal-body {
-  min-height: 360px;
-}
-
-/* Calendar box must always have width/height */
-#calendar {
-  width: 100%;
-  min-height: 360px;
-  height: auto; /* JS will set exact pixel height */
-}
-
-/* FullCalendar inner wrappers should expand fully */
 #calendar .fc,
 #calendar .fc-view-harness,
 #calendar .fc-scrollgrid,
@@ -1529,6 +1499,6 @@ button {
 
 @media (orientation: portrait) {
   #calendar {
-    min-height: 480px; /* give it real space on phones */
+    min-height: 70vh; /* give it real space on phones */
   }
 }
