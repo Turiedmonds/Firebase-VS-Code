@@ -660,10 +660,15 @@
         </div>
       </div>
     </div>
-  <div id="kpiCalendarModal" role="dialog" aria-modal="true" hidden>
-    <div class="calendar-content">
-      <button id="kpiCalendarClose" aria-label="Close">&times;</button>
-      <select id="kpiCalendarFarmFilter"></select>
+  <div id="kpiCalendarModal" class="kpi-modal" role="dialog" aria-modal="true" aria-labelledby="kpiCalendarTitle" hidden>
+    <div class="kpi-modal-card">
+      <header class="kpi-modal-header">
+        <h2 id="kpiCalendarTitle">Calendar</h2>
+        <button class="kpi-close" id="kpiCalendarClose" aria-label="Close">✕</button>
+      </header>
+      <div class="kpi-controls">
+        <select id="kpiCalendarFarmFilter"></select>
+      </div>
       <div id="kpiCalendarGrid" class="calendar-container"></div>
     </div>
   </div>
