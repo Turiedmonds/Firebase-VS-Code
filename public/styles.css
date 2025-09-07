@@ -1470,14 +1470,3 @@ button {
   fill:currentColor;
 }
 
-/* === Calendar Modal === */
-#kpiCalendarModal .kpi-modal-card {
-  display: flex;
-  flex-direction: column;
-  height: 86vh;
-}
-
-#kpiCalendarGrid {
-  flex: 1;
-  min-height: 0;
-}
