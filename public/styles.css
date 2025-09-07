@@ -1505,3 +1505,19 @@ button {
 }
 /* END:CALENDAR:LISTVIEW:DARK+BADGE */
 
+/* === Calendar list view: remove the "all-day" column and fill width === */
+#calendarHost .fc .fc-list-event-time {        /* hides the 'all-day' text/column */
+  display: none !important;
+}
+
+#calendarHost .fc .fc-list-event-title {       /* let the title use all the space */
+  width: 100% !important;
+  white-space: normal;        /* wrap long farm names nicely */
+}
+
+#calendarHost .fc .fc-list-table td,
+#calendarHost .fc .fc-list-table th {          /* tighten side gutters inside border */
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+
