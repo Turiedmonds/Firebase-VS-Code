@@ -3474,9 +3474,46 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
   // Init: fill years
   fillYearsSelect(yearSel);
 
-  SessionStore.onChange(refresh);
+SessionStore.onChange(refresh);
   if (SessionStore.getAll().length) refresh();
 })();
+
+function forceCalendarResize() {
+  const cal = window.dashboardCalendar;
+  if (!cal) return;
+  requestAnimationFrame(() => {
+    try {
+      cal.updateSize();
+    } catch (e) {}
+  });
+}
+
+function renderCalendarIfNeeded() {
+  const cal = window.dashboardCalendar;
+  if (!cal) return;
+  try {
+    cal.render();
+    cal.updateSize();
+  } catch (e) {}
+}
+
+function safeInitialRender() {
+  const el = document.getElementById('calendar');
+  if (!el) return;
+  if (el.clientWidth === 0 || el.clientHeight === 0) {
+    setTimeout(safeInitialRender, 200);
+    return;
+  }
+  renderCalendarIfNeeded();
+}
+
+window.addEventListener('orientationchange', () => {
+  setTimeout(forceCalendarResize, 200);
+});
+
+window.addEventListener('resize', () => {
+  setTimeout(forceCalendarResize, 150);
+});
 
 // === Calendar View ===
 
@@ -3504,7 +3541,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
   }
 
   const btn = document.getElementById('btnCalendar');
-  const overlay = document.getElementById('calendarOverlay');
+  const modal = document.getElementById('calendarModal');
   const closeBtn = document.getElementById('calendarClose');
   const farmSel = document.getElementById('calendarFarmFilter');
   const calendarEl = document.getElementById('calendar');
@@ -3514,7 +3551,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
     console.log('[CAL] window.FullCalendar present?', !!window.FullCalendar, window.FullCalendar && window.FullCalendar.version);
     console.log('[CAL] FullCalendar script tag present?', !!fcScript, fcScript && fcScript.src);
   }
-  if (!btn || !overlay || !closeBtn || !farmSel || !calendarEl || !window.FullCalendar){
+  if (!btn || !modal || !closeBtn || !farmSel || !calendarEl || !window.FullCalendar){
     if (diag && !window.FullCalendar) showDiagBanner('FullCalendar failed to load (check CDN/content blocker).');
     return;
   }
@@ -3617,7 +3654,9 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
             localStorage.setItem('dashboard_calendar_view', info.view.type);
           }
         });
+        window.dashboardCalendar = calendar;
         calendar.render();
+        safeInitialRender();
       } catch(err){
         if (diag) console.log('[CAL] FullCalendar init error', err);
       }
@@ -3626,15 +3665,30 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
       calendar.addEventSource(events);
       calendar.changeView(defaultView);
     }
+    renderCalendarIfNeeded();
   }
 
   btn.addEventListener('click', () => {
-    overlay.classList.add('active');
+    modal.classList.add('active');
     renderCalendar();
+    requestAnimationFrame(renderCalendarIfNeeded);
   });
-  closeBtn.addEventListener('click', () => overlay.classList.remove('active'));
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('active'); });
+  closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('active'); });
+  if (modal) {
+    modal.addEventListener('transitionend', e => {
+      if (e.target === modal && modal.classList.contains('active')) {
+        renderCalendarIfNeeded();
+      }
+    });
+    modal.addEventListener('modal:shown', renderCalendarIfNeeded);
+  }
   farmSel.addEventListener('change', renderCalendar);
+
+  if (calendarEl && 'ResizeObserver' in window) {
+    const ro = new ResizeObserver(() => forceCalendarResize());
+    ro.observe(calendarEl);
+  }
 })();
 
 // === KPI: Days Worked (unique session-days) ===
