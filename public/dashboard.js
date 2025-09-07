@@ -3667,7 +3667,8 @@ SessionStore.onChange(refresh);
   function openCalendarModal() {
     document.body.classList.add('modal-open');
     modal.hidden = false;                  // [hidden] → visible
-    requestAnimationFrame(() => {
+
+    const renderCalendar = () => {
       const px = applyCalHeight();         // set height AFTER visible
 
       if (!fc) {
@@ -3679,21 +3680,25 @@ SessionStore.onChange(refresh);
         });
         window._fcCalendar = fc;
       }
-      requestAnimationFrame(() => {
-        fc.render();
-        fc.updateSize();
-        // iOS Safari sometimes renders the header but not the grid when the
-        // calendar is initialized in a just-shown modal. A second render/update
-        // shortly after ensures the day grid is drawn in portrait mode.
-        setTimeout(() => { fc.render(); fc.updateSize(); }, 50);
-      });
+
+      fc.render();
+      fc.updateSize();
+      // iOS Safari sometimes renders the header but not the grid when the
+      // calendar is initialized in a just-shown modal. A brief delay ensures the
+      // day grid is drawn once the modal is fully visible.
+      setTimeout(() => { fc.updateSize(); }, 50);
 
       // keep sizing correct while modal is open
       if (!onCalResize) {
         onCalResize = () => { applyCalHeight(); fc.updateSize(); };
         window.addEventListener('resize', onCalResize, { passive: true });
       }
-    });
+    };
+
+    // Wait for the modal to finish any CSS transition before measuring
+    modal.addEventListener('transitionend', renderCalendar, { once: true });
+    // Fallback in case there is no transition
+    requestAnimationFrame(renderCalendar);
   }
 
   function closeCalendarModal() {
