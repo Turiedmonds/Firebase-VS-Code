@@ -3675,13 +3675,6 @@ if (window.visualViewport) {
     renderCalendarIfNeeded();
   }
 
-  // Mark the calendar button green permanently
-  function markCalendarReady() {
-    const btnReady = document.getElementById('btnCalendar');
-    if (!btnReady) return;
-    btnReady.classList.add('cal-ready');
-  }
-
   // Ensure this runs after modal is visible
   async function showCalendarModal() {
     modal.classList.add('active');

@@ -1505,11 +1505,6 @@ button {
   height: 100% !important;
 }
 
-/* Permanent green font for calendar button once calendar is ready */
-#btnCalendar.cal-ready {
-  color: #33d17a !important; /* green */
-}
-
 /* Ensure modal content has height in portrait */
 .calendar-modal .modal-content,
 .calendar-modal .modal-body {
