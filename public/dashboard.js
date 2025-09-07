@@ -3509,11 +3509,17 @@ function safeInitialRender() {
 }
 
 window.addEventListener('orientationchange', () => {
-  setTimeout(forceCalendarResize, 200);
+  setTimeout(() => {
+    renderCalendarIfNeeded();
+    forceCalendarResize();
+  }, 200);
 });
 
 window.addEventListener('resize', () => {
-  setTimeout(forceCalendarResize, 150);
+  setTimeout(() => {
+    renderCalendarIfNeeded();
+    forceCalendarResize();
+  }, 150);
 });
 
 // === Calendar View ===

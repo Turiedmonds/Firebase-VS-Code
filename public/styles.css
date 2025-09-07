@@ -1467,9 +1467,11 @@ button {
 /* Ensure the calendar has space to render in iOS Safari */
 #calendar, .calendar-container {
   min-height: 60vh;
+  height: 100%;
 }
 @supports (-webkit-touch-callout: none) {
   #calendar, .calendar-container {
     min-height: 60vh;
+    height: 60vh;
   }
 }
