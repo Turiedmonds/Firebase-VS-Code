@@ -9,12 +9,28 @@ function isReallyOffline() {
 
 const ROLE_KEY = 'user_role'; // 'contractor' | 'staff'
 const CONTRACTOR_KEY = 'contractor_id'; // string
+const STAFF_CAN_LOAD_KEY = 'staff_can_load_sessions'; // 'true' | 'false'
 
 function withTimeout(promise, ms = 1200) {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
   ]);
+}
+
+async function fetchStaffCanLoadSessions(db, contractorId, source) {
+  if (!contractorId) return;
+  try {
+    const snap = await withTimeout(
+      db.collection('contractors').doc(contractorId).get(source ? { source } : undefined)
+    );
+    if (snap.exists) {
+      const val = snap.data().staffCanLoadSessions !== false;
+      localStorage.setItem(STAFF_CAN_LOAD_KEY, val ? 'true' : 'false');
+    }
+  } catch (err) {
+    console.warn('[auth-check] staffCanLoadSessions lookup failed', err);
+  }
 }
 
 async function resolveRoleOfflineFirst(user) {
@@ -24,6 +40,7 @@ async function resolveRoleOfflineFirst(user) {
   const cachedContractor = localStorage.getItem(CONTRACTOR_KEY);
 
   if (cachedRole && cachedContractor) {
+    await fetchStaffCanLoadSessions(db, cachedContractor, 'cache');
     return { role: cachedRole, contractorId: cachedContractor, source: 'localStorage' };
   }
 
@@ -32,6 +49,7 @@ async function resolveRoleOfflineFirst(user) {
       db.collection('contractors').doc(uid).get({ source: 'cache' })
     );
     if (contractorSnap.exists) {
+      await fetchStaffCanLoadSessions(db, uid, 'cache');
       return { role: 'contractor', contractorId: uid, source: 'cache' };
     }
   } catch (err) {
@@ -49,6 +67,7 @@ async function resolveRoleOfflineFirst(user) {
           .get({ source: 'cache' })
       );
       if (staffSnap.exists) {
+        await fetchStaffCanLoadSessions(db, cachedContractor, 'cache');
         return { role: 'staff', contractorId: cachedContractor, source: 'cache' };
       }
     } catch (err) {
@@ -57,6 +76,7 @@ async function resolveRoleOfflineFirst(user) {
   }
 
   if (isReallyOffline()) {
+    await fetchStaffCanLoadSessions(db, cachedContractor, 'cache');
     return {
       role: cachedRole || 'unknown',
       contractorId: cachedContractor || null,
@@ -77,6 +97,7 @@ async function refreshRoleOnline(user) {
     if (contractorSnap.exists) {
       localStorage.setItem(ROLE_KEY, 'contractor');
       localStorage.setItem(CONTRACTOR_KEY, uid);
+      await fetchStaffCanLoadSessions(db, uid);
       return { role: 'contractor', contractorId: uid, source: 'server' };
     }
   } catch (err) {
@@ -92,6 +113,7 @@ async function refreshRoleOnline(user) {
       if (staffSnap.exists) {
         localStorage.setItem(ROLE_KEY, 'staff');
         localStorage.setItem(CONTRACTOR_KEY, knownId);
+        await fetchStaffCanLoadSessions(db, knownId);
         return { role: 'staff', contractorId: knownId, source: 'server' };
       }
     } catch (err) {
@@ -110,6 +132,7 @@ async function refreshRoleOnline(user) {
         const contractorId = docSnap.ref.parent.parent.id;
         localStorage.setItem(ROLE_KEY, 'staff');
         localStorage.setItem(CONTRACTOR_KEY, contractorId);
+        await fetchStaffCanLoadSessions(db, contractorId);
         return { role: 'staff', contractorId, source: 'server' };
       }
     } catch (err) {
