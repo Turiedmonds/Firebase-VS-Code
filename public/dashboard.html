@@ -179,6 +179,7 @@
             <span class="kpi-label">Days Worked</span>
             <span class="kpi-value" id="kpiDaysWorkedValue">—</span>
           </button>
+          <button class="kpi-pill" id="kpiCalendar" aria-haspopup="dialog" aria-controls="kpiCalendarModal">Calendar</button>
         </section>
 
         <!-- KPI MODAL (new) -->
@@ -625,9 +626,8 @@
         <section class="dashboard-buttons">
           <button id="btnManageStaff" class="tab-button">Manage Staff</button>
           <button id="btnStartNewDay" class="tab-button">Start New Day</button>
-          <button id="btnViewSavedSessions" class="tab-button">View Saved Sessions</button>
-          <button id="btnCalendar" class="tab-button">Calendar</button>
-          <button id="btnReturnToActive" class="tab-button" style="display: none;">Return to Active Session</button>
+            <button id="btnViewSavedSessions" class="tab-button">View Saved Sessions</button>
+            <button id="btnReturnToActive" class="tab-button" style="display: none;">Return to Active Session</button>
           <button id="farm-summary-btn" class="dashboard-button">Farm Summary</button>
           <button id="btnChangePin" class="tab-button">Change Contractor PIN</button>
           <button id="btnChangePassword" class="tab-button">Change Password</button>
@@ -660,11 +660,11 @@
         </div>
       </div>
     </div>
-  <div id="calendarModal" role="dialog" aria-modal="true" hidden>
+  <div id="kpiCalendarModal" role="dialog" aria-modal="true" hidden>
     <div class="calendar-content">
-      <button id="calendarClose" aria-label="Close">&times;</button>
-      <select id="calendarFarmFilter"></select>
-      <div id="calendar" class="calendar-container"></div>
+      <button id="kpiCalendarClose" aria-label="Close">&times;</button>
+      <select id="kpiCalendarFarmFilter"></select>
+      <div id="kpiCalendarGrid" class="calendar-container"></div>
     </div>
   </div>
 

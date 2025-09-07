@@ -1471,9 +1471,9 @@ button {
 }
 
 /* === Calendar Modal === */
-#calendarModal[hidden] { display: none !important; }
+#kpiCalendarModal[hidden] { display: none !important; }
 
-#calendarModal {
+#kpiCalendarModal {
   position: fixed;
   inset: 0;
   z-index: 9999;
@@ -1482,9 +1482,7 @@ button {
   background: rgba(0,0,0,0.5);
 }
 
-body.modal-open { overflow: hidden; }
-
-#calendarModal .calendar-content {
+#kpiCalendarModal .calendar-content {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1499,7 +1497,7 @@ body.modal-open { overflow: hidden; }
   box-shadow: 0 12px 30px rgba(0,0,0,.5);
 }
 
-#calendar {
+#kpiCalendarGrid {
   flex: 1;
   min-height: 0;
 }

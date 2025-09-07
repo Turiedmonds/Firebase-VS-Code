@@ -3537,15 +3537,18 @@ SessionStore.onChange(refresh);
     b.textContent = msg;
   }
 
-  const closeBtn = document.getElementById('calendarClose');
-  const farmSel = document.getElementById('calendarFarmFilter');
+  const pill = document.getElementById('kpiCalendar');
+  const modal = document.getElementById('kpiCalendarModal');
+  const closeBtn = document.getElementById('kpiCalendarClose');
+  const farmSel = document.getElementById('kpiCalendarFarmFilter');
+  const calendarEl = document.getElementById('kpiCalendarGrid');
   const fcScript = Array.from(document.getElementsByTagName('script')).find(s => /fullcalendar/i.test(s.src));
   if (diag){
-    console.log('[CAL] dom#calendar present?', !!document.getElementById('calendar'));
+    console.log('[CAL] dom#kpiCalendarGrid present?', !!calendarEl);
     console.log('[CAL] window.FullCalendar present?', !!window.FullCalendar, window.FullCalendar && window.FullCalendar.version);
     console.log('[CAL] FullCalendar script tag present?', !!fcScript, fcScript && fcScript.src);
   }
-  if (!document.getElementById('btnCalendar') || !document.getElementById('calendarModal') || !closeBtn || !farmSel || !document.getElementById('calendar') || !window.FullCalendar){
+  if (!pill || !modal || !closeBtn || !farmSel || !calendarEl || !window.FullCalendar){
     if (diag && !window.FullCalendar) showDiagBanner('FullCalendar failed to load (check CDN/content blocker).');
     return;
   }
@@ -3646,14 +3649,10 @@ SessionStore.onChange(refresh);
     }
   };
 
-  const modal = document.getElementById('calendarModal');
-  const calendarEl = document.getElementById('calendar');
-
   let fc = window._fcCalendar || null;
 
-  function openCalendarModal() {
-    document.body.classList.add('modal-open');
-    modal.hidden = false;                  // [hidden] → visible
+  function openModal() {
+    modal.hidden = false;
 
     if (!fc) {
       fc = new FullCalendar.Calendar(calendarEl, {
@@ -3668,18 +3667,16 @@ SessionStore.onChange(refresh);
     }
   }
 
-  function closeCalendarModal() {
+  function closeModal() {
     modal.hidden = true;
-    document.body.classList.remove('modal-open');
     // (optional) keep fc instance for faster reopen; or destroy it if preferred
     // fc?.destroy(); fc = null; window._fcCalendar = null;
   }
 
-  // Ensure buttons are bound:
-  document.getElementById('btnCalendar')?.addEventListener('click', openCalendarModal);
-  document.getElementById('calendarClose')?.addEventListener('click', closeCalendarModal);
+  pill.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
 
-  modal.addEventListener('click', e => { if (e.target === modal) closeCalendarModal(); });
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
   farmSel.addEventListener('change', () => { fc && fc.refetchEvents(); });
 })();
 
