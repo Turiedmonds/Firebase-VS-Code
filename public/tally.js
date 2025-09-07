@@ -3006,9 +3006,14 @@ function resetForNewDay() {
     localStorage.removeItem('active_session');
     localStorage.removeItem('firestoreSessionId');
     localStorage.removeItem('viewOnlyMode');
+    localStorage.setItem('viewOnlyMode', 'false');
   } catch (e) {
     // Ignore any errors
   }
+
+  // Ensure new day starts unlocked
+  window.sessionLocked = false;
+  unlockSession();
 }
 
 function loadSessionObject(session) {
@@ -3277,8 +3282,8 @@ const interceptReset = (full) => (e) => {
         const inTally = t.matches('#tallySheetView input, #tallySheetView textarea, #tallySheetView select');
         if (!inTally) return;
 
-        // If already unlocked, do nothing
-        if (!window.sessionLocked) return;
+        // Only trigger PIN when session is locked AND a saved session was loaded
+        if (!(window.sessionLocked && window.isLoadedSession)) return;
 
         // Prevent typing/focus action while we decide
         e.preventDefault();
