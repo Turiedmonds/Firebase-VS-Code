@@ -4018,12 +4018,22 @@ SessionStore.onChange(refresh);
   let unlisten = null;
 
   function computeHostHeight(){
-    const chrome = 180; // header/footer space inside modal card
+    const chrome = 180;
     const h = Math.max(360, Math.floor(window.innerHeight - chrome));
     host.style.height = h + 'px';
   }
 
-  // Convert sessions to FullCalendar events
+  function atTime(ymd, hhmm){
+    try {
+      if (!ymd || !hhmm) return null;
+      const [H,M] = String(hhmm).split(':').map(x => parseInt(x,10));
+      if (Number.isNaN(H) || Number.isNaN(M)) return null;
+      const d = new Date(ymd + 'T00:00:00');
+      d.setHours(H, M, 0, 0);
+      return d;
+    } catch { return null; }
+  }
+
   function sessionsToEvents(docs){
     const events = [];
     for (const doc of (docs || [])) {
@@ -4031,44 +4041,49 @@ SessionStore.onChange(refresh);
       if (!s) continue;
       const ymd = (typeof getSessionDateYMD === 'function') ? getSessionDateYMD(s) : null;
       if (!ymd) continue;
-      const farm = (typeof pickFarmName === 'function') ? pickFarmName(s) : 'Farm';
+      const farm  = (typeof pickFarmName === 'function') ? pickFarmName(s) : 'Farm';
       const sheep = (typeof sumSheep === 'function') ? sumSheep(s) : 0;
-      events.push({
-        title: `${farm} — ${Number(sheep).toLocaleString()} sheep`,
-        start: ymd,
-        allDay: true,
-        extendedProps: { farm, sheep, raw: s }
-      });
+
+      const startStr  = s.startTime  || s.header?.startTime  || null;
+      const finishStr = s.finishTime || s.header?.finishTime || null;
+      const start = atTime(ymd, startStr);
+      const end   = atTime(ymd, finishStr);
+
+      if (start && end && end > start) {
+        events.push({
+          title: `${farm} — ${Number(sheep).toLocaleString()} sheep`,
+          start,
+          end,
+          allDay: false,
+          extendedProps: { farm, sheep, ymd, startStr, finishStr, hasTimes: true }
+        });
+      } else {
+        events.push({
+          title: `Workday — ${farm} — ${Number(sheep).toLocaleString()} sheep`,
+          start: ymd,
+          allDay: true,
+          extendedProps: { farm, sheep, ymd, hasTimes: false }
+        });
+      }
     }
     return events;
   }
 
-  // Add numeric date badges to list view headers and dark theme polish
   function decorateListHeaders(){
     if (!calendar) return;
-    // Only for list views
     const viewType = calendar.view?.type || '';
     if (!/list/.test(viewType)) return;
-
     const cushions = host.querySelectorAll('.fc-list-day-cushion');
     cushions.forEach(cushion => {
-      // Remove old badge if present (idempotent)
       cushion.querySelectorAll('.fc-daynum-badge').forEach(b => b.remove());
-
-      // Anchor usually carries the date attr
       const a = cushion.querySelector('a[data-date]') || cushion.querySelector('a');
       const dateStr = a?.getAttribute?.('data-date');
       if (!dateStr) return;
-
       const d = new Date(dateStr);
       if (isNaN(d)) return;
-      const dayNum = d.getDate();
-
       const badge = document.createElement('span');
       badge.className = 'fc-daynum-badge';
-      badge.textContent = String(dayNum);
-
-      // Insert badge at the start of the cushion content
+      badge.textContent = String(d.getDate());
       cushion.firstChild ? cushion.insertBefore(badge, cushion.firstChild) : cushion.appendChild(badge);
     });
   }
@@ -4084,22 +4099,19 @@ SessionStore.onChange(refresh);
       headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listMonth' },
       height: '100%',
       contentHeight: 'auto',
-      firstDay: 1, // Monday (NZ)
+      firstDay: 1,
       dayMaxEvents: true,
       eventDisplay: 'block',
-      datesSet(){ // runs on initial render & when navigating months or changing views
-        decorateListHeaders();
-      },
-      viewDidMount(){ // extra safety
-        decorateListHeaders();
-      },
+      displayEventTime: true,
+      eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+      datesSet(){ decorateListHeaders(); },
+      viewDidMount(){ decorateListHeaders(); },
       eventClick(info){
         const e = info.event.extendedProps || {};
-        alert(`${e.farm || 'Farm'}\n${(e.sheep||0).toLocaleString()} sheep\nDate: ${info.event.startStr}`);
+        const timeLine = e.hasTimes ? `${e.startStr || ''}–${e.finishStr || ''}\n` : '';
+        alert(`${timeLine}${e.farm || 'Farm'}\n${(e.sheep||0).toLocaleString()} sheep\nDate: ${e.ymd || info.event.startStr}`);
       }
     });
-
-    // Seed with cached sessions if available
     try {
       const cached = (typeof SessionStore?.getAll === 'function') ? SessionStore.getAll() : [];
       calendar.addEventSource(sessionsToEvents(cached));
@@ -4120,7 +4132,6 @@ SessionStore.onChange(refresh);
     console.log('[Calendar] open');
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
-
     computeHostHeight();
     requestAnimationFrame(() => {
       ensureCalendar();
@@ -4129,25 +4140,20 @@ SessionStore.onChange(refresh);
         setTimeout(() => {
           calendar.updateSize();
           decorateListHeaders();
-        }, 40); // iOS Safari safety tick
+        }, 40);
       }
     });
-
-    // Live updates
     if (!unlisten && typeof SessionStore?.onChange === 'function') {
       unlisten = SessionStore.onChange(docs => {
         try {
-          const events = sessionsToEvents(docs);
-          if (calendar) {
-            calendar.removeAllEvents();
-            calendar.addEventSource(events);
-            calendar.updateSize();
-            decorateListHeaders();
-          }
+          if (!calendar) return;
+          calendar.removeAllEvents();
+          calendar.addEventSource(sessionsToEvents(docs));
+          calendar.updateSize();
+          decorateListHeaders();
         } catch (e) { console.warn('[Calendar] onChange update failed', e); }
       });
     }
-
     window.addEventListener('resize', onResize, { passive:true });
     window.addEventListener('orientationchange', onResize, { passive:true });
   }
@@ -4163,9 +4169,7 @@ SessionStore.onChange(refresh);
   btn.addEventListener('click', openCalendarModal);
   btnCloseX?.addEventListener('click', closeCalendarModal);
   btnCloseFooter?.addEventListener('click', closeCalendarModal);
-  modal.addEventListener('click', (e)=>{
-    if (e.target === modal) closeCalendarModal();
-  });
+  modal.addEventListener('click', (e)=>{ if (e.target === modal) closeCalendarModal(); });
 
   console.log('[Calendar] init block ready');
 })();
