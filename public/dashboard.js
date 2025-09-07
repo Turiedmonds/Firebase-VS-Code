@@ -1,5 +1,11 @@
 // ===== Dashboard welcome modal: show ONCE EVER =====
 
+const CAL_DIAG = new URLSearchParams(location.search).get('diag') === '1';
+if (!CAL_DIAG && !sessionStorage.getItem('calDiagTip')) {
+  console.log('Open this URL with ?diag=1 to run calendar diagnostics');
+  sessionStorage.setItem('calDiagTip', '1');
+}
+
 // Returns true if we should show the dashboard welcome on this visit
 function shouldShowDashboardWelcomeOnce(){
   try {
@@ -3473,13 +3479,45 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
 })();
 
 // === Calendar View ===
+
 (function setupDashboardCalendar(){
+  const diag = CAL_DIAG;
+  function showDiagBanner(msg){
+    if (!diag) return;
+    let b = document.getElementById('calDiagBanner');
+    if (!b){
+      b = document.createElement('div');
+      b.id = 'calDiagBanner';
+      b.style.position = 'fixed';
+      b.style.top = '0';
+      b.style.left = '0';
+      b.style.right = '0';
+      b.style.zIndex = '9999';
+      b.style.background = '#b91c1c';
+      b.style.color = '#fff';
+      b.style.font = '12px sans-serif';
+      b.style.padding = '2px 4px';
+      b.style.textAlign = 'center';
+      document.body.appendChild(b);
+    }
+    b.textContent = msg;
+  }
+
   const btn = document.getElementById('btnCalendar');
   const overlay = document.getElementById('calendarOverlay');
   const closeBtn = document.getElementById('calendarClose');
   const farmSel = document.getElementById('calendarFarmFilter');
   const calendarEl = document.getElementById('calendar');
-  if (!btn || !overlay || !closeBtn || !farmSel || !calendarEl || !window.FullCalendar) return;
+  const fcScript = Array.from(document.getElementsByTagName('script')).find(s => /fullcalendar/i.test(s.src));
+  if (diag){
+    console.log('[CAL] dom#calendar present?', !!calendarEl);
+    console.log('[CAL] window.FullCalendar present?', !!window.FullCalendar, window.FullCalendar && window.FullCalendar.version);
+    console.log('[CAL] FullCalendar script tag present?', !!fcScript, fcScript && fcScript.src);
+  }
+  if (!btn || !overlay || !closeBtn || !farmSel || !calendarEl || !window.FullCalendar){
+    if (diag && !window.FullCalendar) showDiagBanner('FullCalendar failed to load (check CDN/content blocker).');
+    return;
+  }
 
   function sessionDateToJS(d) {
     if (!d) return null;
@@ -3496,16 +3534,31 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
   async function fetchSessions(){
     const cached = SessionStore.getAll ? SessionStore.getAll() : [];
     if (cached.length) {
+      if (diag) console.log('[CAL] events fetched count', cached.length, '(cache)');
       return cached.map(doc => ({ id: doc.id, ...doc.data() }));
     }
-    const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
-    if (!contractorId || !window.firebase?.firestore) return [];
+    const contractorId = localStorage.getItem('contractor_id') || (firebase.auth()?.currentUser?.uid ?? '');
+    if (diag) {
+      console.log('[CAL] contractorId resolved?', contractorId || '<missing>');
+      const user = firebase.auth && firebase.auth().currentUser;
+      console.log('[CAL] isSignedIn?', !!user, user && user.uid);
+    }
+    if (!contractorId || !window.firebase?.firestore){
+      if (diag) {
+        console.log('[CAL] events fetched count 0 (missing contractorId or firestore)');
+        if (!contractorId) showDiagBanner('No contractor selected (sign in again).');
+      }
+      return [];
+    }
     try {
       const db = firebase.firestore();
       const ref = db.collection('contractors').doc(contractorId).collection('sessions');
       const snap = await ref.get();
-      return snap.docs.map(d=>({ id:d.id, ...d.data() }));
+      const docs = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+      if (diag) console.log('[CAL] events fetched count', docs.length);
+      return docs;
     } catch(e){
+      if (diag) console.log('[CAL] events fetched count 0 (fetch error)');
       console.warn('Calendar session fetch failed', e);
       return [];
     }
@@ -3539,22 +3592,35 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
     const sessions = await fetchSessions();
     const events = buildEvents(sessions);
     const defaultView = localStorage.getItem('dashboard_calendar_view') || 'dayGridMonth';
+    if (diag){
+      const w = calendarEl.offsetWidth, h = calendarEl.offsetHeight;
+      console.log('[CAL] container computed size', w, h);
+      if (h === 0){
+        showDiagBanner('Calendar container has no height.');
+        calendarEl.style.minHeight = '60vh';
+      }
+    }
     if (!calendar) {
-      calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: defaultView,
-        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
-        events,
-        displayEventTime: false,
-        eventClick: info => {
-          info.jsEvent.preventDefault();
-          const id = info.event.id;
-          if (id) window.location.href = `view-sessions.html?session=${encodeURIComponent(id)}`;
-        },
-        datesSet: info => {
-          localStorage.setItem('dashboard_calendar_view', info.view.type);
-        }
-      });
-      calendar.render();
+      if (diag) console.log('[CAL] initializing FullCalendar');
+      try {
+        calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: defaultView,
+          headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+          events,
+          displayEventTime: false,
+          eventClick: info => {
+            info.jsEvent.preventDefault();
+            const id = info.event.id;
+            if (id) window.location.href = `view-sessions.html?session=${encodeURIComponent(id)}`;
+          },
+          datesSet: info => {
+            localStorage.setItem('dashboard_calendar_view', info.view.type);
+          }
+        });
+        calendar.render();
+      } catch(err){
+        if (diag) console.log('[CAL] FullCalendar init error', err);
+      }
     } else {
       calendar.removeAllEvents();
       calendar.addEventSource(events);
