@@ -125,7 +125,7 @@
     }
     </style>
   <style>
-    #calendarOverlay {
+    #calendarModal {
       position: fixed;
       top: 0;
       left: 0;
@@ -135,8 +135,8 @@
       display: none;
       z-index: 1000;
     }
-    #calendarOverlay.active { display: block; }
-    #calendarOverlay .calendar-content {
+    #calendarModal.active { display: block; }
+    #calendarModal .calendar-content {
       background: var(--panel-bg, #0f1115);
       color: var(--text-color, #fff);
       margin: 5% auto;
@@ -163,7 +163,7 @@
       border: 1px solid var(--border-color, #2c2c2c);
       padding: 4px;
     }
-    #calendarOverlay .fc {
+    #calendarModal .fc {
       --fc-page-bg-color: var(--panel-bg, #0f1115);
       --fc-border-color: var(--border-color, #2c2c2c);
       --fc-neutral-bg-color: #1a1d24;
@@ -713,11 +713,11 @@
         </div>
       </div>
     </div>
-  <div id="calendarOverlay" class="calendar-overlay" hidden>
+  <div id="calendarModal" class="calendar-overlay" hidden>
     <div class="calendar-content">
       <button id="calendarClose" aria-label="Close">&times;</button>
       <select id="calendarFarmFilter"></select>
-      <div id="calendar"></div>
+      <div id="calendar" class="calendar-container"></div>
     </div>
   </div>
 

@@ -1463,3 +1463,13 @@ button {
 .kpi-spark circle {
   fill:currentColor;
 }
+
+/* Ensure the calendar has space to render in iOS Safari */
+#calendar, .calendar-container {
+  min-height: 60vh;
+}
+@supports (-webkit-touch-callout: none) {
+  #calendar, .calendar-container {
+    min-height: 60vh;
+  }
+}
