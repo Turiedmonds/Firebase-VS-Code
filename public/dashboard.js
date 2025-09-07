@@ -3682,6 +3682,10 @@ SessionStore.onChange(refresh);
       requestAnimationFrame(() => {
         fc.render();
         fc.updateSize();
+        // iOS Safari sometimes renders the header but not the grid when the
+        // calendar is initialized in a just-shown modal. A second update on the
+        // next task ensures the day grid is drawn.
+        setTimeout(() => fc.updateSize(), 50);
       });
 
       // keep sizing correct while modal is open
