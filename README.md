@@ -66,6 +66,7 @@ user has a missing or unknown role the app alerts them and signs out.
 - Manage staff accounts (create, delete and restore) via Firebase Cloud Functions with email invitations.
 - Change or reset passwords and contractor PINs.
 - Browse and restore previous tally sessions.
+- Dashboard Settings modal includes an option to allow or prevent staff from loading saved sessions.
 
 ## Export Options
 

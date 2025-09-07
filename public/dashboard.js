@@ -2191,10 +2191,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const K_WELCOME_ENABLED = 'dashboard_welcome_enabled';
   const K_WELCOME_DONE    = 'dashboard_welcome_done';
   const K_TOUR_ENABLED    = 'dashboard_tour_enabled';
+  const K_STAFF_CAN_LOAD  = 'dashboard_staff_can_load';
 
   // Ensure defaults
   if (localStorage.getItem(K_WELCOME_ENABLED) == null) localStorage.setItem(K_WELCOME_ENABLED, 'true');
   if (localStorage.getItem(K_TOUR_ENABLED)    == null) localStorage.setItem(K_TOUR_ENABLED, 'true');
+  if (localStorage.getItem(K_STAFF_CAN_LOAD)  == null) localStorage.setItem(K_STAFF_CAN_LOAD, 'true');
 
   // Modal elements
   const overlay   = document.getElementById('dashboard-welcome-overlay');
@@ -2208,6 +2210,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Settings modal elements
   const cbWelS    = document.getElementById('settings-enable-welcome');
   const cbTourS   = document.getElementById('settings-enable-tour');
+  const cbStaffLoadS = document.getElementById('settings-allow-staff-load');
   const btnClearLocal = document.getElementById('btnClearLocalData');
 
   // Help menu elements
@@ -2225,7 +2228,8 @@ document.addEventListener('DOMContentLoaded', () => {
     return {
       welcomeEnabled: localStorage.getItem(K_WELCOME_ENABLED) !== 'false',
       welcomeDone:    localStorage.getItem(K_WELCOME_DONE) === 'true',
-      tourEnabled:    localStorage.getItem(K_TOUR_ENABLED) !== 'false'
+      tourEnabled:    localStorage.getItem(K_TOUR_ENABLED) !== 'false',
+      staffCanLoadSessions: localStorage.getItem(K_STAFF_CAN_LOAD) !== 'false'
     };
   }
   function setPrefs(next){
@@ -2237,6 +2241,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (typeof next.welcomeDone === 'boolean') {
       localStorage.setItem(K_WELCOME_DONE, next.welcomeDone ? 'true' : 'false');
+    }
+    if (typeof next.staffCanLoadSessions === 'boolean') {
+      localStorage.setItem(K_STAFF_CAN_LOAD, next.staffCanLoadSessions ? 'true' : 'false');
     }
   }
 
@@ -2256,6 +2263,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const p = getPrefs();
     if (cbWelS)  cbWelS.checked  = p.welcomeEnabled;
     if (cbTourS) cbTourS.checked = p.tourEnabled;
+    if (cbStaffLoadS) cbStaffLoadS.checked = p.staffCanLoadSessions;
   }
   // Call once at load so UI matches storage
   syncModalFromPrefs();
@@ -2290,7 +2298,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const next = {};
     if (cbWelS)  next.welcomeEnabled = !!cbWelS.checked;
     if (cbTourS) next.tourEnabled    = !!cbTourS.checked;
+    if (cbStaffLoadS) next.staffCanLoadSessions = !!cbStaffLoadS.checked;
     setPrefs(next);
+    if (typeof next.staffCanLoadSessions === 'boolean') {
+      const uid = localStorage.getItem('contractor_id');
+      if (uid) {
+        try {
+          firebase.firestore().collection('contractors').doc(uid)
+            .set({ staffCanLoadSessions: next.staffCanLoadSessions }, { merge: true });
+        } catch (e) {
+          console.warn('[Dashboard] Failed to update staffCanLoadSessions', e);
+        }
+      }
+    }
     // reflect to other UIs
     syncModalFromPrefs();
     syncHelpFromPrefs();
@@ -2306,6 +2326,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   cbWelS?.addEventListener('change', persistFromSettings);
   cbTourS?.addEventListener('change', persistFromSettings);
+  cbStaffLoadS?.addEventListener('change', persistFromSettings);
 
   btnClearLocal?.addEventListener('click', async () => {
     if (!confirm('Clear all local data? You will be signed out and the app will reload.')) return;
