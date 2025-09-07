@@ -1,6 +1,8 @@
 // view-sessions.js
 // Loads and displays sessions for the logged-in contractor.
 
+const K_STAFF_CAN_LOAD = 'dashboard_staff_can_load';
+
 function formatNZDate(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -290,6 +292,12 @@ async function loadNextPage() {
 // Main entry
 
 document.addEventListener('DOMContentLoaded', () => {
+  const canLoad = localStorage.getItem(K_STAFF_CAN_LOAD) !== 'false';
+  const role = sessionStorage.getItem('userRole');
+  if (role === 'staff' && !canLoad) {
+    window.location.replace('tally.html');
+    return;
+  }
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
 
