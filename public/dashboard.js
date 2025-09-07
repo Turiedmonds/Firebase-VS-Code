@@ -2163,8 +2163,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Auto-show welcome on first visit (but don't block auth-driven layout)
   function maybeOpenWelcome() {
     if (!overlay || !modal) return;
-    if (localStorage.getItem('dashboard_welcome_enabled') === 'false') return;
-    if (localStorage.getItem('dashboard_welcome_done') === 'true') return;
+    if (!shouldShowWelcome()) return;
     openWelcome();
   }
 
@@ -2199,6 +2198,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const cbTourM   = document.getElementById('dw-enable-tour');
   const btnSaveM  = document.getElementById('dw-save');
   const btnStartM = document.getElementById('dw-start');
+
+  // Settings modal elements
+  const cbWelS    = document.getElementById('settings-enable-welcome');
+  const cbTourS   = document.getElementById('settings-enable-tour');
 
   // Help menu elements
   const helpMenu  = document.getElementById('dash-help-menu');
@@ -2242,9 +2245,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cbWelH)  cbWelH.checked  = p.welcomeEnabled;
     if (cbTourH) cbTourH.checked = p.tourEnabled;
   }
+  function syncSettingsFromPrefs(){
+    const p = getPrefs();
+    if (cbWelS)  cbWelS.checked  = p.welcomeEnabled;
+    if (cbTourS) cbTourS.checked = p.tourEnabled;
+  }
   // Call once at load so UI matches storage
   syncModalFromPrefs();
   syncHelpFromPrefs();
+  syncSettingsFromPrefs();
 
   // --- Persist from UI (Modal) ---
   function persistFromModal({lockDone=false} = {}){
@@ -2253,8 +2262,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cbTourM) next.tourEnabled    = !!cbTourM.checked;
     if (lockDone && cbDont) next.welcomeDone = !!cbDont.checked;
     setPrefs(next);
-    // reflect to help menu
+    // reflect to other UIs
     syncHelpFromPrefs();
+    syncSettingsFromPrefs();
   }
 
   // --- Persist from UI (Help) ---
@@ -2263,8 +2273,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cbWelH)  next.welcomeEnabled = !!cbWelH.checked;
     if (cbTourH) next.tourEnabled    = !!cbTourH.checked;
     setPrefs(next);
-    // reflect to modal
+    // reflect to other UIs
     syncModalFromPrefs();
+    syncSettingsFromPrefs();
+  }
+
+  // --- Persist from UI (Settings modal) ---
+  function persistFromSettings(){
+    const next = {};
+    if (cbWelS)  next.welcomeEnabled = !!cbWelS.checked;
+    if (cbTourS) next.tourEnabled    = !!cbTourS.checked;
+    setPrefs(next);
+    // reflect to other UIs
+    syncModalFromPrefs();
+    syncHelpFromPrefs();
   }
 
   // AUTOSAVE on checkbox changes (both places), so choices “stick” even if user closes without pressing Save
@@ -2274,6 +2296,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   cbWelH?.addEventListener('change', persistFromHelp);
   cbTourH?.addEventListener('change', persistFromHelp);
+
+  cbWelS?.addEventListener('change', persistFromSettings);
+  cbTourS?.addEventListener('change', persistFromSettings);
 
   // SAVE buttons
   btnSaveM?.addEventListener('click', () => {
@@ -2303,6 +2328,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setPrefs({ tourEnabled: true });
       syncModalFromPrefs();
       syncHelpFromPrefs();
+      syncSettingsFromPrefs();
     }
     startDashboardTour();
   });
