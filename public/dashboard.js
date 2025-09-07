@@ -3183,7 +3183,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
   function renderSummary(sessionHours, crewHours, shedStaffHours){
     tbodySummary.innerHTML = `
       <tr><td>Session Hours (pill metric)</td><td>${hoursToHM(sessionHours)}</td></tr>
-      <tr><td>Total Crew Hours</td><td>${hoursToHM(crewHours)}</td></tr>
+      <tr><td>Total Hours Worked By All Staff (combined)</td><td>${hoursToHM(crewHours)}</td></tr>
       <tr><td>Shed Staff Hours (combined)</td><td>${hoursToHM(shedStaffHours)}</td></tr>
     `;
   }
