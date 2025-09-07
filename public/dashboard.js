@@ -3675,18 +3675,68 @@ if (window.visualViewport) {
     renderCalendarIfNeeded();
   }
 
+  // Mark the calendar button green permanently
+  function markCalendarReady() {
+    const btnReady = document.getElementById('btnCalendar');
+    if (!btnReady) return;
+    btnReady.classList.add('cal-ready');
+  }
+
+  // Destroy any existing calendar and recreate once the modal has dimensions
+  function renderCalendarAfterModalVisible() {
+    const el = calendarEl;
+    if (!el) return;
+
+    const hasSize = () => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0 && el.offsetParent !== null;
+    };
+
+    const createAndRender = async () => {
+      try { if (calendar) { calendar.destroy(); calendar = null; } } catch(e) {}
+      await renderCalendar();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (calendar) {
+            calendar.updateSize();
+            window.dispatchEvent(new Event('resize'));
+            markCalendarReady();
+          }
+        });
+      });
+    };
+
+    if (hasSize()) {
+      createAndRender();
+    } else {
+      let tries = 0, ro = null;
+      const poll = setInterval(() => {
+        tries++;
+        if (hasSize() || tries >= 30) {
+          clearInterval(poll);
+          if (ro) ro.disconnect();
+          createAndRender();
+        }
+      }, 50);
+
+      if (typeof ResizeObserver !== 'undefined') {
+        ro = new ResizeObserver(() => {
+          if (hasSize()) {
+            clearInterval(poll);
+            ro.disconnect();
+            createAndRender();
+          }
+        });
+        ro.observe(el);
+      }
+    }
+  }
+
   // After modal opens, force calendar to resize
   async function showCalendarModal() {
     modal.classList.add('active');
     modal.hidden = false;
-    await renderCalendar();
-
-    // now fix the calendar
-    if (window.dashboardCalendar) {
-      setTimeout(() => {
-        window.dashboardCalendar.updateSize();
-      }, 100);
-    }
+    setTimeout(renderCalendarAfterModalVisible, 0);
   }
 
   btn.addEventListener('click', showCalendarModal);
