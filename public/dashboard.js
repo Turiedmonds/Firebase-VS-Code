@@ -3682,81 +3682,6 @@ if (window.visualViewport) {
     btnReady.classList.add('cal-ready');
   }
 
-  function renderCalendarWhenVisible() {
-    const el = document.getElementById('calendar');
-    if (!el) return;
-
-    // Measure modal body height or fallback to 70% of viewport
-    const modalBody = (el.closest('.modal, .calendar-modal')?.querySelector('.modal-body')) || el.parentElement;
-    const viewportH = window.innerHeight || 700;
-    const bodyH = modalBody ? modalBody.getBoundingClientRect().height : 0;
-    const targetH = Math.max(360, Math.floor(bodyH > 0 ? bodyH : viewportH * 0.7));
-
-    // Apply pixel height so FullCalendar never sees 0
-    el.style.height = targetH + 'px';
-    el.style.minHeight = targetH + 'px';
-    el.style.width = '100%';
-
-    const hasSize = () => {
-      const r = el.getBoundingClientRect();
-      return r.width > 0 && r.height > 0 && el.offsetParent !== null;
-    };
-
-    const doRender = () => {
-      try { if (window.cal) window.cal.destroy(); } catch (e) {}
-
-      window.cal = new FullCalendar.Calendar(el, Object.assign({
-        initialView: 'dayGridMonth',
-        height: '100%',
-        expandRows: true,
-        handleWindowResize: true
-      }, window.calendarOptions || {}));
-
-      // Render after layout commit
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          window.cal.render();
-          window.cal.updateSize();
-          // Nudge Safari/Chrome to recalc width
-          window.dispatchEvent(new Event('resize'));
-          // Extra safety: update again shortly after
-          setTimeout(() => window.cal.updateSize(), 50);
-          setTimeout(() => {
-            // hard nudge: recompute a real height and apply again, then resize
-            const viewportH = window.innerHeight || 700;
-            const h = Math.max(360, Math.floor(viewportH * 0.7));
-            el.style.height = h + 'px';
-            el.style.minHeight = h + 'px';
-            window.cal.updateSize();
-          }, 200);
-        });
-      });
-    };
-
-    if (hasSize()) return doRender();
-
-    // Fallback: poll + observe until visible
-    let ro = null;
-    const poll = setInterval(() => {
-      if (hasSize()) {
-        clearInterval(poll);
-        if (ro) ro.disconnect();
-        doRender();
-      }
-    }, 50);
-
-    if (typeof ResizeObserver !== 'undefined') {
-      ro = new ResizeObserver(() => {
-        if (hasSize()) {
-          clearInterval(poll);
-          ro.disconnect();
-          doRender();
-        }
-      });
-      ro.observe(el);
-    }
-  }
-
   // Ensure this runs after modal is visible
   async function showCalendarModal() {
     modal.classList.add('active');
@@ -3764,7 +3689,7 @@ if (window.visualViewport) {
 
     // One frame delay so layout is ready
     requestAnimationFrame(() => {
-      setTimeout(renderCalendarWhenVisible, 0);
+      setTimeout(renderCalendar, 0);
     });
   }
 
