@@ -930,7 +930,8 @@ function populateDateOptions(station) {
 }
 
 function showLoadSessionModal() {
-    if (window.staffCanLoadSessions === false) return;
+    const role = sessionStorage.getItem('userRole') || window.userRole;
+    if (role === 'staff' && window.staffCanLoadSessions === false) return;
     const modal = document.getElementById('loadSessionModal');
     const step1 = document.getElementById('loadSessionStep1');
     const step2 = document.getElementById('loadSessionStep2');
@@ -947,7 +948,8 @@ function hideLoadSessionModal() {
 }
 
 function showLoadOptionsModal() {
-    if (window.staffCanLoadSessions === false) return;
+    const role = sessionStorage.getItem('userRole') || window.userRole;
+    if (role === 'staff' && window.staffCanLoadSessions === false) return;
     const modal = document.getElementById('loadOptionsModal');
     if (modal) modal.style.display = 'flex';
 }
@@ -958,7 +960,8 @@ function hideLoadOptionsModal() {
 }
 
 function showCloudSessionModal() {
-    if (window.staffCanLoadSessions === false) return;
+    const role = sessionStorage.getItem('userRole') || window.userRole;
+    if (role === 'staff' && window.staffCanLoadSessions === false) return;
     const modal = document.getElementById('cloudSessionModal');
     if (modal) modal.style.display = 'flex';
 }
@@ -3202,7 +3205,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const storedRole = sessionStorage.getItem('userRole');
-    if (storedRole) updateUIForRole(storedRole);
+    if (storedRole) {
+        window.userRole = storedRole;
+        updateUIForRole(storedRole);
+    }
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.addEventListener('click', () => showView(btn.dataset.view));
     });
@@ -3861,6 +3867,7 @@ async function setup() {
   if (overlay) overlay.style.display = 'flex';
   try {
     const role = await verifyContractorUser();
+    window.userRole = role;
     if (role) sessionStorage.setItem('userRole', role);
     if (role === 'staff') {
       const contractorId = localStorage.getItem('contractor_id');
