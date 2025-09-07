@@ -30,7 +30,7 @@ function exportFarmSummaryCSV() {
         ['stationStaffTable', 'Shed Staff'],
         ['stationLeaderTable', 'Team Leaders'],
         ['stationCombTable', 'Comb Types'],
-        ['stationTotalTable', 'Sheep Type Total']
+        ['stationTotalTable', 'Sheep Type Totals']
     ];
 
     const rows = [];
