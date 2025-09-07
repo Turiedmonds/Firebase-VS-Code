@@ -3508,19 +3508,18 @@ function safeInitialRender() {
   forceCalendarResize();
 }
 
-window.addEventListener('orientationchange', () => {
+function scheduleCalendarResize(delay = 150) {
   setTimeout(() => {
     renderCalendarIfNeeded();
     forceCalendarResize();
-  }, 200);
-});
+  }, delay);
+}
 
-window.addEventListener('resize', () => {
-  setTimeout(() => {
-    renderCalendarIfNeeded();
-    forceCalendarResize();
-  }, 150);
-});
+window.addEventListener('orientationchange', () => scheduleCalendarResize(200));
+window.addEventListener('resize', () => scheduleCalendarResize(150));
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => scheduleCalendarResize(150));
+}
 
 // === Calendar View ===
 
@@ -3679,10 +3678,9 @@ window.addEventListener('resize', () => {
     modal.classList.add('active');
     modal.hidden = false;
     await renderCalendar();
-    requestAnimationFrame(() => {
-      renderCalendarIfNeeded();
-      forceCalendarResize();
-    });
+    scheduleCalendarResize(0);
+    requestAnimationFrame(() => scheduleCalendarResize(0));
+    setTimeout(() => scheduleCalendarResize(0), 300);
   });
   closeBtn.addEventListener('click', () => {
     modal.classList.remove('active');
