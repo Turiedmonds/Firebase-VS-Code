@@ -816,6 +816,9 @@ function applyLockToElement(el) {
   const tag = (el.tagName || '').toLowerCase();
   if (tag === 'input' || tag === 'textarea') {
     el.readOnly = true;
+    if (tag === 'input' && (el.type || '').toLowerCase() === 'date') {
+      el.disabled = true;
+    }
     el.setAttribute('data-locked', '1');
   }
   if (tag === 'select') {
@@ -836,6 +839,9 @@ function removeLockFromElement(el) {
   const tag = (el.tagName || '').toLowerCase();
   if (tag === 'input' || tag === 'textarea') {
     el.readOnly = false;
+    if (tag === 'input' && (el.type || '').toLowerCase() === 'date') {
+      el.disabled = false;
+    }
   }
   if (tag === 'select') {
     el.disabled = false;
