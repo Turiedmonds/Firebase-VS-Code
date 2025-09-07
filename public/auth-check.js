@@ -120,7 +120,24 @@ async function refreshRoleOnline(user) {
   return null;
 }
 
-firebase.auth().onAuthStateChanged(async function (user) {
+if (window.firebaseInitError) {
+  const overlay = document.getElementById('loading-overlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
+  const msg = document.createElement('div');
+  msg.textContent = window.firebaseInitError;
+  const retry = document.createElement('button');
+  retry.textContent = 'Retry';
+  retry.addEventListener('click', () => location.reload());
+  const container = document.createElement('div');
+  container.style.marginTop = '20px';
+  container.style.textAlign = 'center';
+  container.appendChild(msg);
+  container.appendChild(retry);
+  document.body.appendChild(container);
+} else {
+  firebase.auth().onAuthStateChanged(async function (user) {
   if (!user) {
     window.location.href = 'login.html';
     return;
@@ -145,7 +162,8 @@ firebase.auth().onAuthStateChanged(async function (user) {
     }
 
   refreshRoleOnline(user);
-});
+  });
+}
 
 function handleOfflineRedirect() {
   const overlay = document.getElementById('loading-overlay');
