@@ -3651,70 +3651,21 @@ SessionStore.onChange(refresh);
 
   let fc = window._fcCalendar || null;
 
-  function getCalHeightPx() {
-    const vh = (window.visualViewport?.height || window.innerHeight);
-    return Math.max(480, Math.floor(vh * 0.88)); // ~88% viewport, min 480px
-  }
-
-  function applyCalHeight() {
-    const px = getCalHeightPx();
-    calendarEl.style.height = px + 'px';   // element height
-    if (fc) fc.setOption('height', px);    // FullCalendar height
-    return px;
-  }
-
-  function renderCalendarWhenReady(calendarEl, calendarInstance) {
-    let tries = 0;
-    (function tick() {
-      const h = calendarEl.getBoundingClientRect().height;
-      if (h > 120) {
-        calendarInstance.render();
-        calendarInstance.updateSize();
-        attachObserver();
-      } else if (tries++ < 30) {
-        requestAnimationFrame(() => requestAnimationFrame(tick));
-      } else {
-        calendarInstance.render();
-        calendarInstance.updateSize();
-        attachObserver();
-      }
-    })();
-
-    function attachObserver() {
-      if ('ResizeObserver' in window) {
-        const ro = new ResizeObserver(() => {
-          applyCalHeight();
-          calendarInstance.updateSize();
-        });
-        ro.observe(calendarEl);
-      } else {
-        window.addEventListener('resize', () => {
-          applyCalHeight();
-          calendarInstance.updateSize();
-        });
-      }
-    }
-  }
-
   function openCalendarModal() {
     document.body.classList.add('modal-open');
     modal.hidden = false;                  // [hidden] → visible
 
-    const px = applyCalHeight();         // set height after visible
-
     if (!fc) {
       fc = new FullCalendar.Calendar(calendarEl, {
         ...calendarOptions,
-        height: px,
-        expandRows: true,
-        handleWindowResize: false       // we will manage resizing
+        height: 'auto',
+        expandRows: true
       });
       window._fcCalendar = fc;
+      fc.render();
     } else {
-      fc.setOption('height', px);
+      fc.updateSize();
     }
-
-    renderCalendarWhenReady(calendarEl, fc);
   }
 
   function closeCalendarModal() {
