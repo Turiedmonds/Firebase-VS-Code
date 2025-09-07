@@ -4108,8 +4108,18 @@ SessionStore.onChange(refresh);
       viewDidMount(){ decorateListHeaders(); },
       eventClick(info){
         const e = info.event.extendedProps || {};
-        const timeLine = e.hasTimes ? `${e.startStr || ''}–${e.finishStr || ''}\n` : '';
-        alert(`${timeLine}${e.farm || 'Farm'}\n${(e.sheep||0).toLocaleString()} sheep\nDate: ${e.ymd || info.event.startStr}`);
+        const fields = [
+          ['Date', e.ymd || '—'],
+          ['Farm', e.farm || '—'],
+          ['Sheep', (e.sheep ?? 0).toLocaleString()],
+          ['Start', e.startStr || '—'],
+          ['Finish', e.finishStr || '—'],
+          ['Type', e.hasTimes ? 'Timed' : 'Workday']
+        ];
+        document.getElementById('sessionDetailsBody').innerHTML =
+          fields.map(([k,v]) => `<div class="label">${k}</div><div class="value">${v}</div>`).join('');
+        document.getElementById('sessionDetailsModal').hidden = false;
+        document.body.style.overflow = 'hidden';
       }
     });
     try {
@@ -4174,3 +4184,7 @@ SessionStore.onChange(refresh);
   console.log('[Calendar] init block ready');
 })();
 //// END:CALENDAR:JS ////
+
+document.getElementById('sessionDetailsClose')?.addEventListener('click',()=>{document.getElementById('sessionDetailsModal').hidden=true;document.body.style.overflow='';});
+document.getElementById('sessionDetailsCloseFooter')?.addEventListener('click',()=>{document.getElementById('sessionDetailsModal').hidden=true;document.body.style.overflow='';});
+document.getElementById('sessionDetailsModal').addEventListener('click',(e)=>{if(e.target.id==='sessionDetailsModal'){e.currentTarget.hidden=true;document.body.style.overflow='';}});
