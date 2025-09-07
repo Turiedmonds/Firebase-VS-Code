@@ -1490,7 +1490,9 @@ body.modal-open { overflow: hidden; }
   display: flex;
   flex-direction: column;
   width: min(920px, 96vw);
-  height: 100svh; /* safe viewport height */
+  /* Fallback for browsers without svh support */
+  height: 100vh;
+  height: 100svh; /* safe viewport height when supported */
   margin: 0 auto;
   padding: 12px;
   border-radius: 12px;
