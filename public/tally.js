@@ -864,6 +864,7 @@ function lockSession() {
 
 function unlockSession() {
   window.sessionLocked = false;
+  document.querySelectorAll('[data-locked="1"]').forEach(el => el.removeAttribute('data-locked'));
   const view = document.querySelector('#tallySheetView');
   if (view) removeLockFromContainer(view);
 }
@@ -3007,6 +3008,7 @@ function resetForNewDay() {
     localStorage.removeItem('firestoreSessionId');
     localStorage.removeItem('viewOnlyMode');
     localStorage.setItem('viewOnlyMode', 'false');
+    window.isLoadedSession = false; // Ensure fresh sessions are never mistaken as loaded
   } catch (e) {
     // Ignore any errors
   }
