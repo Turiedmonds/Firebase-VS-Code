@@ -2550,7 +2550,7 @@ function clearStationSummaryView() {
     document.querySelector('#stationStaffTable tbody')?.replaceChildren();
     document.querySelector('#stationLeaderTable tbody')?.replaceChildren();
     document.querySelector('#stationCombTable tbody')?.replaceChildren();
-    document.querySelector('#stationTotalTable thead')?.replaceChildren();
+    document.querySelector('#stationTotalTable thead tr')?.replaceChildren();
     document.querySelector('#stationTotalTable tbody')?.replaceChildren();
     const msg = document.getElementById('stationNoData');
     if (msg) msg.style.display = 'block';
