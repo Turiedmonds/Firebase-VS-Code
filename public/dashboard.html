@@ -37,6 +37,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="firebase-init.js"></script>
   <script type="module" src="auth.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
   <!-- PWA manifest -->
   <link rel="manifest" href="/manifest.json">
 
@@ -120,6 +122,36 @@
       visibility: hidden !important;
     }
     </style>
+  <style>
+    #calendarOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      z-index: 1000;
+    }
+    #calendarOverlay.active { display: block; }
+    #calendarOverlay .calendar-content {
+      background: #fff;
+      color: #000;
+      margin: 5% auto;
+      padding: 10px;
+      width: 90%;
+      max-width: 1000px;
+      height: 90%;
+      overflow: auto;
+      border-radius: 4px;
+    }
+    #calendarClose {
+      float: right;
+    }
+    #calendarFarmFilter {
+      margin-bottom: 8px;
+    }
+  </style>
   </head>
 <body>
   
@@ -622,6 +654,7 @@
           <button id="btnManageStaff" class="tab-button">Manage Staff</button>
           <button id="btnStartNewDay" class="tab-button">Start New Day</button>
           <button id="btnViewSavedSessions" class="tab-button">View Saved Sessions</button>
+          <button id="btnCalendar" class="tab-button">Calendar</button>
           <button id="btnReturnToActive" class="tab-button" style="display: none;">Return to Active Session</button>
           <button id="farm-summary-btn" class="dashboard-button">Farm Summary</button>
           <button id="btnChangePin" class="tab-button">Change Contractor PIN</button>
@@ -651,6 +684,13 @@
         </div>
       </div>
     </div>
+  <div id="calendarOverlay" class="calendar-overlay" hidden>
+    <div class="calendar-content">
+      <button id="calendarClose" aria-label="Close">&times;</button>
+      <select id="calendarFarmFilter"></select>
+      <div id="calendar"></div>
+    </div>
+  </div>
 
   <script type="module" src="dashboard.js"></script>
   <div id="loading-overlay">

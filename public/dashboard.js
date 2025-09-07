@@ -3472,6 +3472,104 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
   if (SessionStore.getAll().length) refresh();
 })();
 
+// === Calendar View ===
+(function setupDashboardCalendar(){
+  const btn = document.getElementById('btnCalendar');
+  const overlay = document.getElementById('calendarOverlay');
+  const closeBtn = document.getElementById('calendarClose');
+  const farmSel = document.getElementById('calendarFarmFilter');
+  const calendarEl = document.getElementById('calendar');
+  if (!btn || !overlay || !closeBtn || !farmSel || !calendarEl || !window.FullCalendar) return;
+
+  function sessionDateToJS(d) {
+    if (!d) return null;
+    if (typeof d === 'object' && d.toDate) return d.toDate();
+    if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+      const [y,m,day] = d.split('-').map(Number);
+      const dt = new Date(y, m-1, day);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+    const dt = new Date(d);
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+
+  async function fetchSessions(){
+    const cached = SessionStore.getAll ? SessionStore.getAll() : [];
+    if (cached.length) {
+      return cached.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+    const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+    if (!contractorId || !window.firebase?.firestore) return [];
+    try {
+      const db = firebase.firestore();
+      const ref = db.collection('contractors').doc(contractorId).collection('sessions');
+      const snap = await ref.get();
+      return snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    } catch(e){
+      console.warn('Calendar session fetch failed', e);
+      return [];
+    }
+  }
+
+  function buildEvents(sessions){
+    const selFarm = farmSel.value || '';
+    const farms = new Set();
+    const events = [];
+    sessions.forEach(s => {
+      const farm = pickFarmName(s) || 'Unknown Farm';
+      farms.add(farm);
+      if (selFarm && farm !== selFarm) return;
+      const dt = sessionDateToJS(s.date || s.sessionDate || s.createdAt || s.timestamp || s.savedAt);
+      if (!dt) return;
+      const totalSheep = Array.isArray(s.shearerCounts)
+        ? s.shearerCounts.reduce((a,b)=>a + Number(b.total||b.count||0),0)
+        : Number(s.totalSheep || s.total || 0);
+      const title = totalSheep ? `${farm} (${totalSheep})` : farm;
+      events.push({ id:s.id, title, start:dt });
+    });
+    farmSel.innerHTML = '<option value="">All Farms</option>' +
+      Array.from(farms).sort().map(f=>`<option value="${f}">${f}</option>`).join('');
+    farmSel.value = selFarm;
+    return events;
+  }
+
+  let calendar;
+
+  async function renderCalendar(){
+    const sessions = await fetchSessions();
+    const events = buildEvents(sessions);
+    const defaultView = localStorage.getItem('dashboard_calendar_view') || 'dayGridMonth';
+    if (!calendar) {
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: defaultView,
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+        events,
+        eventClick: info => {
+          info.jsEvent.preventDefault();
+          const id = info.event.id;
+          if (id) window.location.href = `view-sessions.html?session=${encodeURIComponent(id)}`;
+        },
+        datesSet: info => {
+          localStorage.setItem('dashboard_calendar_view', info.view.type);
+        }
+      });
+      calendar.render();
+    } else {
+      calendar.removeAllEvents();
+      calendar.addEventSource(events);
+      calendar.changeView(defaultView);
+    }
+  }
+
+  btn.addEventListener('click', () => {
+    overlay.classList.add('active');
+    renderCalendar();
+  });
+  closeBtn.addEventListener('click', () => overlay.classList.remove('active'));
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('active'); });
+  farmSel.addEventListener('change', renderCalendar);
+})();
+
 // === KPI: Days Worked (unique session-days) ===
 (function setupKpiDaysWorked(){
   const pill = document.getElementById('kpiDaysWorked');
