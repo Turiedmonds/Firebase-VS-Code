@@ -13,7 +13,7 @@
     if (firebase.firestore) {
       const db = firebase.firestore();
       try {
-        await db.enableIndexedDbPersistence();
+        await db.enablePersistence({ synchronizeTabs: true });
         console.info('IndexedDB persistence enabled');
       } catch (err) {
         console.warn('Failed to enable persistence', err);
