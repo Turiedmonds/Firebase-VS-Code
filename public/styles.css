@@ -1475,3 +1475,14 @@ button {
     height: 60vh;
   }
 }
+
+/* Ensure calendar fills available space within modal */
+#calendarModal .calendar-content {
+  display: flex;
+  flex-direction: column;
+}
+
+#calendarModal .calendar-content #calendar,
+#calendarModal .calendar-content .calendar-container {
+  flex: 1 1 auto;
+}
