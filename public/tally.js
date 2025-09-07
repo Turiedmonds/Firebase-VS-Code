@@ -2695,15 +2695,23 @@ function buildExportRows(data) {
 }
 
 function updateUIForRole(role) {
-    const admin = role === 'admin';
-    const ids = ['saveCloudBtn', 'saveBothBtn', 'loadCloudBtn'];
-    ids.forEach(id => {
+    const adminIds = ['saveCloudBtn', 'saveBothBtn'];
+    adminIds.forEach(id => {
         const el = document.getElementById(id);
-        if (el) {
-            if (admin) el.removeAttribute('disabled');
-            else el.setAttribute('disabled', 'disabled');
-        }
+        if (!el) return;
+        if (role === 'admin') el.removeAttribute('disabled');
+        else el.setAttribute('disabled', 'disabled');
     });
+
+    const loadCloudBtn = document.getElementById('loadCloudBtn');
+    if (loadCloudBtn) {
+        const canLoad =
+            role === 'admin' ||
+            role === 'contractor' ||
+            (role === 'staff' && window.staffCanLoadSessions);
+        if (canLoad) loadCloudBtn.removeAttribute('disabled');
+        else loadCloudBtn.setAttribute('disabled', 'disabled');
+    }
     const loadBtn = document.getElementById('loadSessionBtn');
     if (loadBtn) {
         if (role === 'staff' && window.staffCanLoadSessions === false) {
