@@ -3668,11 +3668,14 @@ window.addEventListener('resize', () => {
     renderCalendarIfNeeded();
   }
 
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     modal.classList.add('active');
     modal.hidden = false;
-    renderCalendar();
-    requestAnimationFrame(renderCalendarIfNeeded);
+    await renderCalendar();
+    requestAnimationFrame(() => {
+      renderCalendarIfNeeded();
+      forceCalendarResize();
+    });
   });
   closeBtn.addEventListener('click', () => {
     modal.classList.remove('active');
@@ -3688,9 +3691,13 @@ window.addEventListener('resize', () => {
     modal.addEventListener('transitionend', e => {
       if (e.target === modal && modal.classList.contains('active')) {
         renderCalendarIfNeeded();
+        forceCalendarResize();
       }
     });
-    modal.addEventListener('modal:shown', renderCalendarIfNeeded);
+    modal.addEventListener('modal:shown', () => {
+      renderCalendarIfNeeded();
+      forceCalendarResize();
+    });
   }
   farmSel.addEventListener('change', renderCalendar);
 
