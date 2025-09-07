@@ -19,9 +19,32 @@ export function handleLogout() {
     if (overlay) {
       overlay.style.display = 'none';
     }
-    // Clear any cached session data after sign out
-    localStorage.clear();
-    sessionStorage.clear();
+    // Clear session-related data but preserve user preferences
+    const localKeys = [
+      'user_role',
+      'contractor_id',
+      'role_cached_at',
+      'active_session',
+      'firestoreSessionId',
+      'viewOnlyMode',
+      'session_data',
+      'sheariq_saved_session',
+      'pending_cloud_sessions',
+      'contractor_pin',
+      'force_offline'
+    ];
+    localKeys.forEach((k) => localStorage.removeItem(k));
+
+    const sessionKeys = [
+      'userRole',
+      'launch_override',
+      'boot_router_redirect',
+      'debug_redirect',
+      'launch_checked',
+      'launch_redirected',
+      'calDiagTip'
+    ];
+    sessionKeys.forEach((k) => sessionStorage.removeItem(k));
     window.location.replace('login.html');
   });
 }
