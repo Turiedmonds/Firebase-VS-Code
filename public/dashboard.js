@@ -3675,22 +3675,21 @@ if (window.visualViewport) {
     renderCalendarIfNeeded();
   }
 
-  btn.addEventListener('click', async () => {
+  // After modal opens, force calendar to resize
+  async function showCalendarModal() {
     modal.classList.add('active');
     modal.hidden = false;
     await renderCalendar();
-    // Ensure FullCalendar recalculates dimensions after the modal becomes visible
-    setTimeout(() => {
-      try {
-        const cal = window.dashboardCalendar;
-        cal?.updateSize();
-        cal?.render();
-      } catch (e) {}
-    }, 100);
-    scheduleCalendarResize(0);
-    requestAnimationFrame(() => scheduleCalendarResize(0));
-    setTimeout(() => scheduleCalendarResize(0), 300);
-  });
+
+    // now fix the calendar
+    if (window.dashboardCalendar) {
+      setTimeout(() => {
+        window.dashboardCalendar.updateSize();
+      }, 100);
+    }
+  }
+
+  btn.addEventListener('click', showCalendarModal);
   closeBtn.addEventListener('click', () => {
     modal.classList.remove('active');
     modal.hidden = true;

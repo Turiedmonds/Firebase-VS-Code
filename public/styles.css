@@ -1464,23 +1464,10 @@ button {
   fill:currentColor;
 }
 
-/* Ensure the calendar has space to render in iOS Safari */
-#calendar, .calendar-container {
-  /* Fallback ensures a non-zero height when the modal is initially hidden */
-  min-height: 300px;
-  min-height: 60vh;
-  height: 100%;
-  width: 100vw;
+/* Ensure the calendar always has height so FullCalendar renders */
+#calendar {
   width: 100%;
-}
-@supports (-webkit-touch-callout: none) {
-  #calendar, .calendar-container {
-    min-height: 300px;
-    min-height: 60vh;
-    height: 60vh;
-    width: 100vw;
-    width: 100%;
-  }
+  min-height: 360px;   /* always give it height */
 }
 
 /* Ensure calendar fills available space within modal */
