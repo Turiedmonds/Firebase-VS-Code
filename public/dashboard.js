@@ -3484,6 +3484,7 @@ function forceCalendarResize() {
   requestAnimationFrame(() => {
     try {
       cal.updateSize();
+      cal.render();
     } catch (e) {}
   });
 }
@@ -3681,7 +3682,9 @@ if (window.visualViewport) {
     // Ensure FullCalendar recalculates dimensions after the modal becomes visible
     setTimeout(() => {
       try {
-        window.dashboardCalendar?.updateSize();
+        const cal = window.dashboardCalendar;
+        cal?.updateSize();
+        cal?.render();
       } catch (e) {}
     }, 100);
     scheduleCalendarResize(0);

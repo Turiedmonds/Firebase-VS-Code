@@ -1470,12 +1470,16 @@ button {
   min-height: 300px;
   min-height: 60vh;
   height: 100%;
+  width: 100vw;
+  width: 100%;
 }
 @supports (-webkit-touch-callout: none) {
   #calendar, .calendar-container {
     min-height: 300px;
     min-height: 60vh;
     height: 60vh;
+    width: 100vw;
+    width: 100%;
   }
 }
 
@@ -1488,4 +1492,6 @@ button {
 #calendarModal .calendar-content #calendar,
 #calendarModal .calendar-content .calendar-container {
   flex: 1 1 auto;
+  width: 100vw;
+  width: 100%;
 }
