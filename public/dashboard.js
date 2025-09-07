@@ -3505,6 +3505,7 @@ function safeInitialRender() {
     return;
   }
   renderCalendarIfNeeded();
+  forceCalendarResize();
 }
 
 window.addEventListener('orientationchange', () => {
