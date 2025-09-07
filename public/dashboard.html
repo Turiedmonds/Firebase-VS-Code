@@ -135,21 +135,48 @@
     }
     #calendarOverlay.active { display: block; }
     #calendarOverlay .calendar-content {
-      background: #fff;
-      color: #000;
+      background: var(--panel-bg, #0f1115);
+      color: var(--text-color, #fff);
       margin: 5% auto;
       padding: 10px;
       width: 90%;
       max-width: 1000px;
       height: 90%;
       overflow: auto;
-      border-radius: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color, #2c2c2c);
     }
     #calendarClose {
       float: right;
+      background: transparent;
+      border: none;
+      color: inherit;
+      font-size: 24px;
+      cursor: pointer;
     }
     #calendarFarmFilter {
       margin-bottom: 8px;
+      background: var(--panel-bg, #0f1115);
+      color: var(--text-color, #fff);
+      border: 1px solid var(--border-color, #2c2c2c);
+      padding: 4px;
+    }
+    #calendarOverlay .fc {
+      --fc-page-bg-color: var(--panel-bg, #0f1115);
+      --fc-border-color: var(--border-color, #2c2c2c);
+      --fc-neutral-bg-color: #1a1d24;
+      --fc-neutral-text-color: #b9c2d0;
+      --fc-text-color: var(--text-color, #fff);
+      --fc-button-bg-color: #444;
+      --fc-button-border-color: #444;
+      --fc-button-text-color: #fff;
+      --fc-button-hover-bg-color: #555;
+      --fc-button-hover-border-color: #555;
+      --fc-button-active-bg-color: #666;
+      --fc-button-active-border-color: #666;
+      --fc-today-bg-color: #1f2937;
+      --fc-event-bg-color: #3b82f6;
+      --fc-event-border-color: #3b82f6;
     }
   </style>
   </head>
