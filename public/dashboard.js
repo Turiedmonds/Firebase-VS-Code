@@ -2197,9 +2197,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const K_WELCOME_ENABLED = 'dashboard_welcome_enabled';
   const K_WELCOME_DONE    = 'dashboard_welcome_done';
   const K_TOUR_ENABLED    = 'dashboard_tour_enabled';
-  const K_STAFF_CAN_LOAD  = 'dashboard_staff_can_load';
+  const K_STAFF_CAN_LOAD  = 'staff_can_load_sessions';
+  const LEGACY_STAFF_KEY  = 'dashboard_staff_can_load';
 
   // Ensure defaults
+  const legacyVal = localStorage.getItem(LEGACY_STAFF_KEY);
+  if (localStorage.getItem(K_STAFF_CAN_LOAD) == null && legacyVal != null) {
+    localStorage.setItem(K_STAFF_CAN_LOAD, legacyVal);
+  }
   if (localStorage.getItem(K_WELCOME_ENABLED) == null) localStorage.setItem(K_WELCOME_ENABLED, 'true');
   if (localStorage.getItem(K_TOUR_ENABLED)    == null) localStorage.setItem(K_TOUR_ENABLED, 'true');
   if (localStorage.getItem(K_STAFF_CAN_LOAD)  == null) localStorage.setItem(K_STAFF_CAN_LOAD, 'true');
@@ -2249,7 +2254,9 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem(K_WELCOME_DONE, next.welcomeDone ? 'true' : 'false');
     }
     if (typeof next.staffCanLoadSessions === 'boolean') {
-      localStorage.setItem(K_STAFF_CAN_LOAD, next.staffCanLoadSessions ? 'true' : 'false');
+      const val = next.staffCanLoadSessions ? 'true' : 'false';
+      localStorage.setItem(K_STAFF_CAN_LOAD, val);
+      localStorage.setItem(LEGACY_STAFF_KEY, val);
     }
   }
 
