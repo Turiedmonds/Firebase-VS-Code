@@ -1864,6 +1864,28 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
 
+      const btnSettings = document.getElementById('btnSettings');
+      const settingsModal = document.getElementById('settings-modal');
+      function closeSettingsModal(){
+        if (!settingsModal) return;
+        settingsModal.setAttribute('aria-hidden','true');
+        btnSettings?.focus();
+      }
+      function openSettingsModal(){
+        if (!settingsModal || document.body.classList.contains('offline-mode')) return;
+        settingsModal.setAttribute('aria-hidden','false');
+        const first = settingsModal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        first && first.focus();
+      }
+      btnSettings?.addEventListener('click', openSettingsModal);
+      settingsModal?.addEventListener('click', e => {
+        if (e.target.matches('[data-close-modal], .siq-modal__backdrop')) closeSettingsModal();
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && settingsModal?.getAttribute('aria-hidden') === 'false') closeSettingsModal();
+      });
+      window.addEventListener('offline', closeSettingsModal);
+
         if (!isReallyOffline()) {
           SessionStore.start(user.uid, { monthsLive: 12 });
           if (!localStorage.getItem('savedAtBackfilled') && typeof backfillSavedAtForSessions === 'function') {
