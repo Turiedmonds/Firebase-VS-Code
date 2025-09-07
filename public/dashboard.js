@@ -3505,50 +3505,6 @@ SessionStore.onChange(refresh);
   if (SessionStore.getAll().length) refresh();
 })();
 
-function forceCalendarResize() {
-  const cal = window.dashboardCalendar;
-  if (!cal) return;
-  requestAnimationFrame(() => {
-    try {
-      cal.updateSize();
-      cal.render();
-    } catch (e) {}
-  });
-}
-
-function renderCalendarIfNeeded() {
-  const cal = window.dashboardCalendar;
-  if (!cal) return;
-  try {
-    cal.render();
-    cal.updateSize();
-  } catch (e) {}
-}
-
-function safeInitialRender() {
-  const el = document.getElementById('calendar');
-  if (!el) return;
-  if (el.clientWidth === 0 || el.clientHeight === 0) {
-    setTimeout(safeInitialRender, 200);
-    return;
-  }
-  renderCalendarIfNeeded();
-  forceCalendarResize();
-}
-
-function scheduleCalendarResize(delay = 150) {
-  setTimeout(() => {
-    renderCalendarIfNeeded();
-    forceCalendarResize();
-  }, delay);
-}
-
-window.addEventListener('orientationchange', () => scheduleCalendarResize(200));
-window.addEventListener('resize', () => scheduleCalendarResize(150));
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', () => scheduleCalendarResize(150));
-}
-
 // === Calendar View ===
 
 (function setupDashboardCalendar(){
@@ -3657,6 +3613,7 @@ if (window.visualViewport) {
   const calendarOptions = {
     initialView: localStorage.getItem('dashboard_calendar_view') || 'dayGridMonth',
     headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+    height: '100%',
     events: async (info, successCallback, failureCallback) => {
       try {
         const sessions = await fetchSessions();
