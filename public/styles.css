@@ -1470,7 +1470,7 @@ button {
   fill:currentColor;
 }
 
-/* Calendar modal sizing (uses existing KPI modal visuals) */
+/* Calendar modal sizing */
 #calendarModal .kpi-modal-card {
   max-width: 1000px;
   width: min(96vw, 1000px);
