@@ -41,6 +41,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function cacheStaffCanLoad(contractorId) {
+    if (!db || !contractorId) return;
+    const CANONICAL_KEY = 'staff_can_load_sessions';
+    const LEGACY_KEY = 'dashboard_staff_can_load';
+    try {
+      const snap = await db.collection('contractors').doc(contractorId).get();
+      const canLoad = snap.data()?.staffCanLoadSessions;
+      if (typeof canLoad === 'boolean') {
+        const val = canLoad ? 'true' : 'false';
+        localStorage.setItem(CANONICAL_KEY, val);
+        localStorage.setItem(LEGACY_KEY, val);
+        return;
+      }
+    } catch (err) {
+      console.warn('staffCanLoadSessions fetch failed', err);
+    }
+    const existing =
+      localStorage.getItem(CANONICAL_KEY) ?? localStorage.getItem(LEGACY_KEY);
+    if (existing != null) {
+      localStorage.setItem(CANONICAL_KEY, existing);
+      localStorage.setItem(LEGACY_KEY, existing);
+    }
+  }
+
   const emailInput = document.getElementById('email');
   if (emailInput) {
     const savedEmail = localStorage.getItem('savedEmail');
@@ -110,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const contractorDoc = await db.collection('contractors').doc(uid).get();
       if (contractorDoc.exists) {
         await finalizeLogin('contractor', uid, uid);
+        await cacheStaffCanLoad(uid);
         // Use replace to ensure a hard reload after login
         window.location.href = 'dashboard.html';
         return;
@@ -135,6 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (foundContractorId) {
         await finalizeLogin('staff', foundContractorId, uid);
+        await cacheStaffCanLoad(foundContractorId);
         console.log('[login] 💾 contractor_id stored in localStorage:', foundContractorId);
         window.location.href = 'tally.html';
       } else {
