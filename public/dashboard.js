@@ -2578,7 +2578,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   // CSV export (current tables)
   exportBtn?.addEventListener('click', () => {
-    const rows = [['Section','Sheep Type','Total','Percent','Farms','Top Farm (day)']];
+    const rows = [['Section','Sheep Type Breakdown','Total','% of total','Farms','Top Farm (day)']];
     document.querySelectorAll('#kpiFullSheepTable tbody tr').forEach(tr=>{
       const cells=[...tr.children].map(td=>td.textContent.trim());
       rows.push(['Full Sheep', ...cells]);
