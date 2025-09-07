@@ -3613,7 +3613,6 @@ SessionStore.onChange(refresh);
   const calendarOptions = {
     initialView: localStorage.getItem('dashboard_calendar_view') || 'dayGridMonth',
     headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
-    height: '100%',
     events: async (info, successCallback, failureCallback) => {
       try {
         const sessions = await fetchSessions();
@@ -3661,10 +3660,9 @@ SessionStore.onChange(refresh);
   function openCalendarModal() {
     document.body.classList.add('modal-open');
     modal.hidden = false;                  // [hidden] → visible
-
-    const px = applyCalHeight();           // set height BEFORE render
-
     requestAnimationFrame(() => {
+      const px = applyCalHeight();         // set height AFTER visible
+
       if (!fc) {
         fc = new FullCalendar.Calendar(calendarEl, {
           ...calendarOptions,

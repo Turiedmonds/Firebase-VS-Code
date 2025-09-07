@@ -1491,7 +1491,7 @@ body.modal-open { overflow: hidden; }
   margin: 0 auto; padding: 12px; border-radius: 12px;
 }
 
-/* calendar box grows; no %/auto fights */
+/* calendar box grows; height set via JS before render */
 #calendar {
   flex: 1;
   min-height: 0;
