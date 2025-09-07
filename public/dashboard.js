@@ -3574,7 +3574,6 @@ if (window.visualViewport) {
     b.textContent = msg;
   }
 
-  const btn = document.getElementById('btnCalendar');
   const closeBtn = document.getElementById('calendarClose');
   const farmSel = document.getElementById('calendarFarmFilter');
   const fcScript = Array.from(document.getElementsByTagName('script')).find(s => /fullcalendar/i.test(s.src));
@@ -3583,7 +3582,7 @@ if (window.visualViewport) {
     console.log('[CAL] window.FullCalendar present?', !!window.FullCalendar, window.FullCalendar && window.FullCalendar.version);
     console.log('[CAL] FullCalendar script tag present?', !!fcScript, fcScript && fcScript.src);
   }
-  if (!btn || !document.getElementById('calendarModal') || !closeBtn || !farmSel || !document.getElementById('calendar') || !window.FullCalendar){
+  if (!document.getElementById('btnCalendar') || !document.getElementById('calendarModal') || !closeBtn || !farmSel || !document.getElementById('calendar') || !window.FullCalendar){
     if (diag && !window.FullCalendar) showDiagBanner('FullCalendar failed to load (check CDN/content blocker).');
     return;
   }
@@ -3698,13 +3697,13 @@ function setCalHeight() {
 }
 
 function openCalendarModal() {
-  // 1) Show modal first so it can be measured
+  // show modal (CSS now relies on [hidden])
   modal.hidden = false;
 
-  // 2) Give the calendar a real pixel height BEFORE render
+  // give calendar a real pixel height BEFORE render
   setCalHeight();
 
-  // 3) Render on the next frame (after height applies)
+  // render on next frame so height is applied
   requestAnimationFrame(() => {
     if (!window._fcCalendar) {
       window._fcCalendar = new FullCalendar.Calendar(calendarEl, calendarOptions);
@@ -3712,7 +3711,6 @@ function openCalendarModal() {
     window._fcCalendar.render();
     window._fcCalendar.updateSize();
 
-    // 4) Keep sizing correct during orientation/resize while modal is open
     if (!window._onCalResize) {
       window._onCalResize = () => {
         setCalHeight();
@@ -3723,8 +3721,8 @@ function openCalendarModal() {
   });
 }
 
-// Call openCalendarModal() from your Calendar button click handler
-// e.g. document.getElementById('openCalendarBtn').addEventListener('click', openCalendarModal);
+// hook up the button
+document.getElementById('btnCalendar')?.addEventListener('click', openCalendarModal);
 
 // When closing the modal, remove the resize listener (good hygiene)
 function closeCalendarModal() {
@@ -3738,8 +3736,7 @@ function closeCalendarModal() {
 }
 /// --- END calendar open logic ---
 
-  btn.addEventListener('click', openCalendarModal);
-  closeBtn.addEventListener('click', closeCalendarModal);
+  closeBtn?.addEventListener('click', closeCalendarModal);
   modal.addEventListener('click', e => { if (e.target === modal) closeCalendarModal(); });
   farmSel.addEventListener('change', () => { window._fcCalendar && window._fcCalendar.refetchEvents(); });
 })();
