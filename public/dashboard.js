@@ -2202,6 +2202,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Settings modal elements
   const cbWelS    = document.getElementById('settings-enable-welcome');
   const cbTourS   = document.getElementById('settings-enable-tour');
+  const btnClearLocal = document.getElementById('btnClearLocalData');
 
   // Help menu elements
   const helpMenu  = document.getElementById('dash-help-menu');
@@ -2299,6 +2300,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   cbWelS?.addEventListener('change', persistFromSettings);
   cbTourS?.addEventListener('change', persistFromSettings);
+
+  btnClearLocal?.addEventListener('click', async () => {
+    if (!confirm('Clear all local data? You will be signed out and the app will reload.')) return;
+    try { localStorage.clear(); } catch {}
+    if (window.caches) {
+      try {
+        const names = await caches.keys();
+        await Promise.all(names.map(n => caches.delete(n)));
+      } catch {}
+    }
+    alert('Local data cleared. The app will reload and you may need to log in again.');
+    location.reload();
+  });
 
   // SAVE buttons
   btnSaveM?.addEventListener('click', () => {
