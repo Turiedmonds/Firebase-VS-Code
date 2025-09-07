@@ -7,6 +7,9 @@ window.isLoadedSession = false; // visible everywhere
 // Optional: track if PIN was already validated this run
 window.pinValidated = false;
 
+const K_STAFF_CAN_LOAD = 'dashboard_staff_can_load';
+window.staffCanLoadSessions = localStorage.getItem(K_STAFF_CAN_LOAD) !== 'false';
+
 function formatHoursWorked(decimal) {
   if (isNaN(decimal)) return "";
   const hours = Math.floor(decimal);
@@ -927,6 +930,7 @@ function populateDateOptions(station) {
 }
 
 function showLoadSessionModal() {
+    if (window.staffCanLoadSessions === false) return;
     const modal = document.getElementById('loadSessionModal');
     const step1 = document.getElementById('loadSessionStep1');
     const step2 = document.getElementById('loadSessionStep2');
@@ -943,6 +947,7 @@ function hideLoadSessionModal() {
 }
 
 function showLoadOptionsModal() {
+    if (window.staffCanLoadSessions === false) return;
     const modal = document.getElementById('loadOptionsModal');
     if (modal) modal.style.display = 'flex';
 }
@@ -953,6 +958,7 @@ function hideLoadOptionsModal() {
 }
 
 function showCloudSessionModal() {
+    if (window.staffCanLoadSessions === false) return;
     const modal = document.getElementById('cloudSessionModal');
     if (modal) modal.style.display = 'flex';
 }
@@ -2698,6 +2704,35 @@ function updateUIForRole(role) {
             else el.setAttribute('disabled', 'disabled');
         }
     });
+    const loadBtn = document.getElementById('loadSessionBtn');
+    if (loadBtn) {
+        if (role === 'staff' && window.staffCanLoadSessions === false) {
+            loadBtn.style.display = 'none';
+        } else {
+            loadBtn.style.display = '';
+        }
+    }
+    if (role === 'staff' && window.staffCanLoadSessions === false) {
+        ['loadSessionModal', 'loadOptionsModal', 'cloudSessionModal'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+    }
+}
+
+async function fetchStaffLoadPermission(contractorId) {
+    const local = localStorage.getItem(K_STAFF_CAN_LOAD);
+    if (local !== null) return local !== 'false';
+    if (!contractorId) return true;
+    try {
+        const snap = await firebase.firestore().collection('contractors').doc(contractorId).get();
+        const val = snap.exists ? snap.data().staffCanLoadSessions !== false : true;
+        localStorage.setItem(K_STAFF_CAN_LOAD, val ? 'true' : 'false');
+        return val;
+    } catch (e) {
+        console.warn('[tally] Failed to fetch staffCanLoadSessions', e);
+        return true;
+    }
 }
 
 // Verify the signed-in user exists either as a contractor document or within
@@ -3826,6 +3861,12 @@ async function setup() {
   if (overlay) overlay.style.display = 'flex';
   try {
     const role = await verifyContractorUser();
+    if (role) sessionStorage.setItem('userRole', role);
+    if (role === 'staff') {
+      const contractorId = localStorage.getItem('contractor_id');
+      window.staffCanLoadSessions = await fetchStaffLoadPermission(contractorId);
+    }
+    updateUIForRole(role);
     if (role === 'contractor') {
       const btn = document.getElementById('back-to-dashboard-btn');
       if (btn) {
