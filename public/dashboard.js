@@ -3575,17 +3575,15 @@ if (window.visualViewport) {
   }
 
   const btn = document.getElementById('btnCalendar');
-  const modal = document.getElementById('calendarModal');
   const closeBtn = document.getElementById('calendarClose');
   const farmSel = document.getElementById('calendarFarmFilter');
-  const calendarEl = document.getElementById('calendar');
   const fcScript = Array.from(document.getElementsByTagName('script')).find(s => /fullcalendar/i.test(s.src));
   if (diag){
-    console.log('[CAL] dom#calendar present?', !!calendarEl);
+    console.log('[CAL] dom#calendar present?', !!document.getElementById('calendar'));
     console.log('[CAL] window.FullCalendar present?', !!window.FullCalendar, window.FullCalendar && window.FullCalendar.version);
     console.log('[CAL] FullCalendar script tag present?', !!fcScript, fcScript && fcScript.src);
   }
-  if (!btn || !modal || !closeBtn || !farmSel || !calendarEl || !window.FullCalendar){
+  if (!btn || !document.getElementById('calendarModal') || !closeBtn || !farmSel || !document.getElementById('calendar') || !window.FullCalendar){
     if (diag && !window.FullCalendar) showDiagBanner('FullCalendar failed to load (check CDN/content blocker).');
     return;
   }
@@ -3657,97 +3655,93 @@ if (window.visualViewport) {
     return events;
   }
 
-  let calendar;
-
-  async function renderCalendar(){
-    const sessions = await fetchSessions();
-    const events = buildEvents(sessions);
-    const defaultView = localStorage.getItem('dashboard_calendar_view') || 'dayGridMonth';
-    if (diag){
-      const w = calendarEl.offsetWidth, h = calendarEl.offsetHeight;
-      console.log('[CAL] container computed size', w, h);
-      if (h === 0){
-        showDiagBanner('Calendar container has no height.');
-        calendarEl.style.minHeight = '60vh';
-      }
-    }
-    if (!calendar) {
-      if (diag) console.log('[CAL] initializing FullCalendar');
+  const calendarOptions = {
+    initialView: localStorage.getItem('dashboard_calendar_view') || 'dayGridMonth',
+    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+    events: async (info, successCallback, failureCallback) => {
       try {
-        calendar = new FullCalendar.Calendar(calendarEl, {
-          initialView: defaultView,
-          headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
-          events,
-          displayEventTime: false,
-          eventClick: info => {
-            info.jsEvent.preventDefault();
-            const role = localStorage.getItem('user_role');
-            const canLoad = localStorage.getItem('staff_can_load_sessions') !== 'false';
-            if (role === 'staff' && !canLoad) {
-              alert('You do not have permission to view saved sessions.');
-              return;
-            }
-            const id = info.event.id;
-            if (id) window.location.href = `view-sessions.html?session=${encodeURIComponent(id)}`;
-          },
-          datesSet: info => {
-            localStorage.setItem('dashboard_calendar_view', info.view.type);
-          }
-        });
-        window.dashboardCalendar = calendar;
-        calendar.render();
-        safeInitialRender();
-      } catch(err){
-        if (diag) console.log('[CAL] FullCalendar init error', err);
+        const sessions = await fetchSessions();
+        const events = buildEvents(sessions);
+        successCallback(events);
+      } catch (e) {
+        failureCallback(e);
       }
-    } else {
-      calendar.removeAllEvents();
-      calendar.addEventSource(events);
-      calendar.changeView(defaultView);
-    }
-    renderCalendarIfNeeded();
-  }
-
-  // Ensure this runs after modal is visible
-  async function showCalendarModal() {
-    modal.classList.add('active');
-    modal.hidden = false;
-
-    // One frame delay so layout is ready
-    requestAnimationFrame(() => {
-      setTimeout(renderCalendar, 0);
-    });
-  }
-
-  btn.addEventListener('click', showCalendarModal);
-  closeBtn.addEventListener('click', () => {
-    modal.classList.remove('active');
-    modal.hidden = true;
-  });
-  modal.addEventListener('click', e => {
-    if (e.target === modal) {
-      modal.classList.remove('active');
-      modal.hidden = true;
-    }
-  });
-  if (modal) {
-    modal.addEventListener('transitionend', e => {
-      if (e.target === modal && modal.classList.contains('active')) {
-        renderCalendarIfNeeded();
-        forceCalendarResize();
+    },
+    displayEventTime: false,
+    eventClick: info => {
+      info.jsEvent.preventDefault();
+      const role = localStorage.getItem('user_role');
+      const canLoad = localStorage.getItem('staff_can_load_sessions') !== 'false';
+      if (role === 'staff' && !canLoad) {
+        alert('You do not have permission to view saved sessions.');
+        return;
       }
-    });
-    modal.addEventListener('modal:shown', () => {
-      renderCalendarIfNeeded();
-      forceCalendarResize();
-    });
-  }
-  farmSel.addEventListener('change', renderCalendar);
+      const id = info.event.id;
+      if (id) window.location.href = `view-sessions.html?session=${encodeURIComponent(id)}`;
+    },
+    datesSet: info => {
+      localStorage.setItem('dashboard_calendar_view', info.view.type);
+    }
+  };
 
-  if (calendarEl && 'ResizeObserver' in window) {
-    const ro = new ResizeObserver(() => forceCalendarResize());
-    ro.observe(calendarEl);
+/// --- BEGIN calendar open logic (replace your existing open+render block) ---
+const modal = document.getElementById('calendarModal');
+const calendarEl = document.getElementById('calendar');
+
+// keep references global-ish so we can reuse & clean up
+window._fcCalendar = window._fcCalendar || null;
+window._onCalResize = window._onCalResize || null;
+
+function setCalHeight() {
+  const vh = Math.floor((window.visualViewport?.height || window.innerHeight) * 0.88);
+  calendarEl.style.height = vh + 'px';
+}
+
+function openCalendarModal() {
+  // 1) Show modal first so it can be measured
+  modal.hidden = false;
+
+  // 2) Give the calendar a real pixel height BEFORE render
+  setCalHeight();
+
+  // 3) Render on the next frame (after height applies)
+  requestAnimationFrame(() => {
+    if (!window._fcCalendar) {
+      window._fcCalendar = new FullCalendar.Calendar(calendarEl, calendarOptions);
+    }
+    window._fcCalendar.render();
+    window._fcCalendar.updateSize();
+
+    // 4) Keep sizing correct during orientation/resize while modal is open
+    if (!window._onCalResize) {
+      window._onCalResize = () => {
+        setCalHeight();
+        window._fcCalendar.updateSize();
+      };
+      window.addEventListener('resize', window._onCalResize, { passive: true });
+    }
+  });
+}
+
+// Call openCalendarModal() from your Calendar button click handler
+// e.g. document.getElementById('openCalendarBtn').addEventListener('click', openCalendarModal);
+
+// When closing the modal, remove the resize listener (good hygiene)
+function closeCalendarModal() {
+  modal.hidden = true;
+  if (window._onCalResize) {
+    window.removeEventListener('resize', window._onCalResize);
+    window._onCalResize = null;
   }
+  // keep calendar instance for faster re-open; destroy if you prefer:
+  // if (window._fcCalendar) { window._fcCalendar.destroy(); window._fcCalendar = null; }
+}
+/// --- END calendar open logic ---
+
+  btn.addEventListener('click', openCalendarModal);
+  closeBtn.addEventListener('click', closeCalendarModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeCalendarModal(); });
+  farmSel.addEventListener('change', () => { window._fcCalendar && window._fcCalendar.refetchEvents(); });
 })();
 
 // === KPI: Days Worked (unique session-days) ===
