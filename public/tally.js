@@ -2706,21 +2706,19 @@ function updateUIForRole(role) {
     const loadCloudBtn = document.getElementById('loadCloudBtn');
     if (loadCloudBtn) {
         const canLoad =
-            role === 'admin' ||
             role === 'contractor' ||
             (role === 'staff' && window.staffCanLoadSessions);
-        if (canLoad) loadCloudBtn.removeAttribute('disabled');
-        else loadCloudBtn.setAttribute('disabled', 'disabled');
+        loadCloudBtn.disabled = !canLoad;
     }
     const loadBtn = document.getElementById('loadSessionBtn');
     if (loadBtn) {
-        if (role === 'staff' && window.staffCanLoadSessions === false) {
+        if (role === 'staff' && !window.staffCanLoadSessions) {
             loadBtn.style.display = 'none';
         } else {
             loadBtn.style.display = '';
         }
     }
-    if (role === 'staff' && window.staffCanLoadSessions === false) {
+    if (role === 'staff' && !window.staffCanLoadSessions) {
         ['loadSessionModal', 'loadOptionsModal', 'cloudSessionModal'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
