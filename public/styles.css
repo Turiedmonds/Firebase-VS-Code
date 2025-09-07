@@ -1470,31 +1470,6 @@ button {
   fill:currentColor;
 }
 
-/* Ensure calendar fills available space within modal */
-.calendar-content {
-  display: flex;
-  flex-direction: column;
-}
-
-#calendar {
-  flex: 1;              /* expand to fill available space */
-  min-height: 70vh;     /* guarantee enough height on portrait */
-}
-
-#calendarModal .calendar-content #calendar,
-#calendarModal .calendar-content .calendar-container {
-  flex: 1 1 auto;
-  width: 100vw;
-  width: 100%;
-}
-/* Give the modal a real height in portrait */
-.calendar-modal .modal-content,
-.calendar-modal .modal-body {
-  height: 70svh;      /* iOS safe viewport */
-  min-height: 360px;  /* fallback */
-}
-
-/* Ensure FullCalendar inner wrappers don't collapse */
 #calendar .fc,
 #calendar .fc-view-harness,
 #calendar .fc-scrollgrid,
@@ -1503,30 +1478,11 @@ button {
   height: 100% !important;
 }
 
-@media (orientation: portrait) {
-  #calendar {
-    min-height: 70vh; /* give it real space on phones */
-  }
-}
+/* Visibility control for the calendar modal */
+#calendarModal { display: flex; align-items: center; justify-content: center; }
+#calendarModal[hidden] { display: none !important; }
 
-/* ---- Calendar modal height chain + stable viewport height ---- */
+/* Keep the height chain + layout */
 html, body { height: 100%; }
-#calendarModal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
-#calendarModal .calendar-content {
-  display: flex;
-  flex-direction: column;
-  /* use stable viewport units so iOS toolbars don’t collapse height */
-  height: 88svh;
-  width: 92vw;
-  max-width: 720px;
-}
-#calendar {
-  flex: 1;
-  height: 100%;
-  min-height: 0; /* important inside flex containers */
-}
+#calendarModal .calendar-content { display: flex; flex-direction: column; height: 88svh; width: 92vw; max-width: 720px; }
+#calendar { flex: 1; height: 100%; min-height: 0; }
