@@ -651,35 +651,35 @@ button {
 }
 
 /* Modal */
-#shearers-modal.siq-modal , #shedstaff-modal.siq-modal , #farms-full-modal.siq-modal {
+#shearers-modal.siq-modal , #shedstaff-modal.siq-modal , #farms-full-modal.siq-modal , #settings-modal.siq-modal {
   position: fixed;
   inset: 0;
   display: none;
   z-index: 1000;
 }
-#shearers-modal[aria-hidden="false"] , #shedstaff-modal[aria-hidden="false"] , #farms-full-modal[aria-hidden="false"] { display: block; }
-#shearers-modal .siq-modal__backdrop , #shedstaff-modal .siq-modal__backdrop , #farms-full-modal .siq-modal__backdrop {
+#shearers-modal[aria-hidden="false"] , #shedstaff-modal[aria-hidden="false"] , #farms-full-modal[aria-hidden="false"] , #settings-modal[aria-hidden="false"] { display: block; }
+#shearers-modal .siq-modal__backdrop , #shedstaff-modal .siq-modal__backdrop , #farms-full-modal .siq-modal__backdrop , #settings-modal .siq-modal__backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.55);
 }
-#shearers-modal .siq-modal__panel , #shedstaff-modal .siq-modal__panel , #farms-full-modal .siq-modal__panel {
+#shearers-modal .siq-modal__panel , #shedstaff-modal .siq-modal__panel , #farms-full-modal .siq-modal__panel , #settings-modal .siq-modal__panel {
   position: absolute;
   right: 24px; left: 24px; top: 10vh;
   margin: 0 auto; max-width: 860px;
   background: #0f1115; border: 1px solid #21283a; border-radius: 14px;
   box-shadow: 0 18px 48px rgba(0,0,0,0.45);
 }
-#shearers-modal .siq-modal__header , #shedstaff-modal .siq-modal__header , #farms-full-modal .siq-modal__header {
+#shearers-modal .siq-modal__header , #shedstaff-modal .siq-modal__header , #farms-full-modal .siq-modal__header , #settings-modal .siq-modal__header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 16px; border-bottom: 1px solid #1b2130;
 }
-#shearers-modal .siq-modal__body , #shedstaff-modal .siq-modal__body , #farms-full-modal .siq-modal__body { padding: 12px 16px 18px; }
-#shearers-modal .siq-modal__close , #shedstaff-modal .siq-modal__close , #farms-full-modal .siq-modal__close {
+#shearers-modal .siq-modal__body , #shedstaff-modal .siq-modal__body , #farms-full-modal .siq-modal__body , #settings-modal .siq-modal__body { padding: 12px 16px 18px; }
+#shearers-modal .siq-modal__close , #shedstaff-modal .siq-modal__close , #farms-full-modal .siq-modal__close , #settings-modal .siq-modal__close {
   background: transparent; border: none; color: #c8d0e0; font-size: 22px; cursor: pointer;
 }
-#shearers-modal .siq-table-scroll , #shedstaff-modal .siq-table-scroll , #farms-full-modal .siq-table-scroll { overflow: auto; max-height: 60vh; }
-#shearers-modal .siq-rank-table , #shedstaff-modal .siq-rank-table , #farms-full-modal .siq-rank-table { width: 100%; border-collapse: collapse; }
+#shearers-modal .siq-table-scroll , #shedstaff-modal .siq-table-scroll , #farms-full-modal .siq-table-scroll , #settings-modal .siq-table-scroll { overflow: auto; max-height: 60vh; }
+#shearers-modal .siq-rank-table , #shedstaff-modal .siq-rank-table , #farms-full-modal .siq-rank-table , #settings-modal .siq-rank-table { width: 100%; border-collapse: collapse; }
 #shearers-modal .siq-rank-table th, #shedstaff-modal .siq-rank-table th, #farms-full-modal .siq-rank-table th, #shearers-modal .siq-rank-table td , #shedstaff-modal .siq-rank-table td , #farms-full-modal .siq-rank-table td {
   padding: 8px 10px; border-bottom: 1px solid #1b2130; text-align: left;
 }

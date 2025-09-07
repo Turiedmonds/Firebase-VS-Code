@@ -629,6 +629,19 @@
           <button id="btnSettings" class="tab-button">Settings / Preferences</button>
           <button id="logoutBtn" class="tab-button">Logout</button>
         </section>
+        <div id="settings-modal" class="siq-modal" aria-hidden="true">
+          <div class="siq-modal__backdrop modal-backdrop" data-close-modal></div>
+          <div class="siq-modal__panel">
+            <header class="siq-modal__header">
+              <h3>Settings</h3>
+              <button class="siq-modal__close" data-close-modal aria-label="Close">&times;</button>
+            </header>
+            <div class="siq-modal__body">
+              <label for="settings-placeholder">Example Setting</label>
+              <input id="settings-placeholder" type="text">
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
