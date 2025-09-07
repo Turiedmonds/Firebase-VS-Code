@@ -1,7 +1,41 @@
 // view-sessions.js
 // Loads and displays sessions for the logged-in contractor.
 
-const K_STAFF_CAN_LOAD = 'dashboard_staff_can_load';
+const STAFF_CAN_LOAD_KEY = 'staff_can_load_sessions';
+const LEGACY_STAFF_KEY = 'dashboard_staff_can_load';
+
+let staffCanLoadSessions = localStorage.getItem(STAFF_CAN_LOAD_KEY);
+let staffLoadKnown = true;
+if (staffCanLoadSessions === null) {
+  const legacy = localStorage.getItem(LEGACY_STAFF_KEY);
+  if (legacy !== null) {
+    staffCanLoadSessions = legacy;
+    localStorage.setItem(STAFF_CAN_LOAD_KEY, legacy);
+  } else {
+    staffLoadKnown = false;
+  }
+}
+staffCanLoadSessions = staffCanLoadSessions !== 'false';
+
+async function fetchStaffLoadPermission() {
+  if (!navigator.onLine) return staffCanLoadSessions;
+  const contractorId = localStorage.getItem('contractor_id');
+  if (!contractorId) return staffCanLoadSessions;
+  try {
+    const snap = await firebase
+      .firestore()
+      .collection('contractors')
+      .doc(contractorId)
+      .get();
+    const val = snap.exists ? snap.data().staffCanLoadSessions !== false : true;
+    localStorage.setItem(STAFF_CAN_LOAD_KEY, val ? 'true' : 'false');
+    staffCanLoadSessions = val;
+    staffLoadKnown = true;
+  } catch (e) {
+    console.warn('[view-sessions] Failed to fetch staffCanLoadSessions', e);
+  }
+  return staffCanLoadSessions;
+}
 
 function formatNZDate(iso) {
   if (!iso) return '';
@@ -291,13 +325,18 @@ async function loadNextPage() {
 
 // Main entry
 
-document.addEventListener('DOMContentLoaded', () => {
-  const canLoad = localStorage.getItem(K_STAFF_CAN_LOAD) !== 'false';
-  const role = sessionStorage.getItem('userRole');
-  if (role === 'staff' && !canLoad) {
-    window.location.replace('tally.html');
-    return;
+document.addEventListener('DOMContentLoaded', async () => {
+  const role = sessionStorage.getItem('userRole') || localStorage.getItem('user_role');
+  if (role === 'staff') {
+    if (!staffLoadKnown && navigator.onLine) {
+      await fetchStaffLoadPermission();
+    }
+    if (!staffCanLoadSessions) {
+      window.location.replace('tally.html');
+      return;
+    }
   }
+
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.style.display = 'flex';
 

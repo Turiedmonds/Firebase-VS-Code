@@ -1821,6 +1821,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const btnViewSavedSessions = document.getElementById('btnViewSavedSessions');
       if (btnViewSavedSessions) {
         btnViewSavedSessions.addEventListener('click', () => {
+          const role = localStorage.getItem('user_role');
+          const canLoad = localStorage.getItem('staff_can_load_sessions') !== 'false';
+          if (role === 'staff' && !canLoad) {
+            alert('You do not have permission to view saved sessions.');
+            return;
+          }
           window.location.href = 'view-sessions.html';
         });
       }
@@ -3675,6 +3681,12 @@ if (window.visualViewport) {
           displayEventTime: false,
           eventClick: info => {
             info.jsEvent.preventDefault();
+            const role = localStorage.getItem('user_role');
+            const canLoad = localStorage.getItem('staff_can_load_sessions') !== 'false';
+            if (role === 'staff' && !canLoad) {
+              alert('You do not have permission to view saved sessions.');
+              return;
+            }
             const id = info.event.id;
             if (id) window.location.href = `view-sessions.html?session=${encodeURIComponent(id)}`;
           },
