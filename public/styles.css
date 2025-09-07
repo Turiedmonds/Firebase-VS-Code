@@ -1531,3 +1531,9 @@ button {
 #calendar .fc-scroller {
   height: 100% !important;
 }
+
+@media (orientation: portrait) {
+  #calendar {
+    min-height: 480px; /* give it real space on phones */
+  }
+}

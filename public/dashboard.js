@@ -3687,7 +3687,7 @@ if (window.visualViewport) {
     if (!el) return;
 
     // Measure modal body height or fallback to 70% of viewport
-    const modalBody = document.querySelector('.calendar-modal .modal-body') || el.parentElement;
+    const modalBody = (el.closest('.modal, .calendar-modal')?.querySelector('.modal-body')) || el.parentElement;
     const viewportH = window.innerHeight || 700;
     const bodyH = modalBody ? modalBody.getBoundingClientRect().height : 0;
     const targetH = Math.max(360, Math.floor(bodyH > 0 ? bodyH : viewportH * 0.7));
@@ -3721,6 +3721,14 @@ if (window.visualViewport) {
           window.dispatchEvent(new Event('resize'));
           // Extra safety: update again shortly after
           setTimeout(() => window.cal.updateSize(), 50);
+          setTimeout(() => {
+            // hard nudge: recompute a real height and apply again, then resize
+            const viewportH = window.innerHeight || 700;
+            const h = Math.max(360, Math.floor(viewportH * 0.7));
+            el.style.height = h + 'px';
+            el.style.minHeight = h + 'px';
+            window.cal.updateSize();
+          }, 200);
         });
       });
     };
