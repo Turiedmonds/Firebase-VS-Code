@@ -1505,3 +1505,9 @@ button {
 }
 /* END:CALENDAR:LISTVIEW:DARK+BADGE */
 
+/* BEGIN:CALENDAR:LISTVIEW:HIDE-ALLDAY */
+/* Hide the "all-day" label/column in list view */
+.fc .fc-list-event-time {
+  display: none !important;
+}
+/* END:CALENDAR:LISTVIEW:HIDE-ALLDAY */
