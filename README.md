@@ -27,7 +27,7 @@ accounts. Documents in `contractors/{contractorId}/staff` contain:
 
 - `email` – the worker's login email
 - `name` – their display name
-- `role` – permissions like `admin`, `shed_hand` or `presser`
+- `role` – user role, typically `staff`
 
 After sign‑in the app confirms the current email exists in that subcollection
 and signs out if it does not.
@@ -39,9 +39,9 @@ Tally sessions are stored in `contractors/{contractorId}/sessions`, and deleted 
 Each user document includes a `role` field used to restrict functionality. The
 expected values are:
 
-- `admin` – full access to all features including saving/loading sessions from
-  the cloud and exporting farm summaries.
-- `shed_hand` or `presser` – standard tally entry without admin actions.
+- `contractor` – full access to all features including saving/loading sessions
+  from the cloud and exporting farm summaries.
+- `staff` – standard tally entry without contractor-only actions.
 
 The detected role is stored in `sessionStorage` as `userRole`. If a signed-in
 user has a missing or unknown role the app alerts them and signs out.
