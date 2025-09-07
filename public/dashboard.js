@@ -3678,6 +3678,12 @@ if (window.visualViewport) {
     modal.classList.add('active');
     modal.hidden = false;
     await renderCalendar();
+    // Ensure FullCalendar recalculates dimensions after the modal becomes visible
+    setTimeout(() => {
+      try {
+        window.dashboardCalendar?.updateSize();
+      } catch (e) {}
+    }, 100);
     scheduleCalendarResize(0);
     requestAnimationFrame(() => scheduleCalendarResize(0));
     setTimeout(() => scheduleCalendarResize(0), 300);
