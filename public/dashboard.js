@@ -3999,3 +3999,122 @@ SessionStore.onChange(refresh);
   SessionStore.onChange(refresh);
   if (SessionStore.getAll().length) refresh();
 })();
+
+// === Calendar Modal (KPI-style) ===
+(function(){
+  const btn = document.getElementById('kpiCalendar');
+  const modal = document.getElementById('calendarModal');
+  const btnCloseX = document.getElementById('calendarClose');
+  const btnCloseFooter = document.getElementById('calendarCloseFooter');
+  const host = document.getElementById('calendarHost');
+
+  if (!btn || !modal || !host) return;
+
+  let calendar = null;
+  let unlisten = null;
+
+  function computeHostHeight(){
+    // Reserve space for header/footer inside the modal card (~180px)
+    const chrome = 180;
+    const h = Math.max(360, Math.floor(window.innerHeight - chrome));
+    host.style.height = h + 'px';
+  }
+
+  // Build FullCalendar events from SessionStore docs
+  function sessionsToEvents(docs){
+    const events = [];
+    for (const doc of (docs || [])) {
+      const s = (typeof doc.data === 'function') ? doc.data() : doc.data;
+      const ymd = getSessionDateYMD(s);   // helper exists in dashboard.js
+      if (!ymd) continue;
+      const farm = pickFarmName(s);       // helper exists in dashboard.js
+      const sheep = sumSheep(s);          // helper exists in dashboard.js
+      events.push({
+        title: `${farm} — ${sheep.toLocaleString()} sheep`,
+        start: ymd,
+        allDay: true,
+        extendedProps: { farm, sheep, raw: s }
+      });
+    }
+    return events;
+  }
+
+  function ensureCalendar(){
+    if (calendar) return;
+    calendar = new FullCalendar.Calendar(host, {
+      initialView: (window.innerWidth < 640 ? 'listMonth' : 'dayGridMonth'),
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,listMonth'
+      },
+      height: '100%',
+      contentHeight: 'auto',
+      firstDay: 1, // Monday start (NZ friendly)
+      dayMaxEvents: true,
+      eventDisplay: 'block',
+      eventClick(info){
+        try {
+          const e = info.event.extendedProps || {};
+          alert(`${e.farm || 'Farm'}\n${(e.sheep||0).toLocaleString()} sheep\nDate: ${info.event.startStr}`);
+        } catch {}
+      }
+    });
+
+    // Seed with cached sessions if available
+    try {
+      const cached = (typeof SessionStore?.getAll === 'function') ? SessionStore.getAll() : [];
+      calendar.addEventSource(sessionsToEvents(cached));
+    } catch (e) { console.warn('[Calendar] preload events failed', e); }
+  }
+
+  function onResize(){
+    computeHostHeight();
+    if (calendar) {
+      const want = (window.innerWidth < 640) ? 'listMonth' : 'dayGridMonth';
+      if (calendar.view.type !== want) calendar.changeView(want);
+      calendar.updateSize();
+    }
+  }
+
+  function openCalendarModal(){
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+
+    computeHostHeight();
+    requestAnimationFrame(() => {
+      ensureCalendar();
+      calendar.render();
+      setTimeout(() => calendar.updateSize(), 40); // iOS Safari safety tick
+    });
+
+    // Live updates when sessions change
+    if (!unlisten && typeof SessionStore?.onChange === 'function') {
+      unlisten = SessionStore.onChange(docs => {
+        try {
+          const events = sessionsToEvents(docs);
+          calendar.removeAllEvents();
+          calendar.addEventSource(events);
+          calendar.updateSize();
+        } catch (e) { console.warn('[Calendar] onChange update failed', e); }
+      });
+    }
+
+    window.addEventListener('resize', onResize, { passive:true });
+    window.addEventListener('orientationchange', onResize, { passive:true });
+  }
+
+  function closeCalendarModal(){
+    modal.hidden = true;
+    document.body.style.overflow = '';
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('orientationchange', onResize);
+  }
+
+  btn.addEventListener('click', openCalendarModal);
+  btnCloseX?.addEventListener('click', closeCalendarModal);
+  btnCloseFooter?.addEventListener('click', closeCalendarModal);
+  modal.addEventListener('click', (e)=>{
+    if (e.target === modal) closeCalendarModal(); // backdrop click closes
+  });
+})();

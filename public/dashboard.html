@@ -120,6 +120,8 @@
       visibility: hidden !important;
     }
     </style>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.css" rel="stylesheet">
+  <script defer src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.js"></script>
   </head>
 <body>
   
@@ -174,6 +176,10 @@
           <button class="kpi-pill" id="kpiDaysWorked" aria-haspopup="dialog" aria-controls="kpiDaysWorkedModal">
             <span class="kpi-label">Days Worked</span>
             <span class="kpi-value" id="kpiDaysWorkedValue">—</span>
+          </button>
+          <button class="kpi-pill" id="kpiCalendar" aria-haspopup="dialog" aria-controls="calendarModal">
+            <span class="kpi-label">Calendar</span>
+            <span class="kpi-value" id="kpiCalendarValue">Open</span>
           </button>
         </section>
 
@@ -464,6 +470,24 @@
           <footer class="kpi-actions">
             <button id="kpiDWExport">Export CSV</button>
             <button id="kpiDaysWorkedCloseFooter">Close</button>
+          </footer>
+        </div>
+      </div>
+
+      <div id="calendarModal" class="kpi-modal" role="dialog" aria-modal="true" aria-labelledby="calendarTitle" hidden>
+        <div class="kpi-modal-card">
+          <header class="kpi-modal-header">
+            <h2 id="calendarTitle">Sessions Calendar</h2>
+            <button class="kpi-close" id="calendarClose" aria-label="Close">✕</button>
+          </header>
+
+          <!-- Fixed-height host solved via JS, avoids zero-height measurements -->
+          <div id="calendarShell" style="width:100%;max-width:100%;overflow:hidden;">
+            <div id="calendarHost" style="height:420px;"></div>
+          </div>
+
+          <footer class="kpi-actions">
+            <button id="calendarCloseFooter">Close</button>
           </footer>
         </div>
       </div>
