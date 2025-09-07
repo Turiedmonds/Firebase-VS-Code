@@ -1508,3 +1508,25 @@ button {
     min-height: 70vh; /* give it real space on phones */
   }
 }
+
+/* ---- Calendar modal height chain + stable viewport height ---- */
+html, body { height: 100%; }
+#calendarModal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+#calendarModal .calendar-content {
+  display: flex;
+  flex-direction: column;
+  /* use stable viewport units so iOS toolbars don’t collapse height */
+  height: 88svh;
+  width: 92vw;
+  max-width: 720px;
+}
+#calendar {
+  flex: 1;
+  height: 100%;
+  min-height: 0; /* important inside flex containers */
+}
