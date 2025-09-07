@@ -4018,9 +4018,7 @@ SessionStore.onChange(refresh);
   let unlisten = null;
 
   function computeHostHeight(){
-    const chrome = 180;
-    const h = Math.max(360, Math.floor(window.innerHeight - chrome));
-    host.style.height = h + 'px';
+    host.style.height = '100%';
   }
 
   function atTime(ymd, hhmm){
