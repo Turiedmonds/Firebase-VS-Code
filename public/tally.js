@@ -3019,6 +3019,9 @@ function resetForNewDay() {
 }
 
 function loadSessionObject(session) {
+    // Mark that a previously saved session is now active
+    window.isLoadedSession = true;
+
     // Cancel any pending autosave to avoid unintended saves while loading
     if (autosaveTimer) {
         clearTimeout(autosaveTimer);
