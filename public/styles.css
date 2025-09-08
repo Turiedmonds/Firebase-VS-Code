@@ -1552,11 +1552,23 @@ button {
   border:1px solid var(--border-color, #2c2c2c);
   text-align:center;
 }
-.fm-table th {
+.fm-table th { 
   position:sticky;
   top:0;
   background:#1a1a1a;
   z-index:2;
+}
+
+/* Highlight buttons in planner tab when selected */
+#fmFilters button:focus-visible,
+#calPanel-planner button:focus-visible {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+#fmFilters select.filter-active,
+#fmFilters input.filter-active {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
 }
 .fm-table th:first-child { left:0; z-index:3; }
 .fm-table td:first-child {
