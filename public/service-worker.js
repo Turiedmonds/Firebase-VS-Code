@@ -1,5 +1,5 @@
 // ✅ Bump the cache version whenever you change this file or add new assets
-const CACHE_NAME = 'sheariq-pwa-v17';
+const CACHE_NAME = 'sheariq-pwa-v18';
 const FIREBASE_CDN_CACHE = 'firebase-cdn';
 
 
