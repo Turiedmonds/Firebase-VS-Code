@@ -4063,6 +4063,7 @@ SessionStore.onChange(refresh);
   const addBtn = document.getElementById('fmAddPlaceholders');
   const lockChk = document.getElementById('fmLockPast');
   const lockWrap = document.getElementById('fmLockWrapper');
+  const resetBtn = document.getElementById('fmResetFilters');
   const summaryBody = document.querySelector('#farmMonthsSummaryTable tbody');
   const plannerBody = document.querySelector('#farmMonthsPlannerTable tbody');
   const PREF_KEY = 'farmMonthsPrefs';
@@ -4187,6 +4188,14 @@ SessionStore.onChange(refresh);
       to: toInput.value
     };
     try { localStorage.setItem(PREF_KEY, JSON.stringify(p)); } catch(e){}
+  }
+
+  function updateFilterIndicators(){
+    if(farmSel) farmSel.classList.toggle('filter-active', farmSel.value !== '__ALL__');
+    if(sheepSel) sheepSel.classList.toggle('filter-active', sheepSel.value !== '__ALL__');
+    if(stationSel) stationSel.classList.toggle('filter-active', stationSel.value !== '__ALL__');
+    if(fromInput) fromInput.classList.toggle('filter-active', fromInput.value !== `${currentYear}-01`);
+    if(toInput) toInput.classList.toggle('filter-active', toInput.value !== `${currentYear}-12`);
   }
 
   function getEvents(){
@@ -4430,6 +4439,7 @@ SessionStore.onChange(refresh);
   function openCalendarModal(){
     console.log('[Calendar] open');
     loadPrefs();
+    updateFilterIndicators();
     showTab('calendar');
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -4490,7 +4500,17 @@ SessionStore.onChange(refresh);
   genBtn?.addEventListener('click', generateDraft);
   addBtn?.addEventListener('click', addPlaceholders);
   lockChk?.addEventListener('change', renderPlannerTable);
-  [farmSel, sheepSel, stationSel, fromInput, toInput].forEach(el=>el?.addEventListener('change', ()=>{savePrefs();refreshActive();}));
+  [farmSel, sheepSel, stationSel, fromInput, toInput].forEach(el=>el?.addEventListener('change', ()=>{savePrefs();refreshActive();updateFilterIndicators();}));
+  resetBtn?.addEventListener('click', ()=>{
+    farmSel.value='__ALL__';
+    sheepSel.value='__ALL__';
+    stationSel.value='__ALL__';
+    fromInput.value=`${currentYear}-01`;
+    toInput.value=`${currentYear}-12`;
+    savePrefs();
+    updateFilterIndicators();
+    refreshActive();
+  });
 
   console.log('[Calendar] init block ready');
 })();
