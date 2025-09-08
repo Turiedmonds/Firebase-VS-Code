@@ -4338,6 +4338,11 @@ SessionStore.onChange(refresh);
 
   function addPlaceholders(){
     if(!window.calendar){ alert('Calendar not ready'); return; }
+    const existingDrafts = window.calendar.getEvents().some(ev => ev.extendedProps?.draft === true);
+    if(existingDrafts){
+      console.log('Placeholders already added. Skipping duplicate.');
+      return;
+    }
     const year = currentYear + 1;
     Object.keys(plannerData).forEach(f => {
       plannerData[f].forEach((cell,idx) => {
