@@ -1527,5 +1527,5 @@ button {
   padding-right: 12px;
 }
 #calendarHost .fc-hours-cell { font-weight: 600; }
-#calendarHost .fc-list-event-title { white-space: normal; width: auto !important; }
+#calendarHost .fc-list-event-title { white-space: normal; width: 100% !important; }
 
