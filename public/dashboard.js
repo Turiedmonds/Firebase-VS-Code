@@ -4062,7 +4062,15 @@ SessionStore.onChange(refresh);
         title: `${farm} — ${Number(sheep).toLocaleString()} sheep`,
         start: ymd,
         allDay: true,
-        extendedProps: { farm, sheep, hoursWorked: hoursStr, raw: s }
+        extendedProps: {
+          farm,
+          sheep,
+          hoursWorked: hoursStr,
+          teamLeader: s.teamLeader || '',
+          startTime: s.startTime || s.start || '',
+          finishTime: s.finishTime || s.finish || '',
+          raw: s
+        }
       });
     }
     return events;
@@ -4141,7 +4149,16 @@ SessionStore.onChange(refresh);
       },
       eventClick(info){
         const e = info.event.extendedProps || {};
-        alert(`${e.farm || 'Farm'}\n${(e.sheep||0).toLocaleString()} sheep\nDate: ${info.event.startStr}`);
+        const lines = [
+          e.farm || 'Farm',
+          `${(e.sheep||0).toLocaleString()} sheep`,
+          `Date: ${info.event.startStr}`
+        ];
+        if (e.teamLeader) lines.push(`Team Leader: ${e.teamLeader}`);
+        if (e.startTime) lines.push(`Start Time: ${e.startTime}`);
+        if (e.finishTime) lines.push(`Finish Time: ${e.finishTime}`);
+        if (e.hoursWorked) lines.push(`Hours Worked: ${e.hoursWorked}`);
+        alert(lines.join('\n'));
       }
     });
 
