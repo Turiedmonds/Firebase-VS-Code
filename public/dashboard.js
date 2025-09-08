@@ -4055,7 +4055,6 @@ SessionStore.onChange(refresh);
   const fmFilters = document.getElementById('fmFilters');
   const farmSel = document.getElementById('fmFilterFarm');
   const sheepSel = document.getElementById('fmFilterSheep');
-  const stationSel = document.getElementById('fmFilterStation');
   const fromInput = document.getElementById('fmYearFrom');
   const toInput = document.getElementById('fmYearTo');
   const exportBtn = document.getElementById('fmExportCSV');
@@ -4171,7 +4170,6 @@ SessionStore.onChange(refresh);
       const p = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
       if(p.farm) farmSel.value = p.farm;
       if(p.sheep) sheepSel.value = p.sheep;
-      if(p.station) stationSel.value = p.station;
       fromInput.value = p.from || `${currentYear}-01`;
       toInput.value = p.to || `${currentYear}-12`;
     } catch(e){
@@ -4183,7 +4181,6 @@ SessionStore.onChange(refresh);
     const p = {
       farm: farmSel.value,
       sheep: sheepSel.value,
-      station: stationSel.value,
       from: fromInput.value,
       to: toInput.value
     };
@@ -4193,7 +4190,6 @@ SessionStore.onChange(refresh);
   function updateFilterIndicators(){
     if(farmSel) farmSel.classList.toggle('filter-active', farmSel.value !== '__ALL__');
     if(sheepSel) sheepSel.classList.toggle('filter-active', sheepSel.value !== '__ALL__');
-    if(stationSel) stationSel.classList.toggle('filter-active', stationSel.value !== '__ALL__');
     if(fromInput) fromInput.classList.toggle('filter-active', fromInput.value !== `${currentYear}-01`);
     if(toInput) toInput.classList.toggle('filter-active', toInput.value !== `${currentYear}-12`);
   }
@@ -4209,8 +4205,6 @@ SessionStore.onChange(refresh);
       if(y < fromYear || y > toYear) return false;
       const farm = e.extendedProps?.farm || e.extendedProps?.station || 'Unknown';
       if(farmSel.value !== '__ALL__' && farmSel.value !== farm) return false;
-      const st = e.extendedProps?.station || '';
-      if(stationSel.value !== '__ALL__' && stationSel.value !== st) return false;
       const type = e.extendedProps?.sheepType || '';
       if(sheepSel.value !== '__ALL__' && sheepSel.value !== type) return false;
       return true;
@@ -4220,10 +4214,8 @@ SessionStore.onChange(refresh);
   function populateFilters(events){
     const farms = new Set();
     const sheepTypes = new Set();
-    const stations = new Set();
     events.forEach(e => {
       if(e.extendedProps?.farm) farms.add(e.extendedProps.farm);
-      if(e.extendedProps?.station) stations.add(e.extendedProps.station);
       if(e.extendedProps?.sheepType) sheepTypes.add(e.extendedProps.sheepType);
     });
     function fill(sel, set){
@@ -4236,7 +4228,6 @@ SessionStore.onChange(refresh);
     }
     fill(farmSel, farms);
     fill(sheepSel, sheepTypes);
-    fill(stationSel, stations);
   }
 
   function renderSummary(){
@@ -4500,11 +4491,10 @@ SessionStore.onChange(refresh);
   genBtn?.addEventListener('click', generateDraft);
   addBtn?.addEventListener('click', addPlaceholders);
   lockChk?.addEventListener('change', renderPlannerTable);
-  [farmSel, sheepSel, stationSel, fromInput, toInput].forEach(el=>el?.addEventListener('change', ()=>{savePrefs();refreshActive();updateFilterIndicators();}));
+  [farmSel, sheepSel, fromInput, toInput].forEach(el=>el?.addEventListener('change', ()=>{savePrefs();refreshActive();updateFilterIndicators();}));
   resetBtn?.addEventListener('click', ()=>{
     farmSel.value='__ALL__';
     sheepSel.value='__ALL__';
-    stationSel.value='__ALL__';
     fromInput.value=`${currentYear}-01`;
     toInput.value=`${currentYear}-12`;
     savePrefs();
