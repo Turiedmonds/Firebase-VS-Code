@@ -4059,6 +4059,18 @@ SessionStore.onChange(refresh);
                   hoursStr = diff.toFixed(1).replace(/\.0$/, '') + 'h';
                 }
               }
+            } else if (typeof parseHours === 'function') {
+              const stDec = parseHours(st);
+              const ftDec = parseHours(ft);
+              if (isFinite(stDec) && isFinite(ftDec)) {
+                let diff = ftDec - stDec;
+                if (diff < 0) diff += 24; // wrap past midnight
+                if (diff > 0) {
+                  hoursStr = typeof hoursToHM === 'function'
+                    ? hoursToHM(diff)
+                    : diff.toFixed(1).replace(/\.0$/, '') + 'h';
+                }
+              }
             }
           }
         }
