@@ -4060,8 +4060,6 @@ SessionStore.onChange(refresh);
   const toInput = document.getElementById('fmYearTo');
   const exportBtn = document.getElementById('fmExportCSV');
   const genBtn = document.getElementById('fmGenerate');
-  const addBtn = document.getElementById('fmAddPlaceholders');
-  const removeBtn = document.getElementById('fmRemovePlaceholders');
   const lockChk = document.getElementById('fmLockPast');
   const lockWrap = document.getElementById('fmLockWrapper');
   const resetBtn = document.getElementById('fmResetFilters');
@@ -4336,42 +4334,13 @@ SessionStore.onChange(refresh);
     URL.revokeObjectURL(a.href);
   }
 
-  function addPlaceholders(){
-    if(!window.calendar){ alert('Calendar not ready'); return; }
-    const existingDrafts = window.calendar.getEvents().some(ev => ev.extendedProps?.draft === true);
-    if(existingDrafts){
-      console.log('Placeholders already added. Skipping duplicate.');
-      return;
-    }
-    const year = currentYear + 1;
-    Object.keys(plannerData).forEach(f => {
-      plannerData[f].forEach((cell,idx) => {
-        if(cell.days || cell.sheep){
-          window.calendar.addEvent({
-            title: `${f} – draft ${cell.days}d / ${cell.sheep}s`,
-            start: new Date(year, idx, 1),
-            allDay: true,
-            extendedProps: { farm: f, totalSheep: cell.sheep, draft: true }
-          });
-        }
-      });
-    });
-  }
-
-  function removePlaceholders(){
-    if(!window.calendar){ alert('Calendar not ready'); return; }
-    window.calendar.getEvents().forEach(ev => {
-      if(ev.extendedProps?.draft) ev.remove();
-    });
-  }
-
   function showTab(id){
     calTabs.forEach(t=>t.classList.remove('is-active'));
     calTabs.forEach(t=>{ if(t.dataset.tab===id) t.classList.add('is-active'); });
     Object.keys(calPanels).forEach(k=>calPanels[k].hidden = (k!==id));
     fmFilters.hidden = (id==='calendar');
     exportBtn.hidden = (id!=='summary');
-    genBtn.hidden = addBtn.hidden = removeBtn.hidden = lockWrap.hidden = (id!=='planner');
+    genBtn.hidden = lockWrap.hidden = (id!=='planner');
     if(titleEl){
       if(id==='planner') titleEl.textContent = `Draft Plan for ${currentYear + 1}`;
       else titleEl.textContent = 'Sessions Calendar';
@@ -4507,8 +4476,6 @@ SessionStore.onChange(refresh);
   calTabs.forEach(tab=>tab.addEventListener('click',()=>showTab(tab.dataset.tab)));
   exportBtn?.addEventListener('click', exportCSV);
   genBtn?.addEventListener('click', generateDraft);
-  addBtn?.addEventListener('click', addPlaceholders);
-  removeBtn?.addEventListener('click', removePlaceholders);
   lockChk?.addEventListener('change', renderPlannerTable);
   [farmSel, sheepSel, fromInput, toInput].forEach(el=>el?.addEventListener('change', ()=>{savePrefs();refreshActive();updateFilterIndicators();}));
   resetBtn?.addEventListener('click', ()=>{
