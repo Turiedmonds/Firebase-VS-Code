@@ -4144,9 +4144,13 @@ SessionStore.onChange(refresh);
       viewDidMount(){ // extra safety
         decorateListHeaders();
       },
-      eventContent(info) {
+      // Remove "all-day" label in list views by injecting hours worked
+      eventDidMount(info) {
         if (info.view.type.includes('list')) {
-          return { timeText: info.event.extendedProps?.hoursWorked || '' };
+          const timeEl = info.el.querySelector('.fc-list-event-time');
+          if (timeEl) {
+            timeEl.textContent = info.event.extendedProps?.hoursWorked || '';
+          }
         }
       },
       eventClick(info){
