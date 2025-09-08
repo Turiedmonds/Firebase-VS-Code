@@ -4343,7 +4343,7 @@ SessionStore.onChange(refresh);
     genBtn.hidden = lockWrap.hidden = (id!=='planner');
     if(titleEl){
       if(id==='planner') titleEl.textContent = `Draft Plan for ${currentYear + 1}`;
-      else if(id==='summary') titleEl.textContent = 'Farm-by-Month yearly Summary';
+      else if(id==='summary') titleEl.textContent = 'Farm-By-Month Yearly Summary';
       else titleEl.textContent = 'Sessions Calendar';
     }
     if(id==='summary') renderSummary();
