@@ -474,30 +474,92 @@
         </div>
       </div>
 
-      <div id="calendarModal" class="kpi-modal" role="dialog" aria-modal="true" aria-labelledby="calendarTitle" hidden>
-        <div class="kpi-modal-card">
-          <header class="kpi-modal-header">
-            <h2 id="calendarTitle">Sessions Calendar</h2>
-            <button class="kpi-close" id="calendarClose" aria-label="Close">✕</button>
-          </header>
+        <div id="calendarModal" class="kpi-modal" role="dialog" aria-modal="true" aria-labelledby="calendarTitle" hidden>
+          <div class="kpi-modal-card farm-months-card">
+            <header class="kpi-modal-header">
+              <h2 id="calendarTitle">Sessions Calendar</h2>
+              <button class="kpi-close" id="calendarClose" aria-label="Close">✕</button>
+            </header>
 
-          <div class="kpi-controls">
-            <label>
-              Year
-              <select id="calendarYearSelect"></select>
-            </label>
+            <div class="fm-tabs">
+              <button type="button" class="fm-tab is-active" data-tab="calendar">Calendar</button>
+              <button type="button" class="fm-tab" data-tab="summary">Summary</button>
+              <button type="button" class="fm-tab" data-tab="planner">Planner</button>
+            </div>
+
+            <div id="fmFilters" class="kpi-controls farm-months-filters" hidden>
+              <label>Farm
+                <select id="fmFilterFarm"><option value="__ALL__">All farms</option></select>
+              </label>
+              <label>Sheep type
+                <select id="fmFilterSheep"><option value="__ALL__">All types</option></select>
+              </label>
+              <label>Station
+                <select id="fmFilterStation"><option value="__ALL__">All stations</option></select>
+              </label>
+              <label>From
+                <input type="month" id="fmYearFrom">
+              </label>
+              <label>To
+                <input type="month" id="fmYearTo">
+              </label>
+            </div>
+
+            <div class="fm-panels">
+              <div id="calPanel-calendar" class="fm-panel">
+                <div class="kpi-controls">
+                  <label>
+                    Year
+                    <select id="calendarYearSelect"></select>
+                  </label>
+                </div>
+                <div id="calendarShell" style="width:100%;max-width:100%;overflow:hidden;">
+                  <div id="calendarHost" style="height:420px;width:100%;"></div>
+                </div>
+              </div>
+
+              <div id="calPanel-summary" class="fm-panel" hidden>
+                <div class="heat-legend">0 = none, 5 = 10+ days</div>
+                <div class="fm-table-wrapper">
+                  <table id="farmMonthsSummaryTable" class="fm-table">
+                    <thead>
+                      <tr>
+                        <th>Farm</th>
+                        <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
+                        <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div id="calPanel-planner" class="fm-panel" hidden>
+                <div class="fm-table-wrapper">
+                  <table id="farmMonthsPlannerTable" class="fm-table">
+                    <thead>
+                      <tr>
+                        <th>Farm</th>
+                        <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
+                        <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <footer class="kpi-actions" id="calendarFooter">
+              <button id="fmExportCSV" hidden>Export CSV</button>
+              <button id="fmGenerate" hidden>Generate Draft Plan</button>
+              <button id="fmAddPlaceholders" hidden>Add Placeholders</button>
+              <label id="fmLockWrapper" class="fm-lock" hidden><input type="checkbox" id="fmLockPast"> Lock Past Months</label>
+              <button id="calendarCloseFooter">Close</button>
+            </footer>
           </div>
-
-          <!-- Fixed-height host solved via JS, avoids zero-height measurements -->
-          <div id="calendarShell" style="width:100%;max-width:100%;overflow:hidden;">
-            <div id="calendarHost" style="height:420px;width:100%;"></div>
-          </div>
-
-          <footer class="kpi-actions">
-            <button id="calendarCloseFooter">Close</button>
-          </footer>
         </div>
-      </div>
+
 
         <div id="siq-widgets-grid">
         <!-- BEGIN: Top 5 Shearers Widget -->
