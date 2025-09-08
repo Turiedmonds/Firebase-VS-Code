@@ -4043,8 +4043,32 @@ SessionStore.onChange(refresh);
     return;
   }
 
-  let calendar = null;
+  let calendar = window.calendar || null;
   let unlisten = null;
+
+  const calTabs = modal.querySelectorAll('.fm-tab');
+  const calPanels = {
+    calendar: modal.querySelector('#calPanel-calendar'),
+    summary: modal.querySelector('#calPanel-summary'),
+    planner: modal.querySelector('#calPanel-planner')
+  };
+  const fmFilters = document.getElementById('fmFilters');
+  const farmSel = document.getElementById('fmFilterFarm');
+  const sheepSel = document.getElementById('fmFilterSheep');
+  const stationSel = document.getElementById('fmFilterStation');
+  const fromInput = document.getElementById('fmYearFrom');
+  const toInput = document.getElementById('fmYearTo');
+  const exportBtn = document.getElementById('fmExportCSV');
+  const genBtn = document.getElementById('fmGenerate');
+  const addBtn = document.getElementById('fmAddPlaceholders');
+  const lockChk = document.getElementById('fmLockPast');
+  const lockWrap = document.getElementById('fmLockWrapper');
+  const summaryBody = document.querySelector('#farmMonthsSummaryTable tbody');
+  const plannerBody = document.querySelector('#farmMonthsPlannerTable tbody');
+  const PREF_KEY = 'farmMonthsPrefs';
+  let plannerData = {};
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const currentYear = new Date().getFullYear();
 
   fillYearsSelect(yearSel);
 
@@ -4141,6 +4165,212 @@ SessionStore.onChange(refresh);
     });
   }
 
+  function loadPrefs(){
+    try {
+      const p = JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
+      if(p.farm) farmSel.value = p.farm;
+      if(p.sheep) sheepSel.value = p.sheep;
+      if(p.station) stationSel.value = p.station;
+      fromInput.value = p.from || `${currentYear}-01`;
+      toInput.value = p.to || `${currentYear}-12`;
+    } catch(e){
+      fromInput.value = `${currentYear}-01`;
+      toInput.value = `${currentYear}-12`;
+    }
+  }
+  function savePrefs(){
+    const p = {
+      farm: farmSel.value,
+      sheep: sheepSel.value,
+      station: stationSel.value,
+      from: fromInput.value,
+      to: toInput.value
+    };
+    try { localStorage.setItem(PREF_KEY, JSON.stringify(p)); } catch(e){}
+  }
+
+  function getEvents(){
+    if(!window.calendar || typeof window.calendar.getEvents !== 'function') return [];
+    const ev = window.calendar.getEvents();
+    const fromYear = parseInt(fromInput.value.slice(0,4));
+    const toYear = parseInt(toInput.value.slice(0,4));
+    return ev.filter(e => {
+      const d = e.start; if(!d) return false;
+      const y = d.getFullYear();
+      if(y < fromYear || y > toYear) return false;
+      const farm = e.extendedProps?.farm || e.extendedProps?.station || 'Unknown';
+      if(farmSel.value !== '__ALL__' && farmSel.value !== farm) return false;
+      const st = e.extendedProps?.station || '';
+      if(stationSel.value !== '__ALL__' && stationSel.value !== st) return false;
+      const type = e.extendedProps?.sheepType || '';
+      if(sheepSel.value !== '__ALL__' && sheepSel.value !== type) return false;
+      return true;
+    });
+  }
+
+  function populateFilters(events){
+    const farms = new Set();
+    const sheepTypes = new Set();
+    const stations = new Set();
+    events.forEach(e => {
+      if(e.extendedProps?.farm) farms.add(e.extendedProps.farm);
+      if(e.extendedProps?.station) stations.add(e.extendedProps.station);
+      if(e.extendedProps?.sheepType) sheepTypes.add(e.extendedProps.sheepType);
+    });
+    function fill(sel, set){
+      const cur = sel.value;
+      sel.innerHTML = '<option value="__ALL__">All</option>';
+      Array.from(set).sort().forEach(v => {
+        const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o);
+      });
+      sel.value = cur || '__ALL__';
+    }
+    fill(farmSel, farms);
+    fill(sheepSel, sheepTypes);
+    fill(stationSel, stations);
+  }
+
+  function renderSummary(){
+    const events = getEvents();
+    populateFilters(events);
+    const data = {};
+    events.forEach(e => {
+      const farm = e.extendedProps?.farm || e.extendedProps?.station || 'Unknown';
+      const month = e.start.getMonth();
+      const sheep = Number(e.extendedProps?.totalSheep || e.extendedProps?.sheep || 0);
+      if(!data[farm]) data[farm] = Array(12).fill(0).map(()=>({days:0,sheep:0}));
+      data[farm][month].days += 1;
+      data[farm][month].sheep += sheep;
+    });
+    summaryBody.innerHTML = '';
+    Object.keys(data).sort().forEach(f => {
+      const tr=document.createElement('tr');
+      const th=document.createElement('th'); th.textContent=f; tr.appendChild(th);
+      data[f].forEach(cell => {
+        const td=document.createElement('td');
+        if(cell.days===0 && cell.sheep===0){
+          td.textContent='—';
+          td.classList.add('heat-level-0');
+        } else {
+          td.textContent=`${cell.days}d / ${cell.sheep}`;
+          const lvl=Math.min(5, Math.floor(cell.days/2));
+          td.classList.add('heat-level-'+lvl);
+        }
+        tr.appendChild(td);
+      });
+      summaryBody.appendChild(tr);
+    });
+  }
+
+  function generateDraft(){
+    const events = getEvents();
+    const data = {};
+    events.forEach(e => {
+      const farm = e.extendedProps?.farm || e.extendedProps?.station || 'Unknown';
+      const month = e.start.getMonth();
+      const year = e.start.getFullYear();
+      const sheep = Number(e.extendedProps?.totalSheep || e.extendedProps?.sheep || 0);
+      if(!data[farm]) data[farm] = Array(12).fill(0).map(()=>({days:0,sheep:0,years:new Set()}));
+      const cell=data[farm][month];
+      cell.days += 1;
+      cell.sheep += sheep;
+      cell.years.add(year);
+    });
+    plannerData = {};
+    Object.keys(data).forEach(f => {
+      plannerData[f] = Array(12).fill(0).map(()=>({days:0,sheep:0}));
+      data[f].forEach((cell,i) => {
+        const yrs = cell.years.size || 1;
+        plannerData[f][i].days = Math.round(cell.days / yrs);
+        plannerData[f][i].sheep = Math.round(cell.sheep / yrs);
+      });
+    });
+    renderPlannerTable();
+  }
+
+  function renderPlannerTable(){
+    plannerBody.innerHTML = '';
+    const plannerYear = currentYear + 1;
+    Object.keys(plannerData).sort().forEach(f => {
+      const tr=document.createElement('tr');
+      const th=document.createElement('th'); th.textContent=f; tr.appendChild(th);
+      plannerData[f].forEach((cell,idx) => {
+        const td=document.createElement('td');
+        td.dataset.farm=f; td.dataset.month=idx;
+        td.contentEditable = !(lockChk.checked && plannerYear === currentYear && idx < (new Date()).getMonth());
+        if(cell.days || cell.sheep) td.textContent = `${cell.days}d / ${cell.sheep}`;
+        if(cell.days >= 8) td.classList.add('busy');
+        td.addEventListener('input', onEditCell);
+        tr.appendChild(td);
+      });
+      plannerBody.appendChild(tr);
+    });
+  }
+
+  function onEditCell(e){
+    const td=e.target;
+    const f=td.dataset.farm;
+    const m=Number(td.dataset.month);
+    const val=td.textContent.trim();
+    const match=val.match(/(\d+)d\s*\/\s*(\d+)/i);
+    let days=0, sheep=0;
+    if(match){ days=parseInt(match[1],10); sheep=parseInt(match[2],10); }
+    plannerData[f][m]={days,sheep};
+    if(days>=8) td.classList.add('busy'); else td.classList.remove('busy');
+  }
+
+  function exportCSV(){
+    const rows=[[ 'Farm', ...months ]];
+    summaryBody.querySelectorAll('tr').forEach(tr => {
+      const cols=[tr.querySelector('th').textContent.trim()];
+      tr.querySelectorAll('td').forEach(td=>cols.push(td.textContent.trim()));
+      rows.push(cols.join(','));
+    });
+    const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='farm-month-summary.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function addPlaceholders(){
+    if(!window.calendar){ alert('Calendar not ready'); return; }
+    const year = currentYear + 1;
+    Object.keys(plannerData).forEach(f => {
+      plannerData[f].forEach((cell,idx) => {
+        if(cell.days || cell.sheep){
+          window.calendar.addEvent({
+            title: `${f} – draft ${cell.days}d / ${cell.sheep}s`,
+            start: new Date(year, idx, 1),
+            allDay: true,
+            extendedProps: { farm: f, totalSheep: cell.sheep, draft: true }
+          });
+        }
+      });
+    });
+  }
+
+  function showTab(id){
+    calTabs.forEach(t=>t.classList.remove('is-active'));
+    calTabs.forEach(t=>{ if(t.dataset.tab===id) t.classList.add('is-active'); });
+    Object.keys(calPanels).forEach(k=>calPanels[k].hidden = (k!==id));
+    fmFilters.hidden = (id==='calendar');
+    exportBtn.hidden = (id!=='summary');
+    genBtn.hidden = addBtn.hidden = lockWrap.hidden = (id!=='planner');
+    if(id==='summary') renderSummary();
+    if(id==='planner') {
+      if(!Object.keys(plannerData).length) generateDraft();
+      else renderPlannerTable();
+    }
+  }
+
+  function refreshActive(){
+    const active = modal.querySelector('.fm-tab.is-active')?.dataset.tab;
+    if(active==='summary') renderSummary();
+    if(active==='planner') renderPlannerTable();
+  }
+
   function ensureCalendar(){
     if (calendar) return;
     if (typeof FullCalendar === 'undefined') {
@@ -4178,6 +4408,7 @@ SessionStore.onChange(refresh);
         alert(lines.join('\n'));
       }
     });
+    window.calendar = calendar;
 
     // Seed with cached sessions if available
     try {
@@ -4198,6 +4429,8 @@ SessionStore.onChange(refresh);
 
   function openCalendarModal(){
     console.log('[Calendar] open');
+    loadPrefs();
+    showTab('calendar');
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
 
@@ -4243,6 +4476,7 @@ SessionStore.onChange(refresh);
     document.body.style.overflow = '';
     window.removeEventListener('resize', onResize);
     window.removeEventListener('orientationchange', onResize);
+    savePrefs();
   }
 
   btn.addEventListener('click', openCalendarModal);
@@ -4251,7 +4485,14 @@ SessionStore.onChange(refresh);
   modal.addEventListener('click', (e)=>{
     if (e.target === modal) closeCalendarModal();
   });
+  calTabs.forEach(tab=>tab.addEventListener('click',()=>showTab(tab.dataset.tab)));
+  exportBtn?.addEventListener('click', exportCSV);
+  genBtn?.addEventListener('click', generateDraft);
+  addBtn?.addEventListener('click', addPlaceholders);
+  lockChk?.addEventListener('change', renderPlannerTable);
+  [farmSel, sheepSel, stationSel, fromInput, toInput].forEach(el=>el?.addEventListener('change', ()=>{savePrefs();refreshActive();}));
 
   console.log('[Calendar] init block ready');
 })();
 //// END:CALENDAR:JS ////
+
