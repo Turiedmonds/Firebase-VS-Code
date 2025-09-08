@@ -4037,9 +4037,10 @@ SessionStore.onChange(refresh);
   const btnCloseFooter = document.getElementById('calendarCloseFooter');
   const host = document.getElementById('calendarHost');
   const yearSel = document.getElementById('calendarYearSelect');
+  const titleEl = document.getElementById('calendarTitle');
 
-  if (!btn || !modal || !host || !yearSel) {
-    console.warn('[Calendar] Required elements not found (btn/modal/host/yearSel).');
+  if (!btn || !modal || !host || !yearSel || !titleEl) {
+    console.warn('[Calendar] Required elements not found (btn/modal/host/yearSel/title).');
     return;
   }
 
@@ -4358,6 +4359,10 @@ SessionStore.onChange(refresh);
     fmFilters.hidden = (id==='calendar');
     exportBtn.hidden = (id!=='summary');
     genBtn.hidden = addBtn.hidden = lockWrap.hidden = (id!=='planner');
+    if(titleEl){
+      if(id==='planner') titleEl.textContent = `Draft Plan for ${currentYear + 1}`;
+      else titleEl.textContent = 'Sessions Calendar';
+    }
     if(id==='summary') renderSummary();
     if(id==='planner') {
       if(!Object.keys(plannerData).length) generateDraft();
