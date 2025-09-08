@@ -4145,7 +4145,7 @@ SessionStore.onChange(refresh);
         decorateListHeaders();
       },
       eventDidMount(info){
-        if (info.el.classList.contains('fc-list-event')) {
+        if (info.view.type.includes('list')) {
           // Put Hours Worked into the time column (replaces "all-day")
           const timeCell = info.el.querySelector('.fc-list-event-time');
           const hrs = info.event.extendedProps?.hoursWorked || '';
