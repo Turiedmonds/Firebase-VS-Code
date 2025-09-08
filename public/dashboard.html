@@ -25,13 +25,13 @@
 
   <!-- Preload main stylesheet so styles are ready ASAP -->
   <!-- If the page already links to styles.css, add this JUST ABOVE that link -->
-  <link rel="preload" href="styles.css?v=readability2" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="styles.css?v=readability2"></noscript>
+  <link rel="preload" href="styles.css?v=readability3" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="styles.css?v=readability3"></noscript>
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard - SHEAR iQ</title>
-  <link rel="stylesheet" href="styles.css?v=readability2">
+  <link rel="stylesheet" href="styles.css?v=readability3">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -680,7 +680,7 @@
     </div>
   </div>
 
-  <script type="module" src="dashboard.js"></script>
+  <script type="module" src="dashboard.js?v=2"></script>
   <div id="loading-overlay">
     <div class="circle-spinner"></div>
     <div>Authenticating… Please wait</div>
