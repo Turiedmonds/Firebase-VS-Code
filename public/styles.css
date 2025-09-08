@@ -1512,8 +1512,8 @@ button {
 }
 
 /* FullCalendar list view: show Hours in the time column and remove the blue dot */
-#calendarHost .fc .fc-list-event-graphic { display: none !important; }  /* remove dot */
-#calendarHost .fc .fc-list-event-time {
+#calendarHost .fc-list-event-graphic { display: none !important; }  /* remove dot */
+#calendarHost .fc-list-event-time {
   display: table-cell !important;    /* keep the column visible */
   width: 72px;                        /* adjust if needed */
   text-align: right;
@@ -1521,6 +1521,6 @@ button {
   padding-left: 8px;
   padding-right: 12px;
 }
-#calendarHost .fc .fc-hours-cell { font-weight: 600; }
-#calendarHost .fc .fc-list-event-title { white-space: normal; width: auto !important; }
+#calendarHost .fc-hours-cell { font-weight: 600; }
+#calendarHost .fc-list-event-title { white-space: normal; width: auto !important; }
 
