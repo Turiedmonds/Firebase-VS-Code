@@ -4018,8 +4018,11 @@ SessionStore.onChange(refresh);
   let unlisten = null;
 
   function computeHostHeight(){
-    const chrome = 180; // header/footer space inside modal card
-    const h = Math.max(360, Math.floor(window.innerHeight - chrome));
+    const header = modal.querySelector('.kpi-modal-header');
+    const footer = modal.querySelector('.kpi-actions');
+    const chrome = (header?.offsetHeight || 0) + (footer?.offsetHeight || 0);
+    const cardMax = Math.floor(window.innerHeight * 0.96); // match card max-height
+    const h = Math.max(360, cardMax - chrome);
     host.style.height = h + 'px';
   }
 
