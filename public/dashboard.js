@@ -4061,6 +4061,7 @@ SessionStore.onChange(refresh);
   const exportBtn = document.getElementById('fmExportCSV');
   const genBtn = document.getElementById('fmGenerate');
   const addBtn = document.getElementById('fmAddPlaceholders');
+  const removeBtn = document.getElementById('fmRemovePlaceholders');
   const lockChk = document.getElementById('fmLockPast');
   const lockWrap = document.getElementById('fmLockWrapper');
   const resetBtn = document.getElementById('fmResetFilters');
@@ -4352,13 +4353,20 @@ SessionStore.onChange(refresh);
     });
   }
 
+  function removePlaceholders(){
+    if(!window.calendar){ alert('Calendar not ready'); return; }
+    window.calendar.getEvents().forEach(ev => {
+      if(ev.extendedProps?.draft) ev.remove();
+    });
+  }
+
   function showTab(id){
     calTabs.forEach(t=>t.classList.remove('is-active'));
     calTabs.forEach(t=>{ if(t.dataset.tab===id) t.classList.add('is-active'); });
     Object.keys(calPanels).forEach(k=>calPanels[k].hidden = (k!==id));
     fmFilters.hidden = (id==='calendar');
     exportBtn.hidden = (id!=='summary');
-    genBtn.hidden = addBtn.hidden = lockWrap.hidden = (id!=='planner');
+    genBtn.hidden = addBtn.hidden = removeBtn.hidden = lockWrap.hidden = (id!=='planner');
     if(titleEl){
       if(id==='planner') titleEl.textContent = `Draft Plan for ${currentYear + 1}`;
       else titleEl.textContent = 'Sessions Calendar';
@@ -4495,6 +4503,7 @@ SessionStore.onChange(refresh);
   exportBtn?.addEventListener('click', exportCSV);
   genBtn?.addEventListener('click', generateDraft);
   addBtn?.addEventListener('click', addPlaceholders);
+  removeBtn?.addEventListener('click', removePlaceholders);
   lockChk?.addEventListener('change', renderPlannerTable);
   [farmSel, sheepSel, fromInput, toInput].forEach(el=>el?.addEventListener('change', ()=>{savePrefs();refreshActive();updateFilterIndicators();}));
   resetBtn?.addEventListener('click', ()=>{
