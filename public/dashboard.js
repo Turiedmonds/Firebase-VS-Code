@@ -2765,6 +2765,33 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
     return 0;
   }
 
+  // Recursively search nested objects/arrays for an hoursWorked field
+  function findHoursWorkedDeep(obj) {
+    if (obj === null || obj === undefined) return null;
+    if (typeof obj === 'string' || typeof obj === 'number') return null;
+
+    if (Array.isArray(obj)) {
+      for (const item of obj) {
+        if (Array.isArray(item) && item.length >= 2 && /hours\s*worked/i.test(item[0])) {
+          return item[1];
+        }
+        const found = findHoursWorkedDeep(item);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    if (typeof obj.hoursWorked === 'string' || typeof obj.hoursWorked === 'number') {
+      return obj.hoursWorked;
+    }
+    for (const key of Object.keys(obj)) {
+      const val = obj[key];
+      const found = findHoursWorkedDeep(val);
+      if (found) return found;
+    }
+    return null;
+  }
+
   function getSessionHours(session){
     const explicit = session.sessionHours || session.sessionLength || session.dayHours || session.hoursWorked || null;
     if (explicit) return parseHours(explicit);
@@ -2811,10 +2838,11 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
     // 1) Try explicit session-level hours fields where your app stores them.
     // Common paths to check; keep them safe and optional:
     const explicit =
-      session?.meta?.hoursWorked ||
+      findHoursWorkedDeep(session?.meta) ||
       session?.hoursWorked ||
       session?.summary?.hoursWorked ||
       session?.totals?.hoursWorked ||
+      findHoursWorkedDeep(session) ||
       null;
 
     if (explicit) {
