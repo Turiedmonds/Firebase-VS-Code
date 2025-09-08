@@ -1505,6 +1505,11 @@ button {
 }
 /* END:CALENDAR:LISTVIEW:DARK+BADGE */
 
+/* Remove side margin so list view spans modal width on small screens */
+@media (max-width: 640px){
+  #calendarHost .fc { --fc-page-margin: 0; }
+}
+
 #calendarHost .fc .fc-list-table td,
 #calendarHost .fc .fc-list-table th {          /* tighten side gutters inside border */
   padding-left: 12px !important;
