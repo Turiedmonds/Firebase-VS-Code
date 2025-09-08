@@ -4036,14 +4036,25 @@ SessionStore.onChange(refresh);
   const btnCloseX = document.getElementById('calendarClose');
   const btnCloseFooter = document.getElementById('calendarCloseFooter');
   const host = document.getElementById('calendarHost');
+  const yearSel = document.getElementById('calendarYearSelect');
 
-  if (!btn || !modal || !host) {
-    console.warn('[Calendar] Required elements not found (btn/modal/host).');
+  if (!btn || !modal || !host || !yearSel) {
+    console.warn('[Calendar] Required elements not found (btn/modal/host/yearSel).');
     return;
   }
 
   let calendar = null;
   let unlisten = null;
+
+  fillYearsSelect(yearSel);
+
+  yearSel.addEventListener('change', () => {
+    const year = Number(yearSel.value);
+    if (calendar && !isNaN(year)) {
+      const month = calendar.getDate().getMonth();
+      calendar.gotoDate(new Date(year, month, 1));
+    }
+  });
 
   // Prefer existing parser if available
   const parseHours = (typeof window.parseHoursToDecimal === 'function')
@@ -4147,6 +4158,9 @@ SessionStore.onChange(refresh);
       allDayText: '', // remove label entirely
       datesSet(){ // runs on initial render & when navigating months or changing views
         decorateListHeaders();
+        if (yearSel && calendar) {
+          yearSel.value = String(calendar.getDate().getFullYear());
+        }
       },
       viewDidMount(){ // extra safety
         decorateListHeaders();
