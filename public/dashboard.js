@@ -4017,6 +4017,24 @@ SessionStore.onChange(refresh);
   let calendar = null;
   let unlisten = null;
 
+  // Prefer existing parser if available
+  const parseHours = (typeof window.parseHoursToDecimal === 'function')
+    ? window.parseHoursToDecimal
+    : function basicParseHours(input){
+        if (!input) return 0;
+        const s = String(input).trim().toLowerCase();
+        const m = s.match(/^(\d+):(\d{1,2})$/); // H:MM
+        if (m) return (+m[1]) + (+m[2]/60);
+        const hm = s.match(/^(\d+)\s*h(?:ours?)?\s*(\d+)\s*m/i) || s.match(/^(\d+)h(\d+)m$/);
+        if (hm) return (+hm[1]) + (+hm[2]/60);
+        const hOnly = s.match(/^(\d+(?:\.\d+)?)\s*h/);
+        if (hOnly) return +hOnly[1];
+        const minOnly = s.match(/^(\d+)\s*m/);
+        if (minOnly) return (+minOnly[1])/60;
+        if (/^\d+(\.\d+)?$/.test(s)) return +s;
+        return 0;
+      };
+
   function computeHostHeight(){
     const header = modal.querySelector('.kpi-modal-header');
     const footer = modal.querySelector('.kpi-actions');
