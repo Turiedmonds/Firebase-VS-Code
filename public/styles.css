@@ -1516,16 +1516,7 @@ button {
   padding-right: 12px !important;
 }
 
-/* FullCalendar list view: show Hours in the time column and remove the blue dot */
-#calendarHost .fc-list-event-graphic { display: none !important; }  /* remove dot */
-#calendarHost .fc-list-event-time {
-  display: table-cell !important;    /* keep the column visible */
-  width: 72px;                        /* adjust if needed */
-  text-align: right;
-  white-space: nowrap;
-  padding-left: 8px;
-  padding-right: 12px;
-}
-#calendarHost .fc-hours-cell { font-weight: 600; }
+/* FullCalendar list view: remove the blue dot */
+#calendarHost .fc-list-event-graphic { display: none !important; }
 #calendarHost .fc-list-event-title { white-space: normal; width: 100% !important; }
 
