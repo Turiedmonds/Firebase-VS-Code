@@ -4033,11 +4033,36 @@ SessionStore.onChange(refresh);
       if (!ymd) continue;
       const farm = (typeof pickFarmName === 'function') ? pickFarmName(s) : 'Farm';
       const sheep = (typeof sumSheep === 'function') ? sumSheep(s) : 0;
+
+      // Hours worked from start/end times
+      let hoursStr = '';
+      try {
+        const st = s.startTime || s.start || null;
+        const ft = s.finishTime || s.finish || null;
+        if (st && ft) {
+          const start = new Date(st);
+          const end = new Date(ft);
+          if (!isNaN(start) && !isNaN(end)) {
+            if (
+              start.getHours() === 0 && start.getMinutes() === 0 &&
+              end.getHours() === 23 && end.getMinutes() === 59
+            ) {
+              hoursStr = '24h';
+            } else {
+              const diff = (end - start) / 3600000;
+              if (diff > 0) {
+                hoursStr = diff.toFixed(1).replace(/\.0$/, '') + 'h';
+              }
+            }
+          }
+        }
+      } catch (_e) {}
+
       events.push({
         title: `${farm} — ${Number(sheep).toLocaleString()} sheep`,
         start: ymd,
         allDay: true,
-        extendedProps: { farm, sheep, raw: s }
+        extendedProps: { farm, sheep, hoursWorked: hoursStr, raw: s }
       });
     }
     return events;
@@ -4092,6 +4117,27 @@ SessionStore.onChange(refresh);
       },
       viewDidMount(){ // extra safety
         decorateListHeaders();
+      },
+      eventDidMount(info){
+        // Customize list view rows
+        if (info.el.classList.contains('fc-list-event')) {
+          // Remove the default time column ("all-day")
+          const timeCell = info.el.querySelector('.fc-list-event-time');
+          if (timeCell) timeCell.remove();
+
+          // Stretch title cell and append hours worked if available
+          const titleCell = info.el.querySelector('.fc-list-event-title');
+          if (titleCell) {
+            titleCell.style.width = '100%';
+            const hrs = info.event.extendedProps?.hoursWorked;
+            if (hrs) {
+              const span = document.createElement('span');
+              span.className = 'fc-event-hours-worked';
+              span.textContent = hrs;
+              titleCell.append(' ', span);
+            }
+          }
+        }
       },
       eventClick(info){
         const e = info.event.extendedProps || {};
