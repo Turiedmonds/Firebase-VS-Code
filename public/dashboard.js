@@ -4034,24 +4034,30 @@ SessionStore.onChange(refresh);
       const farm = (typeof pickFarmName === 'function') ? pickFarmName(s) : 'Farm';
       const sheep = (typeof sumSheep === 'function') ? sumSheep(s) : 0;
 
-      // Hours worked from start/end times
+      // Hours worked: prefer existing helper, else derive from start/end times
       let hoursStr = '';
       try {
-        const st = s.startTime || s.start || null;
-        const ft = s.finishTime || s.finish || null;
-        if (st && ft) {
-          const start = new Date(st);
-          const end = new Date(ft);
-          if (!isNaN(start) && !isNaN(end)) {
-            if (
-              start.getHours() === 0 && start.getMinutes() === 0 &&
-              end.getHours() === 23 && end.getMinutes() === 59
-            ) {
-              hoursStr = '24h';
-            } else {
-              const diff = (end - start) / 3600000;
-              if (diff > 0) {
-                hoursStr = diff.toFixed(1).replace(/\.0$/, '') + 'h';
+        if (typeof getSessionHoursInfo === 'function') {
+          const info = getSessionHoursInfo(s);
+          if (info && info.displayText) hoursStr = info.displayText;
+        }
+        if (!hoursStr) {
+          const st = s.startTime || s.start || null;
+          const ft = s.finishTime || s.finish || null;
+          if (st && ft) {
+            const start = new Date(st);
+            const end = new Date(ft);
+            if (!isNaN(start) && !isNaN(end)) {
+              if (
+                start.getHours() === 0 && start.getMinutes() === 0 &&
+                end.getHours() === 23 && end.getMinutes() === 59
+              ) {
+                hoursStr = '24h';
+              } else {
+                const diff = (end - start) / 3600000;
+                if (diff > 0) {
+                  hoursStr = diff.toFixed(1).replace(/\.0$/, '') + 'h';
+                }
               }
             }
           }
@@ -4154,6 +4160,7 @@ SessionStore.onChange(refresh);
           `${(e.sheep||0).toLocaleString()} sheep`,
           `Date: ${info.event.startStr}`
         ];
+        if (e.hoursWorked) lines.push(`Hours Worked: ${e.hoursWorked}`);
         if (e.teamLeader) lines.push(`Team Leader: ${e.teamLeader}`);
         if (e.startTime) lines.push(`Start Time: ${e.startTime}`);
         if (e.finishTime) lines.push(`Finish Time: ${e.finishTime}`);
