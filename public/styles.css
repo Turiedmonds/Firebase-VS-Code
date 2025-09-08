@@ -1505,19 +1505,22 @@ button {
 }
 /* END:CALENDAR:LISTVIEW:DARK+BADGE */
 
-/* === Calendar list view: remove the "all-day" column and fill width === */
-#calendarHost .fc .fc-list-event-time {        /* hides the 'all-day' text/column */
-  display: none !important;
-}
-
-#calendarHost .fc .fc-list-event-title {       /* let the title use all the space */
-  width: 100% !important;
-  white-space: normal;        /* wrap long farm names nicely */
-}
-
 #calendarHost .fc .fc-list-table td,
 #calendarHost .fc .fc-list-table th {          /* tighten side gutters inside border */
   padding-left: 12px !important;
   padding-right: 12px !important;
 }
+
+/* FullCalendar list view: show Hours in the time column and remove the blue dot */
+#calendarHost .fc .fc-list-event-graphic { display: none !important; }  /* remove dot */
+#calendarHost .fc .fc-list-event-time {
+  display: table-cell !important;    /* keep the column visible */
+  width: 72px;                        /* adjust if needed */
+  text-align: right;
+  white-space: nowrap;
+  padding-left: 8px;
+  padding-right: 12px;
+}
+#calendarHost .fc .fc-hours-cell { font-weight: 600; }
+#calendarHost .fc .fc-list-event-title { white-space: normal; width: auto !important; }
 
