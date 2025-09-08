@@ -4138,20 +4138,12 @@ SessionStore.onChange(refresh);
       firstDay: 1, // Monday (NZ)
       dayMaxEvents: true,
       eventDisplay: 'block',
+      allDayText: '', // remove label entirely
       datesSet(){ // runs on initial render & when navigating months or changing views
         decorateListHeaders();
       },
       viewDidMount(){ // extra safety
         decorateListHeaders();
-      },
-      // Remove "all-day" label in list views by injecting hours worked
-      eventDidMount(info) {
-        if (info.view.type.includes('list')) {
-          const timeEl = info.el.querySelector('.fc-list-event-time');
-          if (timeEl) {
-            timeEl.textContent = info.event.extendedProps?.hoursWorked || '';
-          }
-        }
       },
       eventClick(info){
         const e = info.event.extendedProps || {};
