@@ -4219,6 +4219,10 @@ SessionStore.onChange(refresh);
   }
 
   function closeCalendarModal(){
+    if (typeof unlisten === 'function') {
+      unlisten();
+      unlisten = null;
+    }
     console.log('[Calendar] close');
     modal.hidden = true;
     document.body.style.overflow = '';
