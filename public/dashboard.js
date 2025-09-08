@@ -4145,24 +4145,18 @@ SessionStore.onChange(refresh);
         decorateListHeaders();
       },
       eventDidMount(info){
-        // Customize list view rows
         if (info.el.classList.contains('fc-list-event')) {
-          // Remove the default time column ("all-day")
+          // Put Hours Worked into the time column (replaces "all-day")
           const timeCell = info.el.querySelector('.fc-list-event-time');
-          if (timeCell) timeCell.remove();
-
-          // Stretch title cell and append hours worked if available
-          const titleCell = info.el.querySelector('.fc-list-event-title');
-          if (titleCell) {
-            titleCell.style.width = '100%';
-            const hrs = info.event.extendedProps?.hoursWorked;
-            if (hrs) {
-              const span = document.createElement('span');
-              span.className = 'fc-event-hours-worked';
-              span.textContent = hrs;
-              titleCell.append(' ', span);
-            }
+          const hrs = info.event.extendedProps?.hoursWorked || '';
+          if (timeCell) {
+            timeCell.textContent = hrs;     // <-- overwrites "all-day"
+            timeCell.classList.add('fc-hours-cell');
           }
+
+          // Title shares space with the time column and wraps nicely
+          const titleCell = info.el.querySelector('.fc-list-event-title');
+          if (titleCell) titleCell.style.width = 'auto';
         }
       },
       eventClick(info){
