@@ -4144,19 +4144,9 @@ SessionStore.onChange(refresh);
       viewDidMount(){ // extra safety
         decorateListHeaders();
       },
-      eventDidMount(info){
+      eventContent(info) {
         if (info.view.type.includes('list')) {
-          // Put Hours Worked into the time column (replaces "all-day")
-          const timeCell = info.el.querySelector('.fc-list-event-time');
-          const hrs = info.event.extendedProps?.hoursWorked || '';
-          if (timeCell) {
-            timeCell.textContent = hrs;     // <-- overwrites "all-day"
-            timeCell.classList.add('fc-hours-cell');
-          }
-
-          // Title shares space with the time column and wraps nicely
-          const titleCell = info.el.querySelector('.fc-list-event-title');
-          if (titleCell) titleCell.style.width = 'auto';
+          return { timeText: info.event.extendedProps?.hoursWorked || '' };
         }
       },
       eventClick(info){
@@ -4201,6 +4191,7 @@ SessionStore.onChange(refresh);
       ensureCalendar();
       if (calendar) {
         calendar.render();
+        calendar.rerenderEvents();
         setTimeout(() => {
           calendar.updateSize();
           decorateListHeaders();
