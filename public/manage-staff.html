@@ -350,21 +350,20 @@
         <label for="staff-name">Staff Name</label>
         <input type="text" id="staff-name" placeholder="Enter staff member’s name" required>
       </div>
-      <div class="form-group">
-        <input type="email" id="staffEmailInput" placeholder="Email" required>
-      </div>
-      <div class="form-group">
-        <label for="new-password">New Password</label>
-        <input id="new-password" type="text" placeholder="Enter password" required>
-      </div>
-      <div class="form-group">
-        <select id="staffRoleSelect">
-          <option value="staff">staff</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <button type="button" id="addStaffBtn">Add Staff Member</button>
-      </div>
+        <div class="form-group">
+          <input type="email" id="staffEmailInput" placeholder="Email" required>
+          <input type="tel" id="staffPhoneInput" placeholder="Phone (optional)">
+          <input type="email" id="staffPersonalEmailInput" placeholder="Personal email (optional)">
+        </div>
+        <div class="form-group">
+          <select id="staffRoleSelect">
+            <option value="staff">staff</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <button type="button" id="addStaffBtn">Add Staff Member</button>
+          <button type="button" id="sendLoginBtn">Send Login Details</button>
+        </div>
     </form>
     <p id="staffSummary"></p>
     <h3 id="activeStaffHeading" class="table-heading">Active Staff</h3>
@@ -435,6 +434,10 @@
         <button id="confirmCancelBtn">Cancel</button>
       </div>
     </div>
+  </div>
+  <div id="copyModal" style="display:none">
+    <pre id="copyCredentials"></pre>
+    <button id="copyOkBtn">Done</button>
   </div>
 </body>
 </html>
