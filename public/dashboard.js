@@ -4264,7 +4264,12 @@ SessionStore.onChange(refresh);
           td.classList.add('heat-level-0');
         } else {
           td.textContent=`${cell.days}d / ${cell.sheep}`;
-          const lvl=Math.min(5, Math.floor(cell.days/2));
+          let lvl;
+          if (cell.days <= 2) lvl = 1;
+          else if (cell.days <= 4) lvl = 2;
+          else if (cell.days <= 6) lvl = 3;
+          else if (cell.days <= 9) lvl = 4;
+          else lvl = 5;
           td.classList.add('heat-level-'+lvl);
         }
         tr.appendChild(td);
