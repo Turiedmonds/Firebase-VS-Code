@@ -806,7 +806,27 @@ function populateSessionData(data) {
         }
     }
 
-updateTotals();
+    const incidentBody = document.getElementById('incidentBody');
+    if (incidentBody) {
+        incidentBody.innerHTML = '';
+        if (Array.isArray(data.incidents) && data.incidents.length) {
+            data.incidents.forEach(inc => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td><input type="time" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
+                const timeInput = tr.querySelector('input');
+                const descInput = tr.querySelector('textarea');
+                if (timeInput) timeInput.value = inc.time || '';
+                if (descInput) descInput.value = inc.description || '';
+                incidentBody.appendChild(tr);
+            });
+        } else {
+            const tr = document.createElement('tr');
+            tr.innerHTML = '<td><input type="time" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
+            incidentBody.appendChild(tr);
+        }
+    }
+
+    updateTotals();
     updateSheepTypeTotals();
     layoutBuilt = true;
 }
@@ -1396,18 +1416,32 @@ function addStand() {
     runs++; // Now safely increment
 }
  
- function removeCount() {
-   if (runs <= minRuns) return;  
+function removeCount() {
+  if (runs <= minRuns) return;
  
      const body = document.getElementById("tallyBody");
      if (body.lastElementChild) {
          body.removeChild(body.lastElementChild);
      }
-     runs--;
-     updateTotals();
- }
- 
- 
+    runs--;
+    updateTotals();
+}
+
+function addIncident() {
+    const body = document.getElementById('incidentBody');
+    if (!body) return;
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td><input type="time" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
+    body.appendChild(tr);
+}
+
+function removeIncident() {
+    const body = document.getElementById('incidentBody');
+    if (!body || !body.lastElementChild) return;
+    body.removeChild(body.lastElementChild);
+}
+
+
  function removeStand() {
       if (numStands <= minStands) return;
  
@@ -2646,13 +2680,25 @@ function collectExportData() {
     }
     data.hours = hoursMap;
 
-     document.querySelectorAll('#sheepTypeTotalsTable tbody tr').forEach(tr => {
+    document.querySelectorAll('#sheepTypeTotalsTable tbody tr').forEach(tr => {
          const cells = tr.querySelectorAll('td');
          if (cells.length >= 2) {
              data.sheepTypeTotals.push({ type: cells[0].textContent, total: cells[1].textContent });
          }
      });
- 
+
+    const incidentBody = document.getElementById('incidentBody');
+    if (incidentBody) {
+        data.incidents = [];
+        Array.from(incidentBody.querySelectorAll('tr')).forEach(tr => {
+            const time = tr.querySelector('input[type="time"]')?.value || '';
+            const desc = tr.querySelector('textarea')?.value || '';
+            if (time.trim() || desc.trim()) {
+                data.incidents.push({ time, description: desc });
+            }
+        });
+    }
+
      return data;
  }
  
@@ -2690,9 +2736,16 @@ function buildExportRows(data) {
     });
      add([]);
  
-     add(['Sheep Type Totals'], true);
-     add(['Sheep Type', 'Total'], true);
+    add(['Sheep Type Totals'], true);
+    add(['Sheep Type', 'Total'], true);
     data.sheepTypeTotals.forEach(t => add([t.type, t.total]));
+
+    if (Array.isArray(data.incidents) && data.incidents.length) {
+        add([]);
+        add(['Incidents'], true);
+        add(['Time', 'Description'], true);
+        data.incidents.forEach(i => add([i.time, i.description]));
+    }
 
     return { rows, boldRows };
 }
@@ -3409,6 +3462,8 @@ function showSetupPrompt() {
  window.removeStand = removeStand;
  window.addCount = addCount;
  window.removeCount = removeCount;
+ window.addIncident = addIncident;
+ window.removeIncident = removeIncident;
  window.addShedStaff = addShedStaff;
  window.removeShedStaff = removeShedStaff;
  window.lockSession = lockSession;
