@@ -211,6 +211,7 @@
   <button class="tab-button active" data-view="tallySheetView">Tally Sheet</button>
   <button class="tab-button" data-view="summaryView" data-help="Welcome to the Daily Summary. This section provides you with a concise snapshot of the current day’s tally sheet. It’s designed to offer a straightforward numerical overview: you’ll see exactly how many sheep were shorn, categorized by type, and the total hours worked by shed staff. This summary focuses purely on the day’s output—no dates or team leader details—so you can quickly assess today’s performance at a glance. It's an efficient way to review daily progress before moving on to the next tasks.">Daily Summary</button>
   <button class="tab-button" data-view="stationSummaryView" data-help="Summarize a farm across dates or all time.">Farm Summary</button>
+  <button class="tab-button" data-view="incidentView">Incident Report</button>
   <button id="back-to-dashboard-btn" class="tab-button" style="display: none;" data-help="Go back to the Contractor Dashboard.">Return to Dashboard</button>
   </div>
 <div id="tallySheetView" class="view" data-help="Welcome to the Tally Sheet — the engine room of SHEΔR iQ. This is where you capture all the key data from the shearing day. When you start a new session, a setup prompt appears where you choose how many shearers, how many tally rows per shearer, and how many shed staff are needed. You’ll also select whether the day follows an 8-hour or 9-hour schedule, and set the lunch break duration to match your team.<br/><br/>Each shearer has flexible tally input — not limited to just four runs. Add as many rows as needed to match how your team works. Every row records both the sheep tally and the sheep type. Below the tally table is the Shed Staff section, where you can enter total hours worked for each rousie, presser, or other support crew member.<br/><br/>Start and Finish times are used to automatically calculate hours worked. If someone works through a break (like lunch), simply enter their times and when prompted, confirm that they worked through — the app will add the appropriate time to their hours for you. You can also toggle between 24‑hour and 12‑hour time views depending on your preference.<br/><br/>All fields — including dropdowns like sheep types, team leaders, and comb types — can be typed into manually. Anything you enter will automatically be added to the dropdown list, saving it for future use.<br/><br/>When you tap Save, the system cleans up your data automatically — removing any empty rows or unused fields — so your exports stay tidy and professional. You can export to CSV instantly, or revisit and reload saved sessions at any time.">
@@ -468,7 +469,27 @@
   <button id="exportFarmSummaryBtn" class="main-button" data-help="Export the farm summary.">Export Farm Summary</button>
   </div>
 </div>
- 
+
+<div id="incidentView" class="view" style="display:none;">
+  <div class="logo-container">
+      <img src="logo.png" alt="SHEΔR iQ logo" />
+      <h2>Incident Report</h2>
+  </div>
+  <div class="section">
+    <table id="incidentTable" data-help="Record any incidents or accidents during this session.">
+      <thead><tr><th>Time</th><th>Description</th></tr></thead>
+      <tbody id="incidentBody">
+        <tr>
+          <td><input type="time" /></td>
+          <td><textarea placeholder="Describe incident..."></textarea></td>
+        </tr>
+      </tbody>
+    </table>
+    <button id="addIncidentBtn" onclick="addIncident()">Add Incident</button>
+    <button id="removeIncidentBtn" onclick="removeIncident()">Remove Incident</button>
+  </div>
+</div>
+
 <footer id="footer">Logged in as: <span id="userEmail">loading...</span></footer>
 
 <!-- Setup Modal -->
