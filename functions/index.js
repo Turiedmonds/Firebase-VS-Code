@@ -6,18 +6,20 @@ const nodemailer = require('nodemailer');
 admin.initializeApp();
 
 exports.createStaffUser = onCall(async (request) => {
-  const { email } = request.data;
-  console.log("📥 Received data in function:", { email });
+  const { loginEmail, personalEmail, email } = request.data || {};
+  const authEmail = loginEmail || email;
+  console.log("📥 Received data in function:", { loginEmail: authEmail, personalEmail });
 
-  if (!email) {
-    throw new Error('Missing email');
+  if (!authEmail) {
+    throw new Error('Missing loginEmail');
   }
 
-  const userRecord = await admin.auth().createUser({ email });
-  return { uid: userRecord.uid };
+  const userRecord = await admin.auth().createUser({ email: authEmail });
+  return { uid: userRecord.uid, personalEmail: personalEmail || null };
 });
 
-async function sendCredentialsEmail({ staffName, staffEmail, contractorEmail }) {
+async function sendCredentialsEmail({ staffName, loginEmail, personalEmail, contractorEmail, staffEmail }) {
+  const authEmail = loginEmail || staffEmail;
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -26,14 +28,15 @@ async function sendCredentialsEmail({ staffName, staffEmail, contractorEmail }) 
     },
   });
 
-  const resetLink = await admin.auth().generatePasswordResetLink(staffEmail);
+  const resetLink = await admin.auth().generatePasswordResetLink(authEmail);
+  const recipientEmail = personalEmail || authEmail;
 
   const mailOptions = {
     from: process.env.GMAIL_USER,
     // Send to both contractor and staff
-    to: [contractorEmail, staffEmail],
+    to: [contractorEmail, recipientEmail],
     subject: 'New Staff Login Created',
-    text: `Kia ora,\n\nYou've successfully created a new SHE\u0394R iQ staff login.\n\nHere are the details for your records:\n\nName: ${staffName}\nEmail: ${staffEmail}\n\nPlease set your password using the following link:\n${resetLink}\n\nNg\u0101 mihi,\nThe SHE\u0394R iQ Team`,
+    text: `Kia ora,\n\nYou've successfully created a new SHE\u0394R iQ staff login.\n\nHere are the details for your records:\n\nName: ${staffName}\nEmail: ${authEmail}\n\nPlease set your password using the following link:\n${resetLink}\n\nNg\u0101 mihi,\nThe SHE\u0394R iQ Team`,
   };
 
   await transporter.sendMail(mailOptions);
