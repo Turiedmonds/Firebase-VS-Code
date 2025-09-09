@@ -812,16 +812,18 @@ function populateSessionData(data) {
         if (Array.isArray(data.incidents) && data.incidents.length) {
             data.incidents.forEach(inc => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td><input type="time" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
-                const timeInput = tr.querySelector('input');
+                tr.innerHTML = '<td><input type="time" /></td><td><input type="text" placeholder="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
+                const timeInput = tr.querySelector('input[type="time"]');
+                const nameInput = tr.querySelector('input[type="text"]');
                 const descInput = tr.querySelector('textarea');
                 if (timeInput) timeInput.value = inc.time || '';
+                if (nameInput) nameInput.value = inc.name || '';
                 if (descInput) descInput.value = inc.description || '';
                 incidentBody.appendChild(tr);
             });
         } else {
             const tr = document.createElement('tr');
-            tr.innerHTML = '<td><input type="time" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
+            tr.innerHTML = '<td><input type="time" /></td><td><input type="text" placeholder="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
             incidentBody.appendChild(tr);
         }
     }
@@ -1431,7 +1433,7 @@ function addIncident() {
     const body = document.getElementById('incidentBody');
     if (!body) return;
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><input type="time" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
+    tr.innerHTML = '<td><input type="time" /></td><td><input type="text" placeholder="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
     body.appendChild(tr);
 }
 
@@ -2692,9 +2694,10 @@ function collectExportData() {
         data.incidents = [];
         Array.from(incidentBody.querySelectorAll('tr')).forEach(tr => {
             const time = tr.querySelector('input[type="time"]')?.value || '';
+            const name = tr.querySelector('input[type="text"]')?.value || '';
             const desc = tr.querySelector('textarea')?.value || '';
-            if (time.trim() || desc.trim()) {
-                data.incidents.push({ time, description: desc });
+            if (time.trim() || name.trim() || desc.trim()) {
+                data.incidents.push({ time, name, description: desc });
             }
         });
     }
@@ -2743,8 +2746,8 @@ function buildExportRows(data) {
     if (Array.isArray(data.incidents) && data.incidents.length) {
         add([]);
         add(['Incidents'], true);
-        add(['Time', 'Description'], true);
-        data.incidents.forEach(i => add([i.time, i.description]));
+        add(['Time', 'Name', 'Description'], true);
+        data.incidents.forEach(i => add([i.time, i.name, i.description]));
     }
 
     return { rows, boldRows };
