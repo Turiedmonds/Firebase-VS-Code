@@ -1622,12 +1622,12 @@ button {
   text-align:left;
 }
 
-.heat-level-0 { background:#111; }
-.heat-level-1 { background:#1b1b1b; }
-.heat-level-2 { background:#252525; }
-.heat-level-3 { background:#2f2f2f; }
-.heat-level-4 { background:#393939; }
-.heat-level-5 { background:#434343; }
+.heat-level-0 { background:#1e3a8a; }
+.heat-level-1 { background:#2563eb; }
+.heat-level-2 { background:#16a34a; }
+.heat-level-3 { background:#facc15; color:#000; }
+.heat-level-4 { background:#fb923c; color:#000; }
+.heat-level-5 { background:#ef4444; color:#000; }
 
 .heatmap-legend {
   display:flex;
