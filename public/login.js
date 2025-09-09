@@ -140,6 +140,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      // Fallback: search contractors collection by email
+      let contractorByEmailSnap = await db
+        .collection('contractors')
+        .where('email', '==', userEmail)
+        .limit(1)
+        .get();
+
+      if (contractorByEmailSnap.empty && userEmail.toLowerCase() !== userEmail) {
+        contractorByEmailSnap = await db
+          .collection('contractors')
+          .where('email', '==', userEmail.toLowerCase())
+          .limit(1)
+          .get();
+      }
+
+      if (!contractorByEmailSnap.empty) {
+        const contractorId = contractorByEmailSnap.docs[0].id;
+        await finalizeLogin('contractor', contractorId, uid);
+        await cacheStaffCanLoad(contractorId);
+        window.location.href = 'dashboard.html';
+        return;
+      }
+
       // Not a contractor - search staff subcollections across all contractors
       const staffSnapshot = await db.collectionGroup('staff').get();
       let foundContractorId = null;
