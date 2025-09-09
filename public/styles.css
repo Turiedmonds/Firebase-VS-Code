@@ -829,6 +829,50 @@ button {
 #shearers-modal .siq-rank-table th, #shedstaff-modal .siq-rank-table th,
 #shearers-modal .siq-rank-table td , #shedstaff-modal .siq-rank-table td { padding: 5px 7px; font-size: 0.9rem; }
 
+/* Session detail modal */
+#session-detail-modal.siq-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 10000;
+}
+#session-detail-modal[aria-hidden="false"] { display: block; }
+#session-detail-modal .siq-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+}
+#session-detail-modal .siq-modal__panel {
+  position: absolute;
+  right: 24px;
+  left: 24px;
+  top: 10vh;
+  margin: 0 auto;
+  max-width: 860px;
+  background: #0f1115;
+  border: 1px solid #21283a;
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.45);
+}
+#session-detail-modal .siq-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #1b2130;
+}
+#session-detail-modal .siq-modal__body {
+  padding: 12px 16px 18px;
+  white-space: pre-line;
+}
+#session-detail-modal .siq-modal__close {
+  background: transparent;
+  border: none;
+  color: #c8d0e0;
+  font-size: 22px;
+  cursor: pointer;
+}
+
 /* Optional: allow more cards per row on desktop */
 #page-content .dash-grid {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); /* was ~280px */

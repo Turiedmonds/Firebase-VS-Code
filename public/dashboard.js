@@ -4069,6 +4069,26 @@ SessionStore.onChange(refresh);
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const currentYear = new Date().getFullYear();
 
+  const detailModal = document.getElementById('session-detail-modal');
+  const detailBody = document.getElementById('session-detail-body');
+
+  function showSessionDetail(lines){
+    if (!detailModal || !detailBody){
+      alert(lines.join('\n'));
+      return;
+    }
+    detailBody.textContent = lines.join('\n');
+    detailModal.setAttribute('aria-hidden','false');
+  }
+
+  function hideSessionDetail(){
+    detailModal?.setAttribute('aria-hidden','true');
+  }
+
+  detailModal?.addEventListener('click', e => {
+    if (e.target.matches('[data-close-modal], .siq-modal__backdrop')) hideSessionDetail();
+  });
+
   fillYearsSelect(yearSel);
 
   yearSel.addEventListener('change', () => {
@@ -4384,7 +4404,7 @@ SessionStore.onChange(refresh);
         if (e.teamLeader) lines.push(`Team Leader: ${e.teamLeader}`);
         if (e.startTime) lines.push(`Start Time: ${e.startTime}`);
         if (e.finishTime) lines.push(`Finish Time: ${e.finishTime}`);
-        alert(lines.join('\n'));
+        showSessionDetail(lines);
       }
     });
     window.calendar = calendar;
