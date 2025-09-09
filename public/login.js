@@ -147,14 +147,16 @@ document.addEventListener('DOMContentLoaded', () => {
       staffSnapshot.forEach((doc) => {
         const data = doc.data();
         console.log("Checking role:", data.role);
-        if (
-          data.email &&
-          data.email.toLowerCase() === userEmail.toLowerCase() &&
-          ((data.role || "").toLowerCase().trim() === "staff")
-        ) {
+
+        const emailsMatch =
+          data.email && data.email.toLowerCase() === userEmail.toLowerCase();
+        const role = (data.role || "").toLowerCase().trim();
+
+        if (emailsMatch && (role === "staff" || !data.role)) {
+          if (!data.role) {
+            console.warn("Role field missing in staff document:", doc.id);
+          }
           foundContractorId = data.contractorId;
-        } else if (!data.role) {
-          console.error("Role field missing in staff document:", doc.id);
         }
       });
 
