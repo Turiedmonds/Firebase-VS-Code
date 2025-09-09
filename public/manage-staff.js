@@ -1,7 +1,7 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, getDocs, addDoc, deleteDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js';
+import firebase from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js';
+import 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js';
+import 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js';
+import 'https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyD529f2jn9mb8OAip4x6l3IQb7KOaPNxaM',
@@ -12,14 +12,15 @@ const firebaseConfig = {
   appId: '1:201669876235:web:379fc4035da99f4b09450e'
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const functions = getFunctions(app);
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const functions = firebase.functions();
 const STAFF_LIMIT = 10;
 const DELETED_STAFF_STATE_KEY = 'deletedStaffSectionState';
 
 let actionOverlay, actionOverlayText, confirmModal, confirmMessage, confirmYesBtn, confirmCancelBtn;
+let lastStaffInfo = null;
 
 function showActionOverlay(message) {
   if (!actionOverlay) return;
@@ -61,7 +62,11 @@ async function loadStaffList(contractorId) {
   const summaryEl = document.getElementById('staffSummary');
   tbody.innerHTML = '';
 
-  const snapshot = await getDocs(collection(db, 'contractors', contractorId, 'staff'));
+  const snapshot = await db
+    .collection('contractors')
+    .doc(contractorId)
+    .collection('staff')
+    .get();
   const docs = snapshot.docs;
   docs.forEach((docSnap, index) => {
     const data = docSnap.data();
@@ -121,8 +126,12 @@ async function loadDeletedStaff(contractorId) {
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  const q = query(collection(db, 'contractors', contractorId, 'logs'), where('type', '==', 'staff_deleted'));
-  const snapshot = await getDocs(q);
+  const snapshot = await db
+    .collection('contractors')
+    .doc(contractorId)
+    .collection('logs')
+    .where('type', '==', 'staff_deleted')
+    .get();
 
   snapshot.forEach(docSnap => {
     const data = docSnap.data();
@@ -174,7 +183,7 @@ async function deleteStaff(btn) {
   try {
     btn.disabled = true;
     showActionOverlay('Deleting staff…');
-    const fn = httpsCallable(functions, 'deleteStaffUser');
+    const fn = functions.httpsCallable('deleteStaffUser');
     await fn({ uid, contractorId });
     await loadStaffList(contractorId);
   } catch (err) {
@@ -198,7 +207,7 @@ async function restoreStaff(btn) {
   try {
     btn.disabled = true;
     showActionOverlay('Restoring staff…');
-    const fn = httpsCallable(functions, 'restoreStaffUser');
+    const fn = functions.httpsCallable('restoreStaffUser');
     await fn({ logId: logid, contractorId });
     await loadStaffList(contractorId);
   } catch (err) {
@@ -216,6 +225,9 @@ async function restoreStaff(btn) {
     const createOverlay = document.getElementById('add-staff-loading');
     const successModal = document.getElementById('staffSuccessModal');
     const successOkBtn = document.getElementById('successOkBtn');
+    const copyModal = document.getElementById('copyModal');
+    const copyCredentials = document.getElementById('copyCredentials');
+    const copyOkBtn = document.getElementById('copyOkBtn');
     actionOverlay = document.getElementById('action-loading');
     actionOverlayText = document.getElementById('action-loading-text');
     confirmModal = document.getElementById('confirmModal');
@@ -236,15 +248,21 @@ async function restoreStaff(btn) {
       });
     }
     if (overlay) overlay.style.display = 'flex';
-    onAuthStateChanged(auth, async user => {
+
+    if (copyOkBtn) {
+      copyOkBtn.addEventListener('click', () => {
+        if (copyModal) copyModal.style.display = 'none';
+      });
+    }
+    auth.onAuthStateChanged(async user => {
       if (!user) {
         window.location.replace('login.html');
         return;
       }
       try {
-        const docRef = doc(collection(db, 'contractors'), user.uid);
-        const snap = await getDoc(docRef);
-        const data = snap.exists() ? snap.data() : {};
+        const docRef = db.collection('contractors').doc(user.uid);
+        const snap = await docRef.get();
+        const data = snap.exists ? snap.data() : {};
         if (data.role !== 'contractor') {
           window.location.replace('login.html');
           return;
@@ -275,12 +293,14 @@ async function restoreStaff(btn) {
       }
 
       const addBtn = document.getElementById('addStaffBtn');
+      const sendLoginBtn = document.getElementById('sendLoginBtn');
       if (successOkBtn) {
         successOkBtn.addEventListener('click', () => {
           if (successModal) successModal.style.display = 'none';
           document.getElementById('staff-name').value = '';
           document.getElementById('staffEmailInput').value = '';
-          document.getElementById('new-password').value = '';
+          document.getElementById('staffPhoneInput').value = '';
+          document.getElementById('staffPersonalEmailInput').value = '';
           document.getElementById('staffRoleSelect').value = 'staff';
         });
       }
@@ -294,7 +314,8 @@ async function restoreStaff(btn) {
         const contractorUid = currentUser.uid;
       const staffName = document.getElementById('staff-name').value.trim();
       const email = document.getElementById('staffEmailInput').value.trim();
-      const password = document.getElementById('new-password').value.trim();
+      const phone = document.getElementById('staffPhoneInput').value.trim();
+      const personalEmail = document.getElementById('staffPersonalEmailInput').value.trim();
       const role = document.getElementById('staffRoleSelect').value;
       if (!staffName) {
         alert('Please enter a name');
@@ -304,45 +325,52 @@ async function restoreStaff(btn) {
         alert('Please enter an email address');
         return;
       }
-      if (!password || password.length < 6) {
-        alert('Temporary password must be at least 6 characters');
-        return;
-      }
 
-        console.log('Creating staff user with', { email, password });
+        console.log('Creating staff user with', { email, phone, personalEmail });
 
         try {
           if (createOverlay) createOverlay.style.display = 'flex';
-          const createStaffUser = httpsCallable(functions, 'createStaffUser');
-          const result = await createStaffUser({ email, password });
-          const uid = result.data.uid;
+          const createStaffUser = functions.httpsCallable('createStaffUser');
+          const { uid, contractorCreatedEmail, tempPassword } = (
+            await createStaffUser({
+              contractorId: contractorUid,
+              contractorCreatedEmail: email,
+              phone,
+              personalEmail
+            })
+          ).data;
           console.log('Created staff user UID:', uid);
 
-        const staffRef = doc(db, 'contractors', contractorUid, 'staff', uid);
-        await setDoc(staffRef, {
+        const staffRef = db
+          .collection('contractors')
+          .doc(contractorUid)
+          .collection('staff')
+          .doc(uid);
+        await staffRef.set({
           name: staffName,
-          email,
+          email: contractorCreatedEmail,
           role,
           contractorId: contractorUid,
-          createdAt: serverTimestamp()
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        console.log('Reached sendStaffCredentials function');
-        console.log('Contractor email:', auth.currentUser?.email);
-        console.log('staffName:', staffName, 'staffEmail:', email, 'password:', password);
+        lastStaffInfo = {
+          staffName,
+          staffEmail: contractorCreatedEmail,
+          password: tempPassword,
+          contractorEmail: auth.currentUser.email
+        };
 
-        try {
-          const sendStaffCredentials = httpsCallable(functions, 'sendStaffCredentials');
-          const response = await sendStaffCredentials({
-            staffName,
-            staffEmail: email,
-            password,
-            contractorEmail: auth.currentUser.email
+        if (phone || personalEmail) {
+          const sendStaffCredentials = functions.httpsCallable('sendStaffCredentials');
+          await sendStaffCredentials({
+            ...lastStaffInfo,
+            phone,
+            personalEmail
           });
-          console.log('Staff credentials email sent successfully:', response.data);
-        } catch (error) {
-          console.error('Email function failed:', error.message || error);
-          throw error;
+        } else if (copyModal && copyCredentials) {
+          copyCredentials.textContent = `Login Email: ${contractorCreatedEmail}\nTemporary Password: ${tempPassword}`;
+          copyModal.style.display = 'block';
         }
 
         console.log('Staff member added successfully');
@@ -355,5 +383,32 @@ async function restoreStaff(btn) {
           if (createOverlay) createOverlay.style.display = 'none';
         }
       });
+
+      if (sendLoginBtn) {
+        sendLoginBtn.addEventListener('click', async () => {
+          if (!lastStaffInfo) {
+            alert('No staff user to send credentials for');
+            return;
+          }
+          const phone = document.getElementById('staffPhoneInput').value.trim();
+          const personalEmail = document.getElementById('staffPersonalEmailInput').value.trim();
+          if (!phone && !personalEmail) {
+            alert('Enter phone or personal email to send login details');
+            return;
+          }
+          try {
+            const sendStaffCredentials = functions.httpsCallable('sendStaffCredentials');
+            await sendStaffCredentials({
+              ...lastStaffInfo,
+              phone,
+              personalEmail
+            });
+            alert('Login details sent');
+          } catch (err) {
+            console.error('Failed to send login details', err);
+            alert('Error sending login details: ' + (err.message || err));
+          }
+        });
+      }
     });
   });
