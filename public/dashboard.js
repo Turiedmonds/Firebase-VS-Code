@@ -1825,6 +1825,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
+      const btnIncidentReports = document.getElementById('btnIncidentReports');
+      if (btnIncidentReports) {
+        btnIncidentReports.addEventListener('click', () => {
+          window.location.href = 'incident-reports.html';
+        });
+      }
+
       const farmSummaryBtn = document.getElementById('farm-summary-btn');
       if (farmSummaryBtn) {
         farmSummaryBtn.addEventListener('click', () => {
@@ -2075,6 +2082,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { sel: '#top5-farms', text: 'Top 5 Farms — view leading farms; open “View All”.' },
     { sel: '#btnManageStaff', text: 'Manage Staff — add/remove users and see online status.' },
     { sel: '#btnViewSavedSessions', text: 'Saved Sessions — reopen previous tally days.' },
+    { sel: '#btnIncidentReports', text: 'Incident Reports — review all recorded incidents.' },
     { sel: '#btnReturnToActive', text: 'Return to Active Session — jump back into an unfinished tally (shown only when a session exists).', optional: true },
     { sel: '#btnStartNewDay', text: 'Start New Day — begin today’s tally.' },
     { sel: '#farm-summary-btn', text: 'Farm Summary — compare farm totals and visits.' },
