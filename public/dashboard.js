@@ -721,13 +721,7 @@ function initTop5ShearersWidget() {
       if (rootEl) rootEl.remove();
       return;
     }
-    // Prefer stored scope; fall back to current auth user
-    let contractorId = localStorage.getItem('contractor_id');
-    if (!contractorId && firebase?.auth?.currentUser?.uid) {
-      contractorId = firebase.auth().currentUser.uid;
-      try { localStorage.setItem('contractor_id', contractorId); } catch {}
-      console.debug('[Top5Shearers] contractor_id recovered from auth');
-    }
+    const contractorId = localStorage.getItem('contractor_id');
     if (!contractorId) {
       console.warn('[Top5Shearers] Missing contractor_id');
       // Render a tiny empty state but do NOT throw.
@@ -1140,12 +1134,7 @@ function initTop5ShedStaffWidget() {
       return;
     }
 
-    let contractorId = localStorage.getItem('contractor_id');
-    if (!contractorId && firebase?.auth?.currentUser?.uid) {
-      contractorId = firebase.auth().currentUser.uid;
-      try { localStorage.setItem('contractor_id', contractorId); } catch {}
-      console.debug('[Top5ShedStaff] contractor_id recovered from auth');
-    }
+    const contractorId = localStorage.getItem('contractor_id');
     if (!contractorId) {
       console.warn('[Top5ShedStaff] Missing contractor_id');
       const listEl = document.getElementById('top5-shedstaff-list');
@@ -1476,12 +1465,7 @@ function initTop5FarmsWidget() {
       return;
     }
 
-    let contractorId = localStorage.getItem('contractor_id');
-    if (!contractorId && firebase?.auth?.currentUser?.uid) {
-      contractorId = firebase.auth().currentUser.uid;
-      try { localStorage.setItem('contractor_id', contractorId); } catch {}
-      console.debug('[Top5Farms] contractor_id recovered from auth');
-    }
+    const contractorId = localStorage.getItem('contractor_id');
     if (!contractorId) {
       console.warn('[Top5Farms] Missing contractor_id');
       const listEl = document.getElementById('top5-farms-list');
@@ -2451,7 +2435,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   // Find contractor id (same logic you already use)
-  const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+  const contractorId = localStorage.getItem('contractor_id');
 
   // Utility: crutched?
   function isCrutched(name){
@@ -2734,7 +2718,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
     return;
   }
 
-  const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+  const contractorId = localStorage.getItem('contractor_id');
 
   // Returns { hours: Number, displayText: String }.
   // displayText prefers the original user-entered string if available.
@@ -3136,7 +3120,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
   const tblByMonth = document.querySelector('#kpiTHByMonth tbody');
   const exportBtn = document.getElementById('kpiTHExport');
 
-  const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+  const contractorId = localStorage.getItem('contractor_id');
 
   if (dashCache.kpiTotalHours != null && pillVal) {
     pillVal.textContent = dashCache.kpiTotalHours;
@@ -3559,7 +3543,7 @@ SessionStore.onChange(refresh);
   const exportBtn = document.getElementById('kpiDWExport');
   let exportExtras = new Map();
 
-  const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+  const contractorId = localStorage.getItem('contractor_id');
 
   if (dashCache.kpiDaysWorked != null && pillVal) {
     pillVal.textContent = dashCache.kpiDaysWorked;

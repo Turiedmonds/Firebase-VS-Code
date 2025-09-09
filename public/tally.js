@@ -433,7 +433,7 @@ function updateSyncStatusBanner() {
 
 async function tryFlushQueue() {
     if (!navigator.onLine || typeof firebase === 'undefined' || !firebase.firestore || !firebase.auth) return;
-    const contractorId = localStorage.getItem('contractor_id') || firebase.auth().currentUser?.uid || null;
+    const contractorId = localStorage.getItem('contractor_id');
     if (!contractorId) return;
     const pending = getPending();
     for (const item of pending) {
@@ -2803,8 +2803,8 @@ async function saveSessionToFirestore(showStatus = false) {
     firestoreSessionId = `${station}_${date}_${leader}`;
   }
 
-  // ✅ Use contractorId from localStorage, fallback to current user UID
-  const contractorId = localStorage.getItem('contractor_id') || firebase.auth().currentUser?.uid || null;
+  // ✅ Use contractorId from localStorage
+  const contractorId = localStorage.getItem('contractor_id');
   if (!contractorId) {
     console.error('Missing contractor_id');
     return;
@@ -2841,7 +2841,7 @@ async function listSessionsFromFirestore() {
         return [];
     }
 
-    const contractorId = localStorage.getItem('contractor_id') || firebase.auth().currentUser?.uid || null;
+    const contractorId = localStorage.getItem('contractor_id');
     if (!contractorId) {
         console.error('Missing contractor_id');
         return [];
@@ -2882,7 +2882,7 @@ async function loadSessionFromFirestore(id) {
         return null;
     }
 
-    const contractorId = localStorage.getItem('contractor_id') || firebase.auth().currentUser?.uid || null;
+    const contractorId = localStorage.getItem('contractor_id');
     if (!contractorId) {
         console.error('Missing contractor_id');
         return null;
@@ -3506,8 +3506,15 @@ async function markTourSeen(uid) {
     localStorage.setItem('tally_guide_done', 'true');
     // Cloud (per-user) if authed
     if (!uid || !firebase?.firestore) return;
+    const contractorId = localStorage.getItem('contractor_id');
+    if (!contractorId) return;
     const db = firebase.firestore();
-    await db.collection('users').doc(uid).set({ hasSeenTour: true }, { merge: true });
+    await db
+      .collection('contractors')
+      .doc(contractorId)
+      .collection('users')
+      .doc(uid)
+      .set({ hasSeenTour: true }, { merge: true });
   } catch (e) {
     console.warn('markTourSeen failed; local flag only:', e);
   }
@@ -3518,10 +3525,16 @@ async function checkTourWelcomeStatus(uid) {
   // If local says done, skip (supports offline)
   if (localStorage.getItem('tally_guide_done') === 'true') return;
   // Try Firestore if we have a user and firestore loaded
-  if (uid && firebase?.firestore) {
+  const contractorId = localStorage.getItem('contractor_id');
+  if (uid && contractorId && firebase?.firestore) {
     try {
       const db = firebase.firestore();
-      const snap = await db.collection('users').doc(uid).get();
+      const snap = await db
+        .collection('contractors')
+        .doc(contractorId)
+        .collection('users')
+        .doc(uid)
+        .get();
       const seen = snap.exists && snap.data() && snap.data().hasSeenTour === true;
       if (seen) {
         localStorage.setItem('tally_guide_done','true');
