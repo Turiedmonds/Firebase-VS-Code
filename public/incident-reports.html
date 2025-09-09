@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Incident Reports - SHEΔR iQ</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 10px;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background: #151515;
+    }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-init.js"></script>
+</head>
+<body>
+  <div class="logo-container">
+    <img src="logo.png" alt="SHEΔR iQ logo" />
+    <h2>Incident Reports</h2>
+  </div>
+  <div id="incidentFilters" style="display:flex;gap:8px;align-items:end;margin:10px 0;flex-wrap:wrap;">
+    <label>
+      <div style="font-size:12px;opacity:.8;">From</div>
+      <input id="filterFrom" type="date" style="padding:6px;">
+    </label>
+    <label>
+      <div style="font-size:12px;opacity:.8;">To</div>
+      <input id="filterTo" type="date" style="padding:6px;">
+    </label>
+    <button id="applyFilters" class="tab-button" type="button">Apply</button>
+    <button id="clearFilters" class="tab-button" type="button">Clear</button>
+  </div>
+  <table id="incidentTable">
+    <thead>
+      <tr><th>Date</th><th>Time</th><th>Name</th><th>Description</th><th>Station</th></tr>
+    </thead>
+    <tbody id="incidentBody"></tbody>
+  </table>
+  <button id="backBtn" class="tab-button" style="margin-top:20px;">Back</button>
+  <script type="module" src="incident-reports.js"></script>
+</body>
+</html>
