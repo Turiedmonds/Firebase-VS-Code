@@ -1,7 +1,9 @@
-firebase.auth().onAuthStateChanged(user => {
-  if (!user) {
-    window.location.href = 'login.html';
-  }
+firebase.auth().onAuthStateChanged(async (user) => {
+  if (!user) return window.location.replace('login.html');
+  const snap = await firebase.firestore().collection('users').doc(user.uid).get();
+  const data = snap.data() || {};
+  localStorage.setItem('contractor_id', data.contractorId);
+  if (data.mustChangePassword) window.location.replace('change-password.html');
 });
 
 export function handleLogout() {
