@@ -116,6 +116,7 @@ function renderSessionRowInto(container, docId, data) {
     : 0;
   const shearers = Array.isArray(data.stands) ? data.stands.length : 0;
   const shedStaff = Array.isArray(data.shedStaff) ? data.shedStaff.length : 0;
+  const hasIncidents = Array.isArray(data.incidents) && data.incidents.length;
 
   const row = document.createElement('div');
   row.style.display = 'flex';
@@ -133,6 +134,19 @@ function renderSessionRowInto(container, docId, data) {
     Sheep: ${totalSheep} | Shearers: ${shearers} | Shed Staff: ${shedStaff}
   `;
   row.appendChild(info);
+  if (hasIncidents) {
+    const flag = document.createElement('span');
+    flag.textContent = '🚩';
+    flag.title = 'View incident report';
+    flag.style.cursor = 'pointer';
+    flag.style.marginLeft = '6px';
+    const strong = info.querySelector('strong');
+    strong?.appendChild(flag);
+    flag.addEventListener('click', () => {
+      localStorage.setItem('incident_session', JSON.stringify(data));
+      window.location.href = 'incident-report.html';
+    });
+  }
 
   const btns = document.createElement('div');
 
