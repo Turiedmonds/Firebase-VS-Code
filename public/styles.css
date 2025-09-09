@@ -1622,7 +1622,7 @@ button {
   text-align:left;
 }
 
-.heat-level-0 { background:#1e3a8a; }
+.heat-level-0 { background:#111; }
 .heat-level-1 { background:#2563eb; }
 .heat-level-2 { background:#16a34a; }
 .heat-level-3 { background:#facc15; color:#000; }
