@@ -1637,6 +1637,10 @@ button {
   opacity:.8;
   margin:8px 0;
 }
+.heatmap-legend-title {
+  flex-basis:100%;
+  font-weight:bold;
+}
 .heatmap-legend span {
   display:flex;
   align-items:center;
