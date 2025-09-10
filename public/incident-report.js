@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     table.appendChild(tbody);
     container.appendChild(table);
   }
-  document.getElementById('backBtn')?.addEventListener('click', () => {
+  document.getElementById('backBtn'() && ).addEventListener)('click', () => {
     window.history.back();
   });
 });

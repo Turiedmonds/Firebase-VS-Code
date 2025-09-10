@@ -486,7 +486,7 @@ function updateSyncStatusBanner() {
 
 async function tryFlushQueue() {
     if (!navigator.onLine || typeof firebase === 'undefined' || !firebase.firestore || !firebase.auth) return;
-    const contractorId = localStorage.getItem('contractor_id') || firebase.auth().currentUser?.uid || null;
+    const contractorId = localStorage.getItem('contractor_id') || firebase.auth(().currentUser && ).currentUser.uid) || null;
     if (!contractorId) return;
     const pending = getPending();
     for (const item of pending) {
@@ -767,7 +767,7 @@ function setupDailyLayout(shearers, counts, staff) {
         isSetupComplete = true;
         showView('tallySheetView');
 
-        const stationName = document.getElementById('stationName')?.value.trim();
+        const stationName = document.getElementById('stationName'() && ).value).trim();
         const titleEl = document.getElementById('summaryTitle');
         if (titleEl && stationName) {
           titleEl.textContent = `${stationName} \u2014 Daily Summary`;
@@ -829,7 +829,7 @@ function populateSessionData(data) {
 
     if (headerRowEl && Array.isArray(data.stands)) {
         data.stands.forEach((st, idx) => {
-         const input = headerRowEl.children[idx + 1]?.querySelector('input');   
+         const input = headerRowEl.children[idx + (1] && 1].querySelector)('input');   
             if (input) {
                 input.value = st.name || '';
                 adjustStandNameWidth(input);
@@ -855,7 +855,7 @@ function populateSessionData(data) {
             const row = bodyEl.children[idx];
             if (!row) return;
             run.stands.forEach((val, sIdx) => {
-                const input = row.children[sIdx + 1]?.querySelector('input[type="number"]');
+                const input = row.children[sIdx + (1] && 1].querySelector)('input[type="number"]');
                 if (input) input.value = val;
             });
             const typeInput = row.querySelector('.sheep-type input');
@@ -1167,8 +1167,8 @@ function hideDatesModal() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('dateListCloseBtn')?.addEventListener('click', hideDatesModal);
-    document.getElementById('dateListModal')?.addEventListener('click', (e) => {
+    document.getElementById('dateListCloseBtn'() && ).addEventListener)('click', hideDatesModal);
+    document.getElementById('dateListModal'() && ).addEventListener)('click', (e) => {
         if (e.target.id === 'dateListModal') hideDatesModal();
     });
 });
@@ -1771,8 +1771,8 @@ function resetAutoHours(input) {
     delete input.dataset.manual;
     delete input.dataset.modalShown;
     const parent = input.parentNode;
-    parent.querySelector('.manual-badge')?.remove();
-    parent.querySelector('.reset-auto-btn')?.remove();
+    parent.querySelector('.manual-badge'() && ).remove)();
+    parent.querySelector('.reset-auto-btn'() && ).remove)();
     if (input.dataset.autoHours === 'shearer') {
         calculateHoursWorked();
     } else {
@@ -1941,10 +1941,10 @@ function cleanUpEmptyRowsAndColumns(manual = false) {
     for (let col = numStands; col >= 1; col--) {
         let isEmpty = true;
         for (let r = 0; r < body.rows.length; r++) {
-            const inp = body.rows[r].cells[col]?.querySelector('input');
+            const inp = body.rows[r].cells[(col] && col].querySelector)('input');
             if (inp && inp.value.trim() !== '') { isEmpty = false; break; }
         }
-        const headerInp = headerRow.cells[col]?.querySelector('input');
+        const headerInp = headerRow.cells[(col] && col].querySelector)('input');
         if (headerInp && headerInp.value.trim() !== '') isEmpty = false;
         if (isEmpty) {
             headerRow.deleteCell(col);
@@ -1959,7 +1959,7 @@ function cleanUpEmptyRowsAndColumns(manual = false) {
         const row = body.rows[r];
         let isEmpty = true;
         for (let c = 1; c <= numStands; c++) {
-            const inp = row.cells[c]?.querySelector('input');
+            const inp = row.cells[(c] && c].querySelector)('input');
             if (inp && inp.value.trim() !== '') { isEmpty = false; break; }
         }
         const typeInput = row.querySelector('.sheep-type input');
@@ -1975,7 +1975,7 @@ function cleanUpEmptyRowsAndColumns(manual = false) {
         for (let i = staffTable.rows.length - 1; i >= 0; i--) {
             const row = staffTable.rows[i];
             const nameInput = row.querySelector("input[type='text']");
-            const name = nameInput?.value.trim() || '';
+            const name = (nameInput && nameInput.value).trim() || '';
 
             // Remove row if no name is entered
             if (name === '') {
@@ -2147,7 +2147,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (lastNBtn) {
     lastNBtn.addEventListener('click', () => {
-      const n = Math.max(1, parseInt(lastNInput?.value, 10) || 0);
+      const n = Math.max(1, parseInt((lastNInput && lastNInput.value), 10) || 0);
       const today = new Date();
       const start = new Date();
       start.setDate(today.getDate() - (n - 1));
@@ -2161,10 +2161,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (endEl) endEl.value = fmt(today);
       if (allEl) allEl.checked = false;
       populateStationDropdown();
-      const farm = (farmSel?.value || '').trim();
+      const farm = ((farmSel && farmSel.value) || '').trim();
       if (farm) {
         hideMsg();
-        apply?.click();
+        (apply && apply.click)();
       } else {
         if (typeof clearStationSummaryView === 'function') clearStationSummaryView();
         showMsg('Select a farm and date range, or tick “All time for this farm”, then press Apply.');
@@ -2174,10 +2174,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (apply) {
     apply.addEventListener('click', () => {
-      const farm  = (farmSel?.value || '').trim();
-      const start = startEl?.value || '';
-      const end   = endEl?.value || '';
-      const all   = !!allEl?.checked;
+      const farm  = ((farmSel && farmSel.value) || '').trim();
+      const start = (startEl && startEl.value) || '';
+      const end   = (endEl && endEl.value) || '';
+      const all   = !!(allEl && allEl.checked);
 
       if (!farm) {
         showMsg('Please select a farm.');
@@ -2214,7 +2214,7 @@ document.addEventListener('DOMContentLoaded', () => {
      const numStandsLocal = numStands;
      const names = [];
      for (let i = 1; i <= numStandsLocal; i++) {
-         const input = headerRow.children[i]?.querySelector('input');
+         const input = headerRow.children[(i] && i].querySelector)('input');
          const name = input && input.value.trim() ? input.value.trim() : `Stand ${i}`;
          names.push(name);
      }
@@ -2230,7 +2230,7 @@ document.addEventListener('DOMContentLoaded', () => {
        const type = (typeInput ? typeInput.value.trim() : '') || '❓ Missing Type';
        if (!totals[type]) totals[type] = new Array(numStandsLocal).fill(0);
        for (let s = 1; s <= numStandsLocal; s++) {
-           const val = parseInt(row.children[s]?.querySelector('input')?.value) || 0;
+           const val = parseInt(row.children[(s] && s].querySelector)('input'() && ).value)) || 0;
            totals[type][s-1] += val;
            standTotals[s-1] += val;
        }
@@ -2296,8 +2296,8 @@ document.addEventListener('DOMContentLoaded', () => {
      if (staffBody) {
          staffBody.innerHTML = '';
           document.querySelectorAll('#shedStaffTable tr').forEach(row => {
-            const name = row.querySelector('td:nth-child(1) input')?.value || '';
-            const hoursStr = row.querySelector('td:nth-child(2) input')?.value || '';
+            const name = row.querySelector('td:nth-child(1) input'() && ).value) || '';
+            const hoursStr = row.querySelector('td:nth-child(2) input'() && ).value) || '';
             if (name.trim() || hoursStr.trim()) {
                 const tr = document.createElement('tr');
                 const nameTd = document.createElement('td');
@@ -2320,9 +2320,9 @@ async function populateStationDropdown() {
     if (!select) return;
     const current = select.value;
 
-    const start = startEl?.value || '';
-    const end   = endEl?.value || '';
-    const all   = !!allEl?.checked;
+    const start = (startEl && startEl.value) || '';
+    const end   = (endEl && endEl.value) || '';
+    const all   = !!(allEl && allEl.checked);
     let startDate = start ? new Date(start) : null;
     let endDate   = end ? new Date(end) : null;
     const filterByDate = !all && startDate && endDate;
@@ -2432,10 +2432,10 @@ async function buildStationSummary() {
   const allEl   = document.getElementById('summaryAllTime');
   const msgEl   = document.getElementById('stationNoData');
 
-  const farm  = (farmSel?.value || '').trim();
-  const start = startEl?.value || '';
-  const end   = endEl?.value || '';
-  const all   = !!allEl?.checked;
+  const farm  = ((farmSel && farmSel.value) || '').trim();
+  const start = (startEl && startEl.value) || '';
+  const end   = (endEl && endEl.value) || '';
+  const all   = !!(allEl && allEl.checked);
 
   function showMsg(text) {
     if (!msgEl) return;
@@ -2546,7 +2546,7 @@ async function buildStationSummary() {
         shearBody.innerHTML = '';
         const rows = Object.entries(shearerData).sort((a,b)=>b[1].total-a[1].total);
         rows.forEach(([name,data]) => {
-             const trimmed = name?.trim() || '';
+             const trimmed = (name && name.trim)() || '';
             if (!trimmed) return;
             const tr = document.createElement('tr');
             const nameTd = document.createElement('td');
@@ -2569,7 +2569,7 @@ async function buildStationSummary() {
         staffBody.innerHTML = '';
         const rows = Object.entries(staffData).sort((a,b)=>b[1]-a[1]);
         rows.forEach(([n,h])=>{
-            const trimmed = n?.trim() || '';
+            const trimmed = (n && n.trim)() || '';
             if (!trimmed) return;
             const tr = document.createElement('tr');
             const nameTd = document.createElement('td');
@@ -2587,7 +2587,7 @@ async function buildStationSummary() {
         leaderBody.innerHTML = '';
         const rows = Object.entries(leaders).sort((a,b)=>b[1].total-a[1].total);
         rows.forEach(([n,o])=>{
-            const trimmed = n?.trim() || '';
+            const trimmed = (n && n.trim)() || '';
             if (!trimmed) return;
             const tr = document.createElement('tr');
             const nameTd = document.createElement('td');
@@ -2619,7 +2619,7 @@ async function buildStationSummary() {
         combBody.innerHTML = '';
         const rows = Object.entries(combs);
         rows.forEach(([c,set])=>{
-            const trimmed = c?.trim() || '';
+            const trimmed = (c && c.trim)() || '';
             if (!trimmed) return;
             const tr = document.createElement('tr');
             const combTd = document.createElement('td');
@@ -2676,26 +2676,26 @@ async function buildStationSummary() {
 }
  
 function clearStationSummaryView() {
-    document.querySelector('#stationShearerTable thead tr')?.replaceChildren();
-    document.querySelector('#stationShearerTable tbody')?.replaceChildren();
-    document.querySelector('#stationStaffTable tbody')?.replaceChildren();
-    document.querySelector('#stationLeaderTable tbody')?.replaceChildren();
-    document.querySelector('#stationCombTable tbody')?.replaceChildren();
-    document.querySelector('#stationTotalTable thead tr')?.replaceChildren();
-    document.querySelector('#stationTotalTable tbody')?.replaceChildren();
+    document.querySelector('#stationShearerTable thead tr'() && ).replaceChildren)();
+    document.querySelector('#stationShearerTable tbody'() && ).replaceChildren)();
+    document.querySelector('#stationStaffTable tbody'() && ).replaceChildren)();
+    document.querySelector('#stationLeaderTable tbody'() && ).replaceChildren)();
+    document.querySelector('#stationCombTable tbody'() && ).replaceChildren)();
+    document.querySelector('#stationTotalTable thead tr'() && ).replaceChildren)();
+    document.querySelector('#stationTotalTable tbody'() && ).replaceChildren)();
     const msg = document.getElementById('stationNoData');
     if (msg) msg.style.display = 'block';
 }
 
 function collectExportData() {
      const data = {
-         date: document.getElementById('date')?.value || '',
-        stationName: document.getElementById('stationName')?.value.trim() || '',
-        teamLeader: document.getElementById('teamLeader')?.value.trim() || '',
-         combType: document.getElementById('combType')?.value || '',
-         startTime: document.getElementById('startTime')?.value || '',
-         finishTime: document.getElementById('finishTime')?.value || '',
-         hoursWorked: document.getElementById('hoursWorked')?.value || '',
+         date: document.getElementById('date'() && ).value) || '',
+        stationName: document.getElementById('stationName'() && ).value).trim() || '',
+        teamLeader: document.getElementById('teamLeader'() && ).value).trim() || '',
+         combType: document.getElementById('combType'() && ).value) || '',
+         startTime: document.getElementById('startTime'() && ).value) || '',
+         finishTime: document.getElementById('finishTime'() && ).value) || '',
+         hoursWorked: document.getElementById('hoursWorked'() && ).value) || '',
          timeSystem: isNineHourDay ? '9-hr' : '8-hr',
          stands: [],
          shearerCounts: [],
@@ -2703,7 +2703,7 @@ function collectExportData() {
          sheepTypeTotals: []
      };
 
-     const finishTime = document.getElementById('finishTime')?.value;
+     const finishTime = document.getElementById('finishTime'() && ).value);
      const sessionHasEnded = finishTime && finishTime.trim() !== '';
  
      const header = document.getElementById('headerRow');
@@ -2711,12 +2711,12 @@ function collectExportData() {
      if (!header || !tbody) return data;
  
     for (let s = 1; s <= numStands; s++) {
-        const headerInput = header.children[s]?.querySelector('input');
+        const headerInput = header.children[(s] && s].querySelector)('input');
         const name = headerInput && headerInput.value.trim() ? headerInput.value.trim() : `Stand ${s}`;
         let hasData = !!(headerInput && headerInput.value.trim());
         if (!hasData) {
             for (let r = 0; r < tbody.children.length; r++) {
-                const val = tbody.children[r].children[s]?.querySelector('input[type="number"]')?.value;
+                const val = tbody.children[r].children[(s] && s].querySelector)('input[type="number"]'() && ).value);
                 if (val && val.trim()) { hasData = true; break; }
             }
         }
@@ -2729,7 +2729,7 @@ function collectExportData() {
         let rowHasData = false;
         const standVals = [];
         data.stands.forEach(s => {
-            const input = row.children[s.index]?.querySelector('input[type="number"]');
+            const input = row.children[(s.index] && s.index].querySelector)('input[type="number"]');
             const val = input ? input.value : '';
             if (val.trim()) rowHasData = true;
             standVals.push(val);
@@ -2742,7 +2742,7 @@ function collectExportData() {
             data.shearerCounts.push({
                 count: idx + 1,
                 stands: standVals,
-                total: row.querySelector('.run-total')?.innerText || '0',
+                total: row.querySelector('.run-total'() && ).innerText) || '0',
                 sheepType
             });
         }
@@ -2753,7 +2753,7 @@ function collectExportData() {
         const hours = row.querySelector('td:nth-child(2) input');
         const hasData = name && hours && (name.value.trim() || hours.value.trim());
         if (!sessionHasEnded || hasData) {
-            data.shedStaff.push({ name: name?.value || '', hours: hours?.value || '' });
+            data.shedStaff.push({ name: (name && name.value) || '', hours: (hours && hours.value) || '' });
         }
     });
 
@@ -2779,9 +2779,9 @@ function collectExportData() {
     if (incidentBody) {
         data.incidents = [];
         Array.from(incidentBody.querySelectorAll('tr')).forEach(tr => {
-            const time = tr.querySelector('input[type="time"]')?.value || '';
-            const name = tr.querySelector('input[type="text"]')?.value || '';
-            const desc = tr.querySelector('textarea')?.value || '';
+            const time = tr.querySelector('input[type="time"]'() && ).value) || '';
+            const name = tr.querySelector('input[type="text"]'() && ).value) || '';
+            const desc = tr.querySelector('textarea'() && ).value) || '';
             if (time.trim() || name.trim() || desc.trim()) {
                 data.incidents.push({ time, name, description: desc });
             }
@@ -2954,7 +2954,7 @@ async function saveSessionToFirestore(showStatus = false) {
   }
 
   // ✅ Use contractorId from localStorage, fallback to current user UID
-  const contractorId = localStorage.getItem('contractor_id') || firebase.auth().currentUser?.uid || null;
+  const contractorId = localStorage.getItem('contractor_id') || firebase.auth(().currentUser && ).currentUser.uid) || null;
   if (!contractorId) {
     console.error('Missing contractor_id');
     return;
@@ -2991,7 +2991,7 @@ async function listSessionsFromFirestore() {
         return [];
     }
 
-    const contractorId = localStorage.getItem('contractor_id') || firebase.auth().currentUser?.uid || null;
+    const contractorId = localStorage.getItem('contractor_id') || firebase.auth(().currentUser && ).currentUser.uid) || null;
     if (!contractorId) {
         console.error('Missing contractor_id');
         return [];
@@ -3032,7 +3032,7 @@ async function loadSessionFromFirestore(id) {
         return null;
     }
 
-    const contractorId = localStorage.getItem('contractor_id') || firebase.auth().currentUser?.uid || null;
+    const contractorId = localStorage.getItem('contractor_id') || firebase.auth(().currentUser && ).currentUser.uid) || null;
     if (!contractorId) {
         console.error('Missing contractor_id');
         return null;
@@ -3089,7 +3089,7 @@ function confirmSaveReset(full) {
     const saveBtn = document.getElementById('unsavedSaveBtn');
     const discardBtn = document.getElementById('unsavedDiscardBtn');
     const cancelBtn = document.getElementById('unsavedCancelBtn');
-    const msgEl = modal?.querySelector('p');
+    const msgEl = (modal && modal.querySelector)('p');
     if (modal && saveBtn && discardBtn && cancelBtn && msgEl) {
         const originalText = msgEl.textContent;
         const origSave = saveBtn.textContent;
@@ -3446,25 +3446,25 @@ const interceptReset = (full) => (e) => {
         e.stopImmediatePropagation();
         confirmSaveReset(full);
     };
-    partialResetBtn?.addEventListener('click', interceptReset(false), true);
-    fullResetBtn?.addEventListener('click', interceptReset(true), true);
+    (partialResetBtn && partialResetBtn.addEventListener)('click', interceptReset(false), true);
+    (fullResetBtn && fullResetBtn.addEventListener)('click', interceptReset(true), true);
 
 
 
-    loadBtn?.addEventListener('click', showLoadOptionsModal);
-    loadLocalBtn?.addEventListener('click', () => {
+    (loadBtn && loadBtn.addEventListener)('click', showLoadOptionsModal);
+    (loadLocalBtn && loadLocalBtn.addEventListener)('click', () => {
         hideLoadOptionsModal();
         showLoadSessionModal();
     });
-    loadCloudBtn?.addEventListener('click', async () => {
+    (loadCloudBtn && loadCloudBtn.addEventListener)('click', async () => {
         hideLoadOptionsModal();
         const sessions = await listSessionsFromFirestore();
         populateCloudSessionDropdown(sessions);
         showCloudSessionModal();
     });
-    cloudCancelBtn?.addEventListener('click', hideCloudSessionModal);
-    cloudConfirmBtn?.addEventListener('click', async () => {
-        const id = cloudSelect?.value;
+    (cloudCancelBtn && cloudCancelBtn.addEventListener)('click', hideCloudSessionModal);
+    (cloudConfirmBtn && cloudConfirmBtn.addEventListener)('click', async () => {
+        const id = (cloudSelect && cloudSelect.value);
         if (!id) { alert('Please select a session'); return; }
         hideCloudSessionModal();
         const session = await loadSessionFromFirestore(id);
@@ -3474,28 +3474,28 @@ const interceptReset = (full) => (e) => {
             alert('Failed to load session from cloud.');
         }
     });
-    cancelBtn?.addEventListener('click', hideLoadSessionModal);
-    lastBtn?.addEventListener('click', () => {
+    (cancelBtn && cancelBtn.addEventListener)('click', hideLoadSessionModal);
+    (lastBtn && lastBtn.addEventListener)('click', () => {
         const session = getLastSession();
         hideLoadSessionModal();
         if (!session) { alert('No saved sessions found.'); return; }
         startSessionLoader(session);
     });
-    otherBtn?.addEventListener('click', () => {
+    (otherBtn && otherBtn.addEventListener)('click', () => {
         populateStationOptions();
         stationInput.value = '';
         dateInput.value = '';
         document.getElementById('loadSessionStep1').style.display = 'none';
         document.getElementById('loadSessionStep2').style.display = 'block';
     });
-    backBtn?.addEventListener('click', () => {
+    (backBtn && backBtn.addEventListener)('click', () => {
         document.getElementById('loadSessionStep2').style.display = 'none';
         document.getElementById('loadSessionStep1').style.display = 'block';
     });
-    stationInput?.addEventListener('input', () => populateDateOptions(stationInput.value));
-     setupConfirmBtn?.addEventListener('click', confirmSetupModal);
-    setupCancelBtn?.addEventListener('click', hideSetupModal);
-    confirmBtn?.addEventListener('click', () => {
+    (stationInput && stationInput.addEventListener)('input', () => populateDateOptions(stationInput.value));
+     (setupConfirmBtn && setupConfirmBtn.addEventListener)('click', confirmSetupModal);
+    (setupCancelBtn && setupCancelBtn.addEventListener)('click', hideSetupModal);
+    (confirmBtn && confirmBtn.addEventListener)('click', () => {
         const station = stationInput.value.trim();
         const dateNZ = dateInput.value.trim();
         if (!station || !dateNZ) { alert('Please enter station and date'); return; }
@@ -3507,12 +3507,12 @@ const interceptReset = (full) => (e) => {
       startSessionLoader(session);
     });
 
-    saveLocalBtn?.addEventListener('click', () => handleSaveOption('local'));
-    saveCloudBtn?.addEventListener('click', () => handleSaveOption('cloud'));
-    saveBothBtn?.addEventListener('click', () => handleSaveOption('both'));
+    (saveLocalBtn && saveLocalBtn.addEventListener)('click', () => handleSaveOption('local'));
+    (saveCloudBtn && saveCloudBtn.addEventListener)('click', () => handleSaveOption('cloud'));
+    (saveBothBtn && saveBothBtn.addEventListener)('click', () => handleSaveOption('both'));
 
     const exportBtn = document.getElementById('exportFarmSummaryBtn');
-    exportBtn?.addEventListener('click', () => {
+    (exportBtn && exportBtn.addEventListener)('click', () => {
         exportFarmSummaryCSV();
     });
 
@@ -3631,7 +3631,7 @@ const body = document.getElementById('tallyBody');
                 ? row.stands
                 : [];
         values.forEach((val, sIdx) => {
-            const inp = tr.children[sIdx + 1]?.querySelector('input[type="number"]');
+            const inp = tr.children[sIdx + (1] && 1].querySelector)('input[type="number"]');
             if (inp) inp.value = val;
         });
         const typeInput = tr.querySelector('.sheep-type input');
@@ -3697,7 +3697,7 @@ async function markTourSeen(uid) {
     // Local first (works offline)
     localStorage.setItem('tally_guide_done', 'true');
     // Cloud (per-user) if authed
-    if (!uid || !firebase?.firestore) return;
+    if (!uid || !(firebase && firebase.firestore)) return;
     const db = firebase.firestore();
     await db.collection('users').doc(uid).set({ hasSeenTour: true }, { merge: true });
   } catch (e) {
@@ -3710,7 +3710,7 @@ async function checkTourWelcomeStatus(uid) {
   // If local says done, skip (supports offline)
   if (localStorage.getItem('tally_guide_done') === 'true') return;
   // Try Firestore if we have a user and firestore loaded
-  if (uid && firebase?.firestore) {
+  if (uid && (firebase && firebase.firestore)) {
     try {
       const db = firebase.firestore();
       const snap = await db.collection('users').doc(uid).get();
@@ -3902,7 +3902,7 @@ function initTallyTooltips() {
   }
 
   function ensureGuidedView(el){
-    const view = el?.closest('.view');
+    const view = (el && el.closest)('.view');
     if (view && view.style.display === 'none') {
       showView(view.id);
     }

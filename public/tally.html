@@ -883,7 +883,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const skip = document.getElementById('onboard-skip');
   const dontShow = document.getElementById('onboard-hide');
 
-  const gb = k => (localStorage.getItem(k) ?? 'true') === 'true';
+  const gb = k => (localStorage.getItem(k) || 'true') === 'true';
 
   function openModal(){
     if (localStorage.getItem('tally_onboard_seen') === 'true') return;

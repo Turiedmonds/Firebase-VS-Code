@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const auth = firebase.auth();
   const db = firebase.firestore ? firebase.firestore() : null;
   // Keep this in sync with public/service-worker.js
-  const CACHE_NAME = 'sheariq-pwa-v19';
+  const CACHE_NAME = 'sheariq-pwa-v20';
 
   async function finalizeLogin(role, contractorId, uid) {
     localStorage.setItem('user_role', role);
@@ -120,7 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const persistence = remember
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      const persistence = (remember || isStandalone)
         ? firebase.auth.Auth.Persistence.LOCAL
         : firebase.auth.Auth.Persistence.SESSION;
       await auth.setPersistence(persistence);
