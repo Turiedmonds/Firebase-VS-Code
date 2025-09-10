@@ -14,6 +14,21 @@ function autoFitColumns(ws) {
     ws['!cols'] = colWidths.map(w => ({ wch: Math.max(w, 10) }));
 }
 
+function applyHeaderStyle(ws, headerRows = []) {
+    if (!ws['!ref']) return;
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    headerRows.forEach(r => {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+            const cell = ws[XLSX.utils.encode_cell({ r, c: C })];
+            if (!cell) continue;
+            cell.s = cell.s || {};
+            cell.s.font = { bold: true, sz: 16 };
+            const thick = { style: 'thick', color: { rgb: '000000' } };
+            cell.s.border = { top: thick, bottom: thick, left: thick, right: thick };
+        }
+    });
+}
+
 function exportTableToCSV(tableId, baseName = 'table') {
     const table = document.getElementById(tableId);
     if (!table) return;
@@ -96,20 +111,24 @@ function exportFarmSummaryExcel() {
     ];
 
     const rows = [];
+    const headerRows = [];
     const appendTable = (id, title) => {
         const table = document.getElementById(id);
         if (!table) return;
         if (rows.length) rows.push([]);
         rows.push([title]);
-        table.querySelectorAll('tr').forEach(tr => {
+        headerRows.push(rows.length - 1);
+        table.querySelectorAll('tr').forEach((tr, idx) => {
             const cols = Array.from(tr.querySelectorAll('th,td'))
                 .map(td => td.textContent.trim());
             rows.push(cols);
+            if (idx === 0) headerRows.push(rows.length - 1);
         });
     };
     tables.forEach(t => appendTable(t[0], t[1]));
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
+    applyHeaderStyle(ws, headerRows);
     autoFitColumns(ws);
 
     const wb = XLSX.utils.book_new();
@@ -513,11 +532,10 @@ function exportDailySummaryExcel() {
             const cell = ws[XLSX.utils.encode_cell({ r: hr, c: C })];
             if (!cell) continue;
             cell.s = cell.s || {};
-            cell.s.font = { bold: true };
             cell.s.fill = { patternType: 'solid', fgColor: { rgb: 'd9d9d9' } };
         }
     });
-
+    applyHeaderStyle(ws, headerRows);
     autoFitColumns(ws);
 
     const wb = XLSX.utils.book_new();
