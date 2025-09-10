@@ -1651,11 +1651,11 @@ async function calculateHoursWorked() {
         ? ["Breakfast", "Morning Smoko", "Lunch", "Afternoon Smoko"]
         : ["Morning Smoko", "Lunch", "Afternoon Smoko"];
 
-    breakWindows.forEach(([bStartStr, bEndStr], idx) => {
+    for (const [idx, [bStartStr, bEndStr]] of breakWindows.entries()) {
         const bStart = new Date("1970-01-01T" + bStartStr);
-         const bEnd = new Date("1970-01-01T" + bEndStr);
+        const bEnd = new Date("1970-01-01T" + bEndStr);
 
-        if (end <= bStart || start >= bEnd) return;
+        if (end <= bStart || start >= bEnd) continue;
 
         if (end > bStart && end <= bEnd) {
             const workedStart = start > bStart ? start : bStart;
@@ -1671,9 +1671,8 @@ async function calculateHoursWorked() {
             const overlapEnd = end < bEnd ? end : bEnd;
             const overlapMinutes = Math.round((overlapEnd - overlapStart) / 60000);
             totalMinutes -= overlapMinutes;
-
         }
-    });
+    }
  
     const totalHours = totalMinutes / 60;
     const newValue = totalHours > 0 ? formatHoursWorked(totalHours) : "0h";

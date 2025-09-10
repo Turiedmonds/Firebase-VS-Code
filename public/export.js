@@ -454,5 +454,9 @@ function showExportPrompt() {
 window.showExportPrompt = showExportPrompt;
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('stationSummaryApply')?.addEventListener('click', buildStationSummary);
+  const btn = document.getElementById('stationSummaryApply');
+  const handler = window.buildStationSummary;
+  if (btn && typeof handler === 'function') {
+    btn.addEventListener('click', handler);
+  }
 });
