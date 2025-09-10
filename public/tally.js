@@ -3180,8 +3180,26 @@ function startSessionLoader(session) {
     }
     confirmUnsavedChanges(() => {
         const summary = `Station: ${session.stationName}\nDate: ${formatDateNZ(session.date)}\nTeam Leader: ${session.teamLeader || ''}\n\nDo you want to load this session?`;
-        if (confirm(summary)) {
-            loadSessionObject(session);
+        const modal = document.getElementById('loadSessionConfirmModal');
+        const msgEl = document.getElementById('loadSessionConfirmMessage');
+        const yesBtn = document.getElementById('loadSessionConfirmYes');
+        const noBtn = document.getElementById('loadSessionConfirmNo');
+        if (modal && msgEl && yesBtn && noBtn) {
+            msgEl.textContent = summary;
+            modal.style.display = 'flex';
+            const cleanup = () => {
+                modal.style.display = 'none';
+                yesBtn.removeEventListener('click', onYes);
+                noBtn.removeEventListener('click', onNo);
+            };
+            const onYes = () => { cleanup(); loadSessionObject(session); };
+            const onNo = () => { cleanup(); };
+            yesBtn.addEventListener('click', onYes);
+            noBtn.addEventListener('click', onNo);
+        } else {
+            if (confirm(summary)) {
+                loadSessionObject(session);
+            }
         }
     });
 }

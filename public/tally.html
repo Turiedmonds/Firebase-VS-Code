@@ -611,6 +611,17 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
   </div>
 
+<!-- Load Session Confirmation Modal -->
+<div id="loadSessionConfirmModal" class="modal-overlay">
+  <div class="modal-box">
+    <p id="loadSessionConfirmMessage" style="white-space: pre-line;"></p>
+    <div class="modal-buttons">
+      <button id="loadSessionConfirmYes">Load</button>
+      <button id="loadSessionConfirmNo">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   var modal = document.getElementById('resetModal');
