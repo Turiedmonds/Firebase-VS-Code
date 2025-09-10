@@ -656,8 +656,12 @@ button {
   inset: 0;
   display: none;
   z-index: 1000;
+  pointer-events: none;
 }
-#shearers-modal[aria-hidden="false"] , #shedstaff-modal[aria-hidden="false"] , #farms-full-modal[aria-hidden="false"] , #settings-modal[aria-hidden="false"] { display: block; }
+#shearers-modal[aria-hidden="false"] , #shedstaff-modal[aria-hidden="false"] , #farms-full-modal[aria-hidden="false"] , #settings-modal[aria-hidden="false"] {
+  display: block;
+  pointer-events: auto;
+}
 #shearers-modal .siq-modal__backdrop , #shedstaff-modal .siq-modal__backdrop , #farms-full-modal .siq-modal__backdrop , #settings-modal .siq-modal__backdrop {
   position: absolute;
   inset: 0;
@@ -1054,7 +1058,10 @@ button {
   box-shadow: 0 12px 28px rgba(0,0,0,0.5);
   z-index: 2147483001;
 }
-#dash-help-menu[hidden] { display: none; }
+#dash-help-menu[hidden] {
+  display: none;
+  pointer-events: none;
+}
 #dash-help-menu .dhm-header {
   display: flex;
   align-items: center;

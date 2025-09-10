@@ -2150,7 +2150,9 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.setAttribute('aria-hidden','false');
     lastFocused = document.activeElement;
     document.addEventListener('keydown', trapFocus);
-    setTimeout(() => ((btnOK && btnOK.focus)()), 0);
+    setTimeout(() => {
+      if (btnOK && btnOK.focus) btnOK.focus();
+    }, 0);
   }
 
   function closeWelcome() {
