@@ -2540,7 +2540,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   let currentFull = 0;
   let currentCrutched = 0;
   let showCrutched = false;
-  let toggleTimer;
 
   function renderPill() {
     const val = showCrutched ? currentCrutched : currentFull;
@@ -2548,12 +2547,9 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     pillVal.textContent = `${val.toLocaleString()} ${label}`;
   }
 
-  function startToggle() {
-    clearInterval(toggleTimer);
-    toggleTimer = setInterval(() => {
-      showCrutched = !showCrutched;
-      renderPill();
-    }, 3000);
+  function togglePill() {
+    showCrutched = !showCrutched;
+    renderPill();
   }
 
   if (!pill || !pillVal || !modal || !yearSel || !farmSel) {
@@ -2566,7 +2562,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       currentFull = Number(kc.full || 0);
       currentCrutched = Number(kc.crutched || 0);
       renderPill();
-      startToggle();
     } else {
       currentFull = Number(kc);
       currentCrutched = 0;
@@ -2761,7 +2756,6 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     renderPill();
     dashCache.kpiSheepCount = { full: currentFull, crutched: currentCrutched };
     saveDashCache();
-    startToggle();
   }
 
   function fillYearsSelect(){
@@ -2795,7 +2789,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   function closeModal(){ modal.hidden = true; }
 
   // Wire up
-  if (pill) pill.addEventListener('click', openModal);
+  if (pill) {
+    pill.addEventListener('click', togglePill);
+    pill.addEventListener('dblclick', openModal);
+  }
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
   if (closeBtnFooter) closeBtnFooter.addEventListener('click', closeModal);
   if (yearSel) yearSel.addEventListener('change', refresh);
