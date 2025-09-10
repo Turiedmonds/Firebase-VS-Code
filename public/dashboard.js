@@ -156,12 +156,15 @@ function checkIncidentNotifications(){
     }
   });
   if (unseen.length) {
-    btn.hidden = false;
+    btn.disabled = false;
     btn.textContent = 'View incident reports (' + unseen.length + ')';
     btn.addEventListener('click', () => {
       unseen.forEach(k => localStorage.setItem('incident_seen_' + k, '1'));
       location.href = 'incident-reports.html';
     }, { once: true });
+  } else {
+    btn.disabled = true;
+    btn.textContent = 'No incident reports';
   }
 }
 
