@@ -212,7 +212,6 @@ try {
   localStorage.setItem('preferred_start', 'dashboard');
 } catch(e) {}
 
-import { handleLogout } from './auth.js';
 
 // Unhide content immediately to avoid blank screen offline
 const earlyPage = document.getElementById('page-content');
@@ -1799,11 +1798,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const pageContent = document.getElementById('page-content');
       if (pageContent) pageContent.style.display = 'block';
-
-      const logoutBtn = document.getElementById('logoutBtn');
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-      }
 
       const btnManageStaff = document.getElementById('btnManageStaff');
       if (btnManageStaff) {
