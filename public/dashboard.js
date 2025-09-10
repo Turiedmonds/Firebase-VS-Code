@@ -136,6 +136,18 @@ function throttle(ms, fn){
   let t=0; return (...a)=>{ const now=Date.now(); if (now-t>ms){ t=now; return fn(...a); } };
 }
 
+function getIncidentSessionKey(s){
+  if (!s) return '_';
+  let d = s.date || s.sessionDate || s.savedAt || s.timestamp || null;
+  try {
+    if (d && typeof d.toDate === 'function') d = d.toDate();
+    else if (d) d = new Date(d);
+  } catch (e) { d = null; }
+  const ymd = (d && !isNaN(d.getTime())) ? d.toISOString().slice(0,10) : '';
+  const station = (s.stationName || s.station || '').trim();
+  return ymd + '_' + station;
+}
+
 function checkIncidentNotifications(){
   const btn = document.getElementById('incidentNotice');
   if (!btn) return;
@@ -149,7 +161,7 @@ function checkIncidentNotifications(){
   const unseen = [];
   sessions.forEach(s => {
     if (Array.isArray(s.incidents) && s.incidents.length) {
-      const sessionKey = (s.date || '') + '_' + (s.stationName || '');
+      const sessionKey = getIncidentSessionKey(s);
       if (!localStorage.getItem('incident_seen_' + sessionKey)) {
         unseen.push(sessionKey);
       }
@@ -166,6 +178,47 @@ function checkIncidentNotifications(){
     btn.disabled = true;
     btn.textContent = 'No incident reports';
   }
+}
+
+async function refreshSessionsFromCloud(){
+  try {
+    const user = firebase.auth().currentUser;
+    const contractorId = localStorage.getItem('contractor_id') || user?.uid || null;
+    if (!contractorId || !user) {
+      checkIncidentNotifications();
+      return;
+    }
+    const snap = await firebase.firestore().collection('contractors').doc(contractorId).collection('sessions').get();
+    const arr = [];
+    snap.forEach(doc => arr.push(doc.data()));
+    localStorage.setItem('sheariq_sessions', JSON.stringify(arr));
+  } catch (e) {
+    console.error('Failed to refresh sessions', e);
+  }
+  checkIncidentNotifications();
+}
+
+function migrateOldIncidentSeenKeys(){
+  const prefix = 'incident_seen_';
+  const toMove = [];
+  for (let i=0; i<localStorage.length; i++){
+    const key = localStorage.key(i);
+    if (key && key.startsWith(prefix)){
+      const rest = key.slice(prefix.length);
+      if (/^\d{2}\/\d{2}\/\d{4}_/.test(rest)){
+        toMove.push(key);
+      }
+    }
+  }
+  toMove.forEach(oldKey=>{
+    const rest = oldKey.slice(prefix.length);
+    const [datePart, ...stationParts] = rest.split('_');
+    const [dd, mm, yyyy] = datePart.split('/');
+    const newKey = prefix + `${yyyy}-${mm}-${dd}_${stationParts.join('_')}`;
+    const val = localStorage.getItem(oldKey);
+    try { localStorage.setItem(newKey, val); } catch(e){}
+    try { localStorage.removeItem(oldKey); } catch(e){}
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -194,7 +247,17 @@ document.addEventListener('DOMContentLoaded', () => {
       showOfflineToastOnce('Offline mode: cached navigation ready');
     }
   }));
+  migrateOldIncidentSeenKeys();
   checkIncidentNotifications();
+  refreshSessionsFromCloud();
+});
+
+window.addEventListener('focus', refreshSessionsFromCloud);
+firebase.auth().onAuthStateChanged(refreshSessionsFromCloud);
+window.addEventListener('storage', e => {
+  if (e.key === 'incident_seen_last_update') {
+    checkIncidentNotifications();
+  }
 });
 
 // Auto-open on first dashboard load (only once)
