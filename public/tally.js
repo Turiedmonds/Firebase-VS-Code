@@ -38,6 +38,53 @@ function detectAgeCategory(sheepTypeName) {
   return 'unknown';
 }
 
+function showAlertModal(message) {
+  return new Promise(resolve => {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-box">
+        <p>${message}</p>
+        <div class="modal-buttons">
+          <button class="alert-ok">OK</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+    modal.querySelector('.alert-ok').addEventListener('click', () => {
+      modal.remove();
+      resolve();
+    });
+  });
+}
+
+function showConfirmModal(message) {
+  return new Promise(resolve => {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-box">
+        <p>${message}</p>
+        <div class="modal-buttons">
+          <button class="confirm-ok">OK</button>
+          <button class="confirm-cancel">Cancel</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+    modal.querySelector('.confirm-ok').addEventListener('click', () => {
+      modal.remove();
+      resolve(true);
+    });
+    modal.querySelector('.confirm-cancel').addEventListener('click', () => {
+      modal.remove();
+      resolve(false);
+    });
+  });
+}
+
+window.alert = showAlertModal;
+
 document.addEventListener('DOMContentLoaded', () => {
   if (!document.getElementById('tt-root')) {
     const tt = document.createElement('div');
@@ -1578,7 +1625,7 @@ spacerCell.innerText = "Total Today";
 subtotalRow.appendChild(spacerCell);
 updateTotals();
 
-function calculateHoursWorked() {
+async function calculateHoursWorked() {
     const startInput = document.getElementById("startTime");
     const endInput = document.getElementById("finishTime");
     const output = document.getElementById("hoursWorked");
@@ -1615,7 +1662,8 @@ function calculateHoursWorked() {
             const worked = Math.round((end - workedStart) / 60000);
             const label = labels[idx] || `Break ${idx + 1}`;
             console.log(`Finish within ${label}: worked ${worked} minutes`);
-            if (!confirm(`You worked into ${label}. Add ${worked} minutes as paid time?`)) {
+            const addTime = await showConfirmModal(`You worked into ${label}. Add ${worked} minutes as paid time?`);
+            if (!addTime) {
                 totalMinutes -= worked;
             }
         } else {
@@ -1733,7 +1781,7 @@ function initAutoHoursField(input) {
         lunchIndicatorYellow = !lunchIndicatorYellow;
         lunchIndicator.style.color = lunchIndicatorYellow ? '#ff0' : '#0f0';
         updateLunchIndicatorText();
-        alert(`✅ Lunch break set to ${lunchBreakDurationMinutes === 60 ? '1 hour' : '45 minutes'}`);
+        showAlertModal(`✅ Lunch break set to ${lunchBreakDurationMinutes === 60 ? '1 hour' : '45 minutes'}`);
       });
       
       // Set initial display
@@ -1949,7 +1997,7 @@ function performSave(saveLocal, saveCloud, manual) {
             });
 
             if (issues.length) {
-                window.alert(issues.join('\n'));
+                showAlertModal(issues.join('\n'));
                 return;
             }
         }
@@ -1973,7 +2021,7 @@ function performSave(saveLocal, saveCloud, manual) {
             localStorage.setItem('sheariq_saved_session', json);
             saveSessionToStorage(data);
             if (manual) {
-                alert('Session saved successfully to local storage.');
+                showAlertModal('Session saved successfully to local storage.');
             }
         }
 
@@ -2888,7 +2936,7 @@ async function saveSessionToFirestore(showStatus = false) {
       }, { merge: true });
     dequeueById(firestoreSessionId);
     if (showStatus) {
-      alert('✅ Session saved to the cloud!');
+      await showAlertModal('✅ Session saved to the cloud!');
       showAutosaveStatus('\u2601\ufe0f Saved to cloud');
     }
   } catch (err) {
