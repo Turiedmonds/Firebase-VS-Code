@@ -125,9 +125,11 @@ function exportFarmSummaryExcel() {
 window.exportFarmSummaryExcel = exportFarmSummaryExcel;
 
 function exportFarmSummary() {
-    const useExcel = window.confirm('Export as Excel (.xlsx)? Click Cancel for CSV.');
-    if (useExcel) exportFarmSummaryExcel();
-    else exportFarmSummaryCSV();
+    showAppModal({ title: "Confirm", message: 'Export as Excel (.xlsx)? Click Cancel for CSV.' })
+        .then(ok => {
+            if (ok) exportFarmSummaryExcel();
+            else exportFarmSummaryCSV();
+        });
 }
 window.exportFarmSummary = exportFarmSummary;
 
@@ -238,114 +240,115 @@ function loadPreviousSession() {
         alert('No saved session found.');
         return;
     }
-    if (!window.confirm('This will replace all current data. Do you want to continue?')) {
-        return;
-    }
+    showAppModal({ title: "Confirm", message: 'This will replace all current data. Do you want to continue?' })
+        .then(ok => {
+            if (!ok) return;
 
-    const dateObj = data.date ? new Date(data.date) : null;
-    let formattedDate = data.date || '';
-    if (dateObj && !isNaN(dateObj)) {
-        formattedDate = dateObj.toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
-    }
-    const sessionName = `${formattedDate}${data.stationName ? ' \u2014 ' + data.stationName : ''}`;
-    alert(sessionName);
+            const dateObj = data.date ? new Date(data.date) : null;
+            let formattedDate = data.date || '';
+            if (dateObj && !isNaN(dateObj)) {
+                formattedDate = dateObj.toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' });
+            }
+            const sessionName = `${formattedDate}${data.stationName ? ' \u2014 ' + data.stationName : ''}`;
+            alert(sessionName);
 
-    // Determine required stands and runs
-    const targetRuns = Array.isArray(data.shearerCounts) ? data.shearerCounts.length : runs;
-    const targetStands = data.shearerCounts && data.shearerCounts[0]
-        ? (Array.isArray(data.shearerCounts[0].stands)
-            ? data.shearerCounts[0].stands.length
-            : Array.isArray(data.shearerCounts[0].counts)
-                ? data.shearerCounts[0].counts.length
-                : numStands)
-        : numStands;
+            // Determine required stands and runs
+            const targetRuns = Array.isArray(data.shearerCounts) ? data.shearerCounts.length : runs;
+            const targetStands = data.shearerCounts && data.shearerCounts[0]
+                ? (Array.isArray(data.shearerCounts[0].stands)
+                    ? data.shearerCounts[0].stands.length
+                    : Array.isArray(data.shearerCounts[0].counts)
+                        ? data.shearerCounts[0].counts.length
+                        : numStands)
+                : numStands;
 
-    while (numStands < targetStands) addStand();
-    while (numStands > targetStands) removeStand();
-    while (runs < targetRuns) addCount();
-    while (runs > targetRuns) removeCount();
+            while (numStands < targetStands) addStand();
+            while (numStands > targetStands) removeStand();
+            while (runs < targetRuns) addCount();
+            while (runs > targetRuns) removeCount();
 
-    // Clear existing inputs
-    document.querySelectorAll('#tallyBody input').forEach(inp => inp.value = '');
-    document.querySelectorAll('#shedStaffTable input').forEach(inp => inp.value = '');
+            // Clear existing inputs
+            document.querySelectorAll('#tallyBody input').forEach(inp => inp.value = '');
+            document.querySelectorAll('#shedStaffTable input').forEach(inp => inp.value = '');
 
-// Populate shearer names in header
-    const headerRow = document.getElementById('headerRow');
-    if (headerRow && Array.isArray(data.stands)) {
-        data.stands.forEach((st, idx) => {
-            const input = headerRow.children[idx + 1]?.querySelector('input');
-            if (input) {
-                input.value = st.name || '';
-                adjustStandNameWidth(input);
-                applyInputHistory(input);
+            // Populate shearer names in header
+            const headerRow = document.getElementById('headerRow');
+            if (headerRow && Array.isArray(data.stands)) {
+                data.stands.forEach((st, idx) => {
+                    const input = headerRow.children[idx + 1]?.querySelector('input');
+                    if (input) {
+                        input.value = st.name || '';
+                        adjustStandNameWidth(input);
+                        applyInputHistory(input);
+                    }
+                });
+            }
+
+            // Basic fields
+            const assign = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+            assign('date', data.date);
+            assign('stationName', data.stationName);
+            assign('teamLeader', data.teamLeader);
+            assign('combType', data.combType);
+            assign('startTime', data.startTime);
+            assign('finishTime', data.finishTime);
+            assign('hoursWorked', data.hoursWorked);
+
+            setWorkdayType(data.timeSystem === '9-hr');
+            updateShedStaffHours(data.hoursWorked || '');
+
+            // Populate shearer counts
+            const body = document.getElementById('tallyBody');
+            if (body && Array.isArray(data.shearerCounts)) {
+                data.shearerCounts.forEach((run, idx) => {
+                    const row = body.children[idx];
+                    if (!row) return;
+                    const values = Array.isArray(run.stands) ? run.stands : Array.isArray(run.counts) ? run.counts : [];
+                    values.forEach((val, sIdx) => {
+                        const input = row.children[sIdx + 1]?.querySelector('input[type="number"]');
+                        if (input) input.value = val;
+                    });
+                    const typeInput = row.querySelector('.sheep-type input');
+                    if (typeInput) {
+                        typeInput.value = run.sheepType || '';
+                        adjustSheepTypeWidth(typeInput);
+                    }
+                });
+            }
+
+            // Populate shed staff
+            const staffTable = document.getElementById('shedStaffTable');
+            if (staffTable) {
+                staffTable.innerHTML = '';
+                if (Array.isArray(data.shedStaff)) {
+                    data.shedStaff.forEach(staff => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = '<td><input placeholder="Staff Name" type="text"/></td><td><input placeholder="e.g. 8h 30m" type="text" class="hours-input"/></td>';
+                        const nameInput = tr.querySelector('td:nth-child(1) input');
+                        const hoursInput = tr.querySelector('td:nth-child(2) input');
+                        if (nameInput) {
+                            nameInput.value = staff.name || '';
+                            adjustShedStaffNameWidth(nameInput);
+                            applyInputHistory(nameInput);
+                        }
+                        if (hoursInput) {
+                            hoursInput.value = formatHoursWorked(parseHoursWorked(staff.hours));
+                            adjustShedStaffHoursWidth(hoursInput);
+                        }
+                        staffTable.appendChild(tr);
+                    });
+                }
+            }
+
+            updateTotals();
+            updateSheepTypeTotals();
+            // Ensure the session is locked if it's not for today
+            if (window.enforceSessionLock) window.enforceSessionLock(data.date);
+            if (data.viewOnly && window.lockSession) {
+                window.lockSession();
+                if (window.promptForPinUnlock) window.promptForPinUnlock();
             }
         });
-    }
-    
-    // Basic fields
-    const assign = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-    assign('date', data.date);
-    assign('stationName', data.stationName);
-    assign('teamLeader', data.teamLeader);
-    assign('combType', data.combType);
-    assign('startTime', data.startTime);
-    assign('finishTime', data.finishTime);
-    assign('hoursWorked', data.hoursWorked);
-
-    setWorkdayType(data.timeSystem === '9-hr');
-    updateShedStaffHours(data.hoursWorked || '');
-
-    // Populate shearer counts
-    const body = document.getElementById('tallyBody');
-    if (body && Array.isArray(data.shearerCounts)) {
-        data.shearerCounts.forEach((run, idx) => {
-            const row = body.children[idx];
-            if (!row) return;
-            const values = Array.isArray(run.stands) ? run.stands : Array.isArray(run.counts) ? run.counts : [];
-            values.forEach((val, sIdx) => {
-                const input = row.children[sIdx + 1]?.querySelector('input[type="number"]');
-                if (input) input.value = val;
-            });
-            const typeInput = row.querySelector('.sheep-type input');
-            if (typeInput) {
-                typeInput.value = run.sheepType || '';
-                adjustSheepTypeWidth(typeInput);
-            }
-        });
-    }
-
-    // Populate shed staff
-    const staffTable = document.getElementById('shedStaffTable');
-    if (staffTable) {
-        staffTable.innerHTML = '';
-        if (Array.isArray(data.shedStaff)) {
-            data.shedStaff.forEach(staff => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = '<td><input placeholder="Staff Name" type="text"/></td><td><input placeholder="e.g. 8h 30m" type="text" class="hours-input"/></td>';
-                const nameInput = tr.querySelector('td:nth-child(1) input');
-                const hoursInput = tr.querySelector('td:nth-child(2) input');
-                if (nameInput) {
-                    nameInput.value = staff.name || '';
-                    adjustShedStaffNameWidth(nameInput);
-                    applyInputHistory(nameInput);
-                }
-                if (hoursInput) {
-                hoursInput.value = formatHoursWorked(parseHoursWorked(staff.hours));    
-                    adjustShedStaffHoursWidth(hoursInput);
-                }
-                staffTable.appendChild(tr);
-            });
-        }
-    }
-
-    updateTotals();
-    updateSheepTypeTotals();
-    // Ensure the session is locked if it's not for today
-    if (window.enforceSessionLock) window.enforceSessionLock(data.date);
-    if (data.viewOnly && window.lockSession) {
-        window.lockSession();
-        if (window.promptForPinUnlock) window.promptForPinUnlock();
-    }
 }
 window.exportDailySummaryCSV = exportDailySummaryCSV;
 
@@ -507,9 +510,11 @@ function exportDailySummaryExcel() {
 }
 
 function showExportPrompt() {
-    const useExcel = window.confirm('Export as Excel (.xlsx)? Click Cancel for CSV.');
-    if (useExcel) exportDailySummaryExcel();
-    else exportDailySummaryCSV();
+    showAppModal({ title: "Confirm", message: 'Export as Excel (.xlsx)? Click Cancel for CSV.' })
+        .then(ok => {
+            if (ok) exportDailySummaryExcel();
+            else exportDailySummaryCSV();
+        });
 }
 
 // Expose functions used by inline handlers

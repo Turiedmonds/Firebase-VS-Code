@@ -1415,20 +1415,26 @@ function buildDatePreview(datesSet, limit = 3) {
  function toggleWorkdayType() {
      const switchToNine = !isNineHourDay;
      const msg = switchToNine ? 'Switch to 9-hour day system?' : 'Switch to 8-hour day system?';
-     if (confirm(msg)) {
-         setWorkdayType(switchToNine);
-     }
+     showAppModal({ title: "Confirm", message: msg })
+         .then(ok => {
+             if (ok) {
+                 setWorkdayType(switchToNine);
+             }
+         });
  }
  
  function handleStartTimeChange() {
      const start = document.getElementById('startTime');
      if (start && start.value === '05:00' && !promptedNineHour) {
          promptedNineHour = true;
-         if (confirm('Is this a 9-hour day?')) {
-             setWorkdayType(true);
-         } else {
-             setWorkdayType(false);
-         }
+         showAppModal({ title: "Confirm", message: 'Is this a 9-hour day?' })
+             .then(ok => {
+                 if (ok) {
+                     setWorkdayType(true);
+                 } else {
+                     setWorkdayType(false);
+                 }
+             });
      }
      calculateHoursWorked();
  }
@@ -3080,11 +3086,19 @@ function confirmUnsavedChanges(next) {
         discardBtn.addEventListener('click', onDiscard);
         cancelBtn.addEventListener('click', onCancel);
     } else {
-        if (confirm('You have unsaved work. Save before loading?')) {
-            saveData(true, next);
-        } else if (confirm('Continue without saving?')) {
-            next();
-        }
+        showAppModal({ title: "Confirm", message: 'You have unsaved work. Save before loading?' })
+            .then(ok => {
+                if (ok) {
+                    saveData(true, next);
+                } else {
+                    showAppModal({ title: "Confirm", message: 'Continue without saving?' })
+                        .then(ok2 => {
+                            if (ok2) {
+                                next();
+                            }
+                        });
+                }
+            });
     }
 }
 
@@ -3128,16 +3142,23 @@ function confirmSaveReset(full) {
         discardBtn.addEventListener('click', onDiscard);
         cancelBtn.addEventListener('click', onCancel);
     } else {
-        const save = confirm('Do you want to save the current session before resetting?');
-        if (save) {
-            // Prevent cleanup until a new finish time is entered
-            allowCleanup = false;
-            saveData(true, () => { if (typeof performReset === 'function') performReset(full); });
-        } else if (confirm('Reset without saving?')) {
-            // Prevent cleanup until a new finish time is entered
-            allowCleanup = false;
-            if (typeof performReset === 'function') performReset(full);
-        }
+        showAppModal({ title: "Confirm", message: 'Do you want to save the current session before resetting?' })
+            .then(save => {
+                if (save) {
+                    // Prevent cleanup until a new finish time is entered
+                    allowCleanup = false;
+                    saveData(true, () => { if (typeof performReset === 'function') performReset(full); });
+                } else {
+                    showAppModal({ title: "Confirm", message: 'Reset without saving?' })
+                        .then(ok => {
+                            if (ok) {
+                                // Prevent cleanup until a new finish time is entered
+                                allowCleanup = false;
+                                if (typeof performReset === 'function') performReset(full);
+                            }
+                        });
+                }
+            });
     }
 }
 
@@ -3313,9 +3334,12 @@ function startSessionLoader(session) {
             yesBtn.addEventListener('click', onYes);
             noBtn.addEventListener('click', onNo);
         } else {
-            if (confirm(summary)) {
-                loadSessionObject(session);
-            }
+            showAppModal({ title: "Confirm", message: summary })
+                .then(ok => {
+                    if (ok) {
+                        loadSessionObject(session);
+                    }
+                });
         }
     });
 }
@@ -3331,10 +3355,13 @@ function restoreTodaySession() {
     const session = JSON.parse(backup);
     delete session.viewOnly; // ensure restored session is editable
     const summary = `Return to today\u2019s session?\n\nStation: ${session.stationName}\nDate: ${formatDateNZ(session.date)}\nTeam Leader: ${session.teamLeader || ''}`;
-    if (!confirm(summary)) return;
+    showAppModal({ title: "Confirm", message: summary })
+      .then(ok => {
+        if (!ok) return;
 
-    startSessionLoader(session);
-    localStorage.removeItem("session_today_backup");
+        startSessionLoader(session);
+        localStorage.removeItem("session_today_backup");
+      });
   } catch (e) {
     console.error("\u274c Failed to restore today\u2019s session:", e);
     alert("Something went wrong restoring your session.");

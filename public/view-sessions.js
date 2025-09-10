@@ -183,16 +183,18 @@ function renderSessionRowInto(container, docId, data) {
   delBtn.textContent = 'Delete';
   delBtn.className = 'tab-button';
   delBtn.style.marginLeft = '6px';
-  delBtn.addEventListener('click', async () => {
-    if (!confirm('Delete this session?')) return;
-    const expectedPin = localStorage.getItem('contractor_pin') || '1234';
-    const pin = prompt('Enter Contractor PIN to delete:');
-    if (pin !== expectedPin) {
-      if (pin !== null) alert('Incorrect PIN');
-      return;
-    }
-    try {
-      await firebase
+  delBtn.addEventListener('click', () => {
+    showAppModal({ title: "Confirm", message: 'Delete this session?' })
+      .then(async ok => {
+        if (!ok) return;
+        const expectedPin = localStorage.getItem('contractor_pin') || '1234';
+        const pin = prompt('Enter Contractor PIN to delete:');
+        if (pin !== expectedPin) {
+          if (pin !== null) alert('Incorrect PIN');
+          return;
+        }
+        try {
+          await firebase
         .firestore()
         .collection('contractors')
         .doc(_contractorId)
@@ -215,6 +217,7 @@ function renderSessionRowInto(container, docId, data) {
       alert('Failed to delete session.');
     }
   });
+});
   btns.appendChild(delBtn);
 
   row.appendChild(btns);

@@ -2433,17 +2433,20 @@ document.addEventListener('DOMContentLoaded', () => {
   cbTourS?.addEventListener('change', persistFromSettings);
   cbStaffLoadS?.addEventListener('change', persistFromSettings);
 
-  btnClearLocal?.addEventListener('click', async () => {
-    if (!confirm('Clear all local data? You will be signed out and the app will reload.')) return;
-    try { localStorage.clear(); } catch {}
-    if (window.caches) {
-      try {
-        const names = await caches.keys();
-        await Promise.all(names.map(n => caches.delete(n)));
-      } catch {}
-    }
-    alert('Local data cleared. The app will reload and you may need to log in again.');
-    location.reload();
+  btnClearLocal?.addEventListener('click', () => {
+    showAppModal({ title: "Confirm", message: 'Clear all local data? You will be signed out and the app will reload.' })
+      .then(async ok => {
+        if (!ok) return;
+        try { localStorage.clear(); } catch {}
+        if (window.caches) {
+          try {
+            const names = await caches.keys();
+            await Promise.all(names.map(n => caches.delete(n)));
+          } catch {}
+        }
+        alert('Local data cleared. The app will reload and you may need to log in again.');
+        location.reload();
+      });
   });
 
   // SAVE buttons
