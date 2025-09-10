@@ -2544,7 +2544,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   function renderPill() {
     const val = showCrutched ? currentCrutched : currentFull;
     const label = showCrutched ? 'Crutched' : 'Shorn';
-    pillVal.textContent = `${val.toLocaleString()} ${label}`;
+    pillVal.textContent = `${label}: ${val.toLocaleString()}`;
   }
 
   function togglePill() {
@@ -2790,8 +2790,15 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   // Wire up
   if (pill) {
-    pill.addEventListener('click', togglePill);
-    pill.addEventListener('dblclick', openModal);
+    let clickTimer;
+    pill.addEventListener('click', () => {
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(openModal, 250);
+    });
+    pill.addEventListener('dblclick', () => {
+      clearTimeout(clickTimer);
+      togglePill();
+    });
   }
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
   if (closeBtnFooter) closeBtnFooter.addEventListener('click', closeModal);
