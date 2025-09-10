@@ -3073,12 +3073,16 @@ function resetTallySheet() {
     const subtotalRowEl = document.getElementById('subtotalRow');
     const staffTableEl = document.getElementById('shedStaffTable');
     const totalsBodyEl = document.querySelector('#sheepTypeTotalsTable tbody');
+    const incidentBodyEl = document.getElementById('incidentBody');
 
     if (headerRowEl) headerRowEl.innerHTML = '<th>Count #</th><th>Count Total</th><th class="sheep-type">Sheep Type</th>';
     if (bodyEl) bodyEl.innerHTML = '';
     if (subtotalRowEl) subtotalRowEl.innerHTML = '<th>Shearer Totals</th>';
     if (staffTableEl) staffTableEl.innerHTML = '';
     if (totalsBodyEl) totalsBodyEl.innerHTML = '';
+    if (incidentBodyEl) {
+        incidentBodyEl.innerHTML = '<tr><td><input type="time" /></td><td><input type="text" placeholder="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td></tr>';
+    }
 
     numStands = 0;
     runs = 0;

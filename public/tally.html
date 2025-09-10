@@ -647,6 +647,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var totalsBody = document.querySelector('#sheepTypeTotalsTable tbody');
     if (totalsBody) totalsBody.innerHTML = '';
     document.querySelectorAll('#shedStaffTable tr td:nth-child(2) input').forEach(function(el){ el.value = ''; });
+    var incidentBody = document.getElementById('incidentBody');
+    if (incidentBody) {
+      incidentBody.innerHTML = '<tr><td><input type="time" /></td><td><input type="text" placeholder="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td></tr>';
+    }
   }
 
   function performReset(full) {
