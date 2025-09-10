@@ -411,6 +411,7 @@ let allowCleanup = false;
 
 // === Autosave state ===
 let autosaveTimer = null;
+let cleanupAutosaveTimer = null;
 let lastSavedJson = '';
 let lastLocalSave = 0;
 let lastCloudSave = 0;
@@ -579,6 +580,36 @@ function scheduleAutosave() {
             showAutosaveStatus('Autosaved', mode);
         }
     }, 3000);
+}
+
+function runCleanupAutosave() {
+    if (cleanupAutosaveTimer) {
+        clearTimeout(cleanupAutosaveTimer);
+        cleanupAutosaveTimer = null;
+    }
+    if (autosaveTimer) {
+        clearTimeout(autosaveTimer);
+        autosaveTimer = null;
+    }
+    const mode = localStorage.getItem('tally_autosave_mode') || 'both';
+    if (mode === 'off') return;
+    const saveLocal = mode === 'local' || mode === 'both';
+    const saveCloud = mode === 'cloud' || mode === 'both';
+    performSave(saveLocal, saveCloud, false);
+    const session = collectExportData();
+    const json = JSON.stringify(session);
+    const now = Date.now();
+    if (saveLocal) lastLocalSave = now;
+    if (saveCloud) lastCloudSave = now;
+    lastSavedJson = json;
+    updateAutosaveIndicator(mode);
+    showAutosaveStatus('Autosaved', mode);
+}
+
+function scheduleCleanupAutosave() {
+    if (!allowCleanup) return;
+    if (cleanupAutosaveTimer) clearTimeout(cleanupAutosaveTimer);
+    cleanupAutosaveTimer = setTimeout(runCleanupAutosave, 10000);
 }
 
  // Dynamic sheep type list will be saved to localStorage under 'sheep_types'
@@ -1791,6 +1822,12 @@ function initAutoHoursField(input) {
    if (end) {
      end.addEventListener('input', e => {
        allowCleanup = !!e.target.value.trim();
+       if (allowCleanup) {
+         scheduleCleanupAutosave();
+       } else if (cleanupAutosaveTimer) {
+         clearTimeout(cleanupAutosaveTimer);
+         cleanupAutosaveTimer = null;
+       }
      });
      end.addEventListener('change', () => {
        if (!hasTouchedTallyInputs && !hasShownFinishTimeWarning) {
@@ -1800,11 +1837,15 @@ function initAutoHoursField(input) {
            end.value = enteredTime;
            hasShownFinishTimeWarning = true;
            calculateHoursWorked();
+           allowCleanup = !!end.value.trim();
+           scheduleCleanupAutosave();
          }, () => {
            end.value = '';
          });
        } else {
          calculateHoursWorked();
+         allowCleanup = !!end.value.trim();
+         scheduleCleanupAutosave();
        }
      });
    }
