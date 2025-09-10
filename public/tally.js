@@ -3252,12 +3252,16 @@ document.addEventListener('DOMContentLoaded', () => {
     window.isLoadedSession = params.get('loadedSession') === 'true';
     const isNewDay = params.get('newDay') === 'true';
 
+    if (!window.isLoadedSession) {
+      // Fresh sessions should default to editable mode
+      try { localStorage.setItem('viewOnlyMode', 'false'); } catch (e) {}
+    }
     const viewOnlyMode = (localStorage.getItem('viewOnlyMode') || '').toLowerCase();
-    // If explicitly 'false', we allow editing (unlocked). Otherwise lock.
-    if (viewOnlyMode === 'false' || window.pinValidated === true) {
-      unlockSession();
-    } else {
+    // Only lock when explicitly in view-only mode and no valid PIN provided
+    if (viewOnlyMode === 'true' && window.pinValidated !== true) {
       lockSession();
+    } else {
+      unlockSession();
     }
 
     if (window.isLoadedSession) {
