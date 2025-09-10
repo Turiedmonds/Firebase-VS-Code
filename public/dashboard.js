@@ -2536,6 +2536,26 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   const tblCrutched = document.querySelector('#kpiCrutchedTable tbody');
   const exportBtn = document.getElementById('kpiExportCsv');
 
+  // --- state + toggle helpers ---
+  let currentFull = 0;
+  let currentCrutched = 0;
+  let showCrutched = false;
+  let toggleTimer;
+
+  function renderPill() {
+    const val = showCrutched ? currentCrutched : currentFull;
+    const label = showCrutched ? 'Crutched' : 'Shorn';
+    pillVal.textContent = `${val.toLocaleString()} ${label}`;
+  }
+
+  function startToggle() {
+    clearInterval(toggleTimer);
+    toggleTimer = setInterval(() => {
+      showCrutched = !showCrutched;
+      renderPill();
+    }, 3000);
+  }
+
   if (!pill || !pillVal || !modal || !yearSel || !farmSel) {
     return;
   }
@@ -2543,11 +2563,14 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   if (dashCache.kpiSheepCount != null) {
     const kc = dashCache.kpiSheepCount;
     if (typeof kc === 'object') {
-      const f = Number(kc.full || 0);
-      const c = Number(kc.crutched || 0);
-      pillVal.textContent = `${f.toLocaleString()} S / ${c.toLocaleString()} C`;
+      currentFull = Number(kc.full || 0);
+      currentCrutched = Number(kc.crutched || 0);
+      renderPill();
+      startToggle();
     } else {
-      pillVal.textContent = Number(kc).toLocaleString();
+      currentFull = Number(kc);
+      currentCrutched = 0;
+      renderPill();
     }
   } else if (isReallyOffline()) {
     pillVal.textContent = 'Data not available offline';
@@ -2733,12 +2756,12 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   function updatePill(full, crutched){
-    if (!pillVal) return;
-    const f = Number(full || 0);
-    const c = Number(crutched || 0);
-    pillVal.textContent = `${f.toLocaleString()} S / ${c.toLocaleString()} C`;
-    dashCache.kpiSheepCount = { full: f, crutched: c };
+    currentFull = Number(full || 0);
+    currentCrutched = Number(crutched || 0);
+    renderPill();
+    dashCache.kpiSheepCount = { full: currentFull, crutched: currentCrutched };
     saveDashCache();
+    startToggle();
   }
 
   function fillYearsSelect(){
