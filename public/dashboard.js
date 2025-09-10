@@ -2478,7 +2478,14 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   if (dashCache.kpiSheepCount != null) {
-    pillVal.textContent = Number(dashCache.kpiSheepCount).toLocaleString();
+    const kc = dashCache.kpiSheepCount;
+    if (typeof kc === 'object') {
+      const f = Number(kc.full || 0);
+      const c = Number(kc.crutched || 0);
+      pillVal.textContent = `${f.toLocaleString()} S / ${c.toLocaleString()} C`;
+    } else {
+      pillVal.textContent = Number(kc).toLocaleString();
+    }
   } else if (isReallyOffline()) {
     pillVal.textContent = 'Data not available offline';
     console.info('[Dashboard] Skipping live widget init offline.');
@@ -2662,11 +2669,12 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     });
   }
 
-  function updatePill(value){
+  function updatePill(full, crutched){
     if (!pillVal) return;
-    const num = Number(value || 0);
-    pillVal.textContent = num.toLocaleString();
-    dashCache.kpiSheepCount = num;
+    const f = Number(full || 0);
+    const c = Number(crutched || 0);
+    pillVal.textContent = `${f.toLocaleString()} S / ${c.toLocaleString()} C`;
+    dashCache.kpiSheepCount = { full: f, crutched: c };
     saveDashCache();
   }
 
@@ -2683,7 +2691,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const farm = farmSel.value || '__ALL__';
     const sessions = await fetchSessionsForYear(year);
     const agg = aggregate(sessions, farm);
-    if (pillVal) updatePill(agg.totalFull);
+    if (pillVal) updatePill(agg.totalFull, agg.totalCrut);
 
     // Populate farm list (keep current selection if possible)
     const current = farmSel.value;
@@ -2712,7 +2720,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (day)']];
     document.querySelectorAll('#kpiFullSheepTable tbody tr').forEach(tr=>{
       const cells=[...tr.children].map(td=>td.textContent.trim());
-      rows.push(['Full Sheep', ...cells]);
+      rows.push(['Shorn', ...cells]);
     });
     document.querySelectorAll('#kpiCrutchedTable tbody tr').forEach(tr=>{
       const cells=[...tr.children].map(td=>td.textContent.trim());
