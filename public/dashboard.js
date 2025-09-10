@@ -136,6 +136,35 @@ function throttle(ms, fn){
   let t=0; return (...a)=>{ const now=Date.now(); if (now-t>ms){ t=now; return fn(...a); } };
 }
 
+function checkIncidentNotifications(){
+  const btn = document.getElementById('incidentNotice');
+  if (!btn) return;
+  let sessions;
+  try {
+    sessions = JSON.parse(localStorage.getItem('sheariq_sessions') || '[]');
+    sessions = Array.isArray(sessions) ? sessions : [];
+  } catch (e) {
+    sessions = [];
+  }
+  const unseen = [];
+  sessions.forEach(s => {
+    if (Array.isArray(s.incidents) && s.incidents.length) {
+      const sessionKey = (s.date || '') + '_' + (s.stationName || '');
+      if (!localStorage.getItem('incident_seen_' + sessionKey)) {
+        unseen.push(sessionKey);
+      }
+    }
+  });
+  if (unseen.length) {
+    btn.hidden = false;
+    btn.textContent = 'View incident reports (' + unseen.length + ')';
+    btn.addEventListener('click', () => {
+      unseen.forEach(k => localStorage.setItem('incident_seen_' + k, '1'));
+      location.href = 'incident-reports.html';
+    }, { once: true });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const role = localStorage.getItem('user_role');
   if (role === 'contractor' && isReallyOffline()) {
@@ -162,6 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showOfflineToastOnce('Offline mode: cached navigation ready');
     }
   }));
+  checkIncidentNotifications();
 });
 
 // Auto-open on first dashboard load (only once)
