@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('contractor_id', contractorId);
     localStorage.setItem('role_cached_at', String(Date.now()));
 
-    if (navigator.serviceWorker?.controller) {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
       try {
         const cache = await caches.open(CACHE_NAME);
         await cache.addAll([
@@ -47,7 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const LEGACY_KEY = 'dashboard_staff_can_load';
     try {
       const snap = await db.collection('contractors').doc(contractorId).get();
-      const canLoad = snap.data()?.staffCanLoadSessions;
+      const data = snap.data();
+      const canLoad = data && data.staffCanLoadSessions;
       if (typeof canLoad === 'boolean') {
         const val = canLoad ? 'true' : 'false';
         localStorage.setItem(CANONICAL_KEY, val);
@@ -57,8 +58,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.warn('staffCanLoadSessions fetch failed', err);
     }
-    const existing =
-      localStorage.getItem(CANONICAL_KEY) ?? localStorage.getItem(LEGACY_KEY);
+    let existing = localStorage.getItem(CANONICAL_KEY);
+    if (existing === null || existing === undefined) {
+      existing = localStorage.getItem(LEGACY_KEY);
+    }
     if (existing != null) {
       localStorage.setItem(CANONICAL_KEY, existing);
       localStorage.setItem(LEGACY_KEY, existing);
