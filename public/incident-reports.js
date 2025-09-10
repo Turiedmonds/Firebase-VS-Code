@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const applyBtn = document.getElementById('applyFilters');
   const clearBtn = document.getElementById('clearFilters');
   const backBtn = document.getElementById('backBtn');
+  const exportBtn = document.getElementById('exportBtn');
 
   let allIncidents = [];
 
@@ -58,6 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
     render(allIncidents);
   });
   backBtn?.addEventListener('click', () => window.history.back());
+  exportBtn?.addEventListener('click', () => {
+    window.exportTableToCSV('incidentTable', 'incident_reports');
+  });
 
   async function loadIncidents() {
     const user = firebase.auth().currentUser;
