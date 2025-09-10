@@ -486,7 +486,7 @@ function updateSyncStatusBanner() {
 
 async function tryFlushQueue() {
     if (!navigator.onLine || typeof firebase === 'undefined' || !firebase.firestore || !firebase.auth) return;
-    const contractorId = localStorage.getItem('contractor_id') || firebase.auth(().currentUser && ).currentUser.uid) || null;
+    const contractorId = localStorage.getItem('contractor_id') || (firebase.auth().currentUser && firebase.auth().currentUser.uid) || null;
     if (!contractorId) return;
     const pending = getPending();
     for (const item of pending) {
@@ -767,7 +767,8 @@ function setupDailyLayout(shearers, counts, staff) {
         isSetupComplete = true;
         showView('tallySheetView');
 
-        const stationName = document.getElementById('stationName'() && ).value).trim();
+        const stationNameEl = document.getElementById('stationName');
+        const stationName = stationNameEl ? stationNameEl.value.trim() : '';
         const titleEl = document.getElementById('summaryTitle');
         if (titleEl && stationName) {
           titleEl.textContent = `${stationName} \u2014 Daily Summary`;
@@ -829,7 +830,8 @@ function populateSessionData(data) {
 
     if (headerRowEl && Array.isArray(data.stands)) {
         data.stands.forEach((st, idx) => {
-         const input = headerRowEl.children[idx + (1] && 1].querySelector)('input');   
+            const cell = headerRowEl.children[idx + 1];
+            const input = cell ? cell.querySelector('input') : null;
             if (input) {
                 input.value = st.name || '';
                 adjustStandNameWidth(input);
@@ -855,7 +857,8 @@ function populateSessionData(data) {
             const row = bodyEl.children[idx];
             if (!row) return;
             run.stands.forEach((val, sIdx) => {
-                const input = row.children[sIdx + (1] && 1].querySelector)('input[type="number"]');
+                const cell = row.children[sIdx + 1];
+                const input = cell ? cell.querySelector('input[type="number"]') : null;
                 if (input) input.value = val;
             });
             const typeInput = row.querySelector('.sheep-type input');
@@ -1167,10 +1170,14 @@ function hideDatesModal() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('dateListCloseBtn'() && ).addEventListener)('click', hideDatesModal);
-    document.getElementById('dateListModal'() && ).addEventListener)('click', (e) => {
-        if (e.target.id === 'dateListModal') hideDatesModal();
-    });
+    const closeBtn = document.getElementById('dateListCloseBtn');
+    if (closeBtn) closeBtn.addEventListener('click', hideDatesModal);
+    const modalEl = document.getElementById('dateListModal');
+    if (modalEl) {
+        modalEl.addEventListener('click', (e) => {
+            if (e.target.id === 'dateListModal') hideDatesModal();
+        });
+    }
 });
 
  function adjustStandNameWidth(input) {
@@ -1771,8 +1778,10 @@ function resetAutoHours(input) {
     delete input.dataset.manual;
     delete input.dataset.modalShown;
     const parent = input.parentNode;
-    parent.querySelector('.manual-badge'() && ).remove)();
-    parent.querySelector('.reset-auto-btn'() && ).remove)();
+    const badge = parent.querySelector('.manual-badge');
+    if (badge) badge.remove();
+    const resetBtn = parent.querySelector('.reset-auto-btn');
+    if (resetBtn) resetBtn.remove();
     if (input.dataset.autoHours === 'shearer') {
         calculateHoursWorked();
     } else {
@@ -1941,10 +1950,12 @@ function cleanUpEmptyRowsAndColumns(manual = false) {
     for (let col = numStands; col >= 1; col--) {
         let isEmpty = true;
         for (let r = 0; r < body.rows.length; r++) {
-            const inp = body.rows[r].cells[(col] && col].querySelector)('input');
+            const cell = body.rows[r].cells[col];
+            const inp = cell ? cell.querySelector('input') : null;
             if (inp && inp.value.trim() !== '') { isEmpty = false; break; }
         }
-        const headerInp = headerRow.cells[(col] && col].querySelector)('input');
+        const headerCell = headerRow.cells[col];
+        const headerInp = headerCell ? headerCell.querySelector('input') : null;
         if (headerInp && headerInp.value.trim() !== '') isEmpty = false;
         if (isEmpty) {
             headerRow.deleteCell(col);
@@ -1959,7 +1970,8 @@ function cleanUpEmptyRowsAndColumns(manual = false) {
         const row = body.rows[r];
         let isEmpty = true;
         for (let c = 1; c <= numStands; c++) {
-            const inp = row.cells[(c] && c].querySelector)('input');
+            const cell = row.cells[c];
+            const inp = cell ? cell.querySelector('input') : null;
             if (inp && inp.value.trim() !== '') { isEmpty = false; break; }
         }
         const typeInput = row.querySelector('.sheep-type input');
@@ -2213,11 +2225,12 @@ document.addEventListener('DOMContentLoaded', () => {
  
      const numStandsLocal = numStands;
      const names = [];
-     for (let i = 1; i <= numStandsLocal; i++) {
-         const input = headerRow.children[(i] && i].querySelector)('input');
-         const name = input && input.value.trim() ? input.value.trim() : `Stand ${i}`;
-         names.push(name);
-     }
+    for (let i = 1; i <= numStandsLocal; i++) {
+        const cell = headerRow.children[i];
+        const input = cell ? cell.querySelector('input') : null;
+        const name = input && input.value.trim() ? input.value.trim() : `Stand ${i}`;
+        names.push(name);
+    }
  
     const totals = {};
     const standTotals = new Array(numStandsLocal).fill(0);
@@ -2230,7 +2243,9 @@ document.addEventListener('DOMContentLoaded', () => {
        const type = (typeInput ? typeInput.value.trim() : '') || '❓ Missing Type';
        if (!totals[type]) totals[type] = new Array(numStandsLocal).fill(0);
        for (let s = 1; s <= numStandsLocal; s++) {
-           const val = parseInt(row.children[(s] && s].querySelector)('input'() && ).value)) || 0;
+           const cell = row.children[s];
+           const input = cell ? cell.querySelector('input') : null;
+           const val = parseInt(input && input.value) || 0;
            totals[type][s-1] += val;
            standTotals[s-1] += val;
        }
@@ -2295,9 +2310,11 @@ document.addEventListener('DOMContentLoaded', () => {
      const staffBody = document.getElementById('summaryShedStaff');
      if (staffBody) {
          staffBody.innerHTML = '';
-          document.querySelectorAll('#shedStaffTable tr').forEach(row => {
-            const name = row.querySelector('td:nth-child(1) input'() && ).value) || '';
-            const hoursStr = row.querySelector('td:nth-child(2) input'() && ).value) || '';
+         document.querySelectorAll('#shedStaffTable tr').forEach(row => {
+            const nameEl = row.querySelector('td:nth-child(1) input');
+            const name = (nameEl && nameEl.value) || '';
+            const hoursEl = row.querySelector('td:nth-child(2) input');
+            const hoursStr = (hoursEl && hoursEl.value) || '';
             if (name.trim() || hoursStr.trim()) {
                 const tr = document.createElement('tr');
                 const nameTd = document.createElement('td');
@@ -2676,26 +2693,33 @@ async function buildStationSummary() {
 }
  
 function clearStationSummaryView() {
-    document.querySelector('#stationShearerTable thead tr'() && ).replaceChildren)();
-    document.querySelector('#stationShearerTable tbody'() && ).replaceChildren)();
-    document.querySelector('#stationStaffTable tbody'() && ).replaceChildren)();
-    document.querySelector('#stationLeaderTable tbody'() && ).replaceChildren)();
-    document.querySelector('#stationCombTable tbody'() && ).replaceChildren)();
-    document.querySelector('#stationTotalTable thead tr'() && ).replaceChildren)();
-    document.querySelector('#stationTotalTable tbody'() && ).replaceChildren)();
+    const shearerHead = document.querySelector('#stationShearerTable thead tr');
+    if (shearerHead) shearerHead.replaceChildren();
+    const shearerBody = document.querySelector('#stationShearerTable tbody');
+    if (shearerBody) shearerBody.replaceChildren();
+    const staffBody = document.querySelector('#stationStaffTable tbody');
+    if (staffBody) staffBody.replaceChildren();
+    const leaderBody = document.querySelector('#stationLeaderTable tbody');
+    if (leaderBody) leaderBody.replaceChildren();
+    const combBody = document.querySelector('#stationCombTable tbody');
+    if (combBody) combBody.replaceChildren();
+    const totalHead = document.querySelector('#stationTotalTable thead tr');
+    if (totalHead) totalHead.replaceChildren();
+    const totalBody = document.querySelector('#stationTotalTable tbody');
+    if (totalBody) totalBody.replaceChildren();
     const msg = document.getElementById('stationNoData');
     if (msg) msg.style.display = 'block';
 }
 
 function collectExportData() {
      const data = {
-         date: document.getElementById('date'() && ).value) || '',
-        stationName: document.getElementById('stationName'() && ).value).trim() || '',
-        teamLeader: document.getElementById('teamLeader'() && ).value).trim() || '',
-         combType: document.getElementById('combType'() && ).value) || '',
-         startTime: document.getElementById('startTime'() && ).value) || '',
-         finishTime: document.getElementById('finishTime'() && ).value) || '',
-         hoursWorked: document.getElementById('hoursWorked'() && ).value) || '',
+         date: (document.getElementById('date') || {}).value || '',
+        stationName: ((document.getElementById('stationName') || {}).value || '').trim(),
+        teamLeader: ((document.getElementById('teamLeader') || {}).value || '').trim(),
+         combType: (document.getElementById('combType') || {}).value || '',
+         startTime: (document.getElementById('startTime') || {}).value || '',
+         finishTime: (document.getElementById('finishTime') || {}).value || '',
+         hoursWorked: (document.getElementById('hoursWorked') || {}).value || '',
          timeSystem: isNineHourDay ? '9-hr' : '8-hr',
          stands: [],
          shearerCounts: [],
@@ -2703,7 +2727,8 @@ function collectExportData() {
          sheepTypeTotals: []
      };
 
-     const finishTime = document.getElementById('finishTime'() && ).value);
+     const finishTimeEl = document.getElementById('finishTime');
+     const finishTime = finishTimeEl ? finishTimeEl.value : '';
      const sessionHasEnded = finishTime && finishTime.trim() !== '';
  
      const header = document.getElementById('headerRow');
@@ -2711,12 +2736,15 @@ function collectExportData() {
      if (!header || !tbody) return data;
  
     for (let s = 1; s <= numStands; s++) {
-        const headerInput = header.children[(s] && s].querySelector)('input');
+        const headerCell = header.children[s];
+        const headerInput = headerCell ? headerCell.querySelector('input') : null;
         const name = headerInput && headerInput.value.trim() ? headerInput.value.trim() : `Stand ${s}`;
         let hasData = !!(headerInput && headerInput.value.trim());
         if (!hasData) {
             for (let r = 0; r < tbody.children.length; r++) {
-                const val = tbody.children[r].children[(s] && s].querySelector)('input[type="number"]'() && ).value);
+                const rowCell = tbody.children[r].children[s];
+                const valInput = rowCell ? rowCell.querySelector('input[type="number"]') : null;
+                const val = valInput && valInput.value;
                 if (val && val.trim()) { hasData = true; break; }
             }
         }
@@ -2729,7 +2757,8 @@ function collectExportData() {
         let rowHasData = false;
         const standVals = [];
         data.stands.forEach(s => {
-            const input = row.children[(s.index] && s.index].querySelector)('input[type="number"]');
+            const cell = row.children[s.index];
+            const input = cell ? cell.querySelector('input[type="number"]') : null;
             const val = input ? input.value : '';
             if (val.trim()) rowHasData = true;
             standVals.push(val);
@@ -2739,10 +2768,12 @@ function collectExportData() {
         const sheepType = typeInput ? typeInput.value : '';
         if (sheepType.trim()) rowHasData = true;
         if (!sessionHasEnded || rowHasData) {
+            const totalCell = row.querySelector('.run-total');
+            const total = totalCell ? totalCell.innerText : '0';
             data.shearerCounts.push({
                 count: idx + 1,
                 stands: standVals,
-                total: row.querySelector('.run-total'() && ).innerText) || '0',
+                total,
                 sheepType
             });
         }
@@ -2779,9 +2810,12 @@ function collectExportData() {
     if (incidentBody) {
         data.incidents = [];
         Array.from(incidentBody.querySelectorAll('tr')).forEach(tr => {
-            const time = tr.querySelector('input[type="time"]'() && ).value) || '';
-            const name = tr.querySelector('input[type="text"]'() && ).value) || '';
-            const desc = tr.querySelector('textarea'() && ).value) || '';
+            const timeInput = tr.querySelector('input[type="time"]');
+            const time = (timeInput && timeInput.value) || '';
+            const nameInput = tr.querySelector('input[type="text"]');
+            const name = (nameInput && nameInput.value) || '';
+            const descInput = tr.querySelector('textarea');
+            const desc = (descInput && descInput.value) || '';
             if (time.trim() || name.trim() || desc.trim()) {
                 data.incidents.push({ time, name, description: desc });
             }
@@ -2954,7 +2988,7 @@ async function saveSessionToFirestore(showStatus = false) {
   }
 
   // ✅ Use contractorId from localStorage, fallback to current user UID
-  const contractorId = localStorage.getItem('contractor_id') || firebase.auth(().currentUser && ).currentUser.uid) || null;
+  const contractorId = localStorage.getItem('contractor_id') || (firebase.auth().currentUser && firebase.auth().currentUser.uid) || null;
   if (!contractorId) {
     console.error('Missing contractor_id');
     return;
@@ -2991,7 +3025,7 @@ async function listSessionsFromFirestore() {
         return [];
     }
 
-    const contractorId = localStorage.getItem('contractor_id') || firebase.auth(().currentUser && ).currentUser.uid) || null;
+    const contractorId = localStorage.getItem('contractor_id') || (firebase.auth().currentUser && firebase.auth().currentUser.uid) || null;
     if (!contractorId) {
         console.error('Missing contractor_id');
         return [];
@@ -3032,7 +3066,7 @@ async function loadSessionFromFirestore(id) {
         return null;
     }
 
-    const contractorId = localStorage.getItem('contractor_id') || firebase.auth(().currentUser && ).currentUser.uid) || null;
+    const contractorId = localStorage.getItem('contractor_id') || (firebase.auth().currentUser && firebase.auth().currentUser.uid) || null;
     if (!contractorId) {
         console.error('Missing contractor_id');
         return null;
@@ -3631,7 +3665,8 @@ const body = document.getElementById('tallyBody');
                 ? row.stands
                 : [];
         values.forEach((val, sIdx) => {
-            const inp = tr.children[sIdx + (1] && 1].querySelector)('input[type="number"]');
+            const cell = tr.children[sIdx + 1];
+            const inp = cell ? cell.querySelector('input[type="number"]') : null;
             if (inp) inp.value = val;
         });
         const typeInput = tr.querySelector('.sheep-type input');

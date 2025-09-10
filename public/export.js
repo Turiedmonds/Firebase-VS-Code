@@ -50,7 +50,8 @@ function exportFarmSummaryCSV() {
     const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(','))
         .join('\r\n');
 
-    const farmName = document.getElementById('stationSelect'() && ).value).trim() || 'FarmSummary';
+    const farmSelect = document.getElementById('stationSelect');
+    const farmName = (farmSelect && farmSelect.value ? farmSelect.value : '').trim() || 'FarmSummary';
     const date = new Date();
     const formatted = date.toLocaleDateString('en-NZ').replace(/\//g, '-');
     const fileName = `FarmSummary_${farmName}_${formatted}.csv`;
@@ -209,7 +210,8 @@ function loadPreviousSession() {
     const headerRow = document.getElementById('headerRow');
     if (headerRow && Array.isArray(data.stands)) {
         data.stands.forEach((st, idx) => {
-            const input = headerRow.children[idx + (1] && 1].querySelector)('input');
+            const cell = headerRow.children[idx + 1];
+            const input = cell ? cell.querySelector('input') : null;
             if (input) {
                 input.value = st.name || '';
                 adjustStandNameWidth(input);
@@ -239,7 +241,8 @@ function loadPreviousSession() {
             if (!row) return;
             const values = Array.isArray(run.stands) ? run.stands : Array.isArray(run.counts) ? run.counts : [];
             values.forEach((val, sIdx) => {
-                const input = row.children[sIdx + (1] && 1].querySelector)('input[type="number"]');
+                const cell = row.children[sIdx + 1];
+                const input = cell ? cell.querySelector('input[type="number"]') : null;
                 if (input) input.value = val;
             });
             const typeInput = row.querySelector('.sheep-type input');
