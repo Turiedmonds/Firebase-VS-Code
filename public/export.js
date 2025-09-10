@@ -1,5 +1,19 @@
 // Functions from tally.js are loaded globally; no module imports needed
 
+function autoFitColumns(ws) {
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    const colWidths = new Array(range.e.c - range.s.c + 1).fill(0);
+    for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+            const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+            if (!cell) continue;
+            const text = cell.v != null ? String(cell.v) : '';
+            colWidths[C] = Math.max(colWidths[C], text.length + 2);
+        }
+    }
+    ws['!cols'] = colWidths.map(w => ({ wch: Math.max(w, 10) }));
+}
+
 function exportTableToCSV(tableId, baseName = 'table') {
     const table = document.getElementById(tableId);
     if (!table) return;
@@ -96,17 +110,7 @@ function exportFarmSummaryExcel() {
     tables.forEach(t => appendTable(t[0], t[1]));
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
-    const range = XLSX.utils.decode_range(ws['!ref']);
-    const colWidths = new Array(range.e.c - range.s.c + 1).fill(0);
-    for (let R = range.s.r; R <= range.e.r; R++) {
-        for (let C = range.s.c; C <= range.e.c; C++) {
-            const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
-            if (!cell) continue;
-            const text = cell.v != null ? String(cell.v) : '';
-            colWidths[C] = Math.max(colWidths[C], text.length);
-        }
-    }
-    ws['!cols'] = colWidths.map(w => ({ wch: w + 2 }));
+    autoFitColumns(ws);
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Summary');
@@ -465,18 +469,16 @@ function exportDailySummaryExcel() {
 
     const range = XLSX.utils.decode_range(ws['!ref']);
     const border = { style: 'thin', color: { rgb: '000000' } };
-    const colWidths = new Array(range.e.c - range.s.c + 1).fill(0);
     for (let R = range.s.r; R <= range.e.r; R++) {
         for (let C = range.s.c; C <= range.e.c; C++) {
             const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
             if (!cell) continue;
-           
+
             const text = cell.v != null ? String(cell.v) : '';
             if (text) {
                 cell.s = cell.s || {};
                 cell.s.border = { top: border, bottom: border, left: border, right: border };
                 cell.s.alignment = { horizontal: 'center', vertical: 'center' };
-                colWidths[C] = Math.max(colWidths[C], text.length);
             }
         }
     }
@@ -491,7 +493,7 @@ function exportDailySummaryExcel() {
         }
     });
 
-  ws['!cols'] = colWidths.map(w => ({ wch: Math.max(w + 2, 15) }));
+    autoFitColumns(ws);
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Summary');
