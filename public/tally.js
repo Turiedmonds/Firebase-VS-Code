@@ -1900,7 +1900,8 @@ let manualSave = false;
 
 function performSave(saveLocal, saveCloud, manual) {
     if ((isSetupComplete && hasUserStartedEnteringData) || manual) {
-        if (allowCleanup || manual) {
+        // Only clean up when a finish time has been entered
+        if (allowCleanup) {
             cleanUpEmptyRowsAndColumns(manual);
         }
     }
@@ -1911,17 +1912,17 @@ function performSave(saveLocal, saveCloud, manual) {
     if (!tbody || !header) return;
 
     if (manual) {
-        // Check empty stand columns
-        for (let s = 1; s <= numStands; s++) {
-            const inputs = Array.from(tbody.querySelectorAll(`tr td:nth-child(${s + 1}) input`));
-            const empty = inputs.every(inp => !inp.value.trim());
-            if (empty) {
-                issues.push(`Stand ${s} has no data. Please remove unused stands.`);
-                const headerInput = header.children[s].querySelector('input');
-                if (headerInput) headerInput.classList.add('highlight-error');
-                inputs.forEach(i => i.classList.add('highlight-error'));
+            // Check empty stand columns
+            for (let s = 1; s <= numStands; s++) {
+                const inputs = Array.from(tbody.querySelectorAll(`tr td:nth-child(${s + 1}) input`));
+                const empty = inputs.every(inp => !inp.value.trim());
+                if (empty) {
+                    issues.push(`Stand ${s} has no data. Please remove unused stands.`);
+                    const headerInput = header.children[s].querySelector('input');
+                    if (headerInput) headerInput.classList.add('highlight-error');
+                    inputs.forEach(i => i.classList.add('highlight-error'));
+                }
             }
-        }
 
         // Check empty count rows
         Array.from(tbody.querySelectorAll('tr')).forEach((row, idx) => {
@@ -1951,32 +1952,32 @@ function performSave(saveLocal, saveCloud, manual) {
             return;
         }
     }
- 
-    // Collect current session data
-    const data = collectExportData();
-    data.viewOnly = true; // Lock session by default
-    data.meta = data.meta || {};
-    data.meta.date = new Date().toLocaleDateString("en-NZ");
 
-    // Keep an up-to-date active session for quick resumption
-    try {
-        localStorage.setItem('active_session', JSON.stringify(data));
-    } catch (e) {
-        // Swallow storage errors to avoid disrupting save flow
-    }
-   
-    if (saveLocal) {
-        const json = JSON.stringify(data, null, 2);
-        localStorage.setItem('sheariq_saved_session', json);
-        saveSessionToStorage(data);
-        if (manual) {
-            alert('Session saved successfully to local storage.');
+        // Collect current session data
+        const data = collectExportData();
+        data.viewOnly = true; // Lock session by default
+        data.meta = data.meta || {};
+        data.meta.date = new Date().toLocaleDateString("en-NZ");
+
+        // Keep an up-to-date active session for quick resumption
+        try {
+            localStorage.setItem('active_session', JSON.stringify(data));
+        } catch (e) {
+            // Swallow storage errors to avoid disrupting save flow
         }
-    }
 
-    if (saveCloud) {
-        saveSessionToFirestore(true);
-    }
+        if (saveLocal) {
+            const json = JSON.stringify(data, null, 2);
+            localStorage.setItem('sheariq_saved_session', json);
+            saveSessionToStorage(data);
+            if (manual) {
+                alert('Session saved successfully to local storage.');
+            }
+        }
+
+        if (saveCloud) {
+            saveSessionToFirestore(true);
+        }
 }
 
 function saveData(manual = false, callback) {
@@ -3021,8 +3022,18 @@ function confirmSaveReset(full) {
             discardBtn.removeEventListener('click', onDiscard);
             cancelBtn.removeEventListener('click', onCancel);
         };
-        const onSave = () => { cleanup(); saveData(true, () => { if (typeof performReset === 'function') performReset(full); }); };
-        const onDiscard = () => { cleanup(); if (typeof performReset === 'function') performReset(full); };
+        const onSave = () => {
+            cleanup();
+            // Prevent cleanup until a new finish time is entered
+            allowCleanup = false;
+            saveData(true, () => { if (typeof performReset === 'function') performReset(full); });
+        };
+        const onDiscard = () => {
+            cleanup();
+            // Prevent cleanup until a new finish time is entered
+            allowCleanup = false;
+            if (typeof performReset === 'function') performReset(full);
+        };
         const onCancel = () => { cleanup(); };
         saveBtn.addEventListener('click', onSave);
         discardBtn.addEventListener('click', onDiscard);
@@ -3030,8 +3041,12 @@ function confirmSaveReset(full) {
     } else {
         const save = confirm('Do you want to save the current session before resetting?');
         if (save) {
+            // Prevent cleanup until a new finish time is entered
+            allowCleanup = false;
             saveData(true, () => { if (typeof performReset === 'function') performReset(full); });
         } else if (confirm('Reset without saving?')) {
+            // Prevent cleanup until a new finish time is entered
+            allowCleanup = false;
             if (typeof performReset === 'function') performReset(full);
         }
     }
