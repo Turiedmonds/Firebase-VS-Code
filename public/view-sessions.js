@@ -58,7 +58,7 @@ let allSessions = []; // accumulate fetched docs as plain objects { __id, ...dat
 
 // Parse Date from session fields; prefer 'date' then 'savedAt'
 function parseSessionDate(s) {
-  const val = s?.date || s?.savedAt;
+  const val = (s && s.date) || (s && s.savedAt);
   if (!val) return null;
   if (typeof val === 'object' && typeof val.toDate === 'function') return val.toDate();
   const d = new Date(val);
@@ -141,7 +141,7 @@ function renderSessionRowInto(container, docId, data) {
     flag.style.cursor = 'pointer';
     flag.style.marginLeft = '6px';
     const strong = info.querySelector('strong');
-    strong?.appendChild(flag);
+    (strong && strong.appendChild)(flag);
     flag.addEventListener('click', () => {
       localStorage.setItem('incident_session', JSON.stringify(data));
       window.location.href = 'incident-report.html';
@@ -243,9 +243,9 @@ function updateMetaAndButton() {
 }
 
 function applyFiltersAndRender() {
-  const q = (document.getElementById('sfq')?.value || '').trim().toLowerCase();
-  const fromV = document.getElementById('sfrom')?.value || '';
-  const toV   = document.getElementById('sto')?.value || '';
+  const q = (document.getElementById('sfq'() && ).value) || '').trim().toLowerCase();
+  const fromV = document.getElementById('sfrom'() && ).value) || '';
+  const toV   = document.getElementById('sto'() && ).value) || '';
   const from = fromV ? new Date(fromV + 'T00:00:00') : null;
   const to   = toV   ? new Date(toV   + 'T23:59:59') : null;
 
@@ -270,8 +270,8 @@ function applyFiltersAndRender() {
 
   // Newest first within groups
   rows.sort((a, b) => {
-    const da = parseSessionDate(a)?.getTime() || 0;
-    const db = parseSessionDate(b)?.getTime() || 0;
+    const da = parseSessionDate((a) && a).getTime)() || 0;
+    const db = parseSessionDate((b) && b).getTime)() || 0;
     return db - da;
   });
 
@@ -279,7 +279,7 @@ function applyFiltersAndRender() {
     const d = parseSessionDate(s);
     const yKey = yKeyFromDate(d);
     const sec = ensureYearSection(yKey);
-    const body = sec?.querySelector('.year-body');
+    const body = (sec && sec.querySelector)('.year-body');
     if (!body) continue;
     renderSessionRowInto(body, s.__id, s);
   }
@@ -409,23 +409,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       function applyNow(){ applyFiltersAndRender(); }
 
-      sapply?.addEventListener('click', applyNow);
-      sclear?.addEventListener('click', () => {
+      (sapply && sapply.addEventListener)('click', applyNow);
+      (sclear && sclear.addEventListener)('click', () => {
         if (sfq)   sfq.value = '';
         if (sfrom) sfrom.value = '';
         if (sto)   sto.value = '';
         applyFiltersAndRender();
       });
       // Optional: live typing search
-      sfq?.addEventListener('input', applyNow);
+      (sfq && sfq.addEventListener)('input', applyNow);
 
-      more?.addEventListener('click', () => loadNextPage());
+      (more && more.addEventListener)('click', () => loadNextPage());
 
-      exAll?.addEventListener('click', () => {
+      (exAll && exAll.addEventListener)('click', () => {
         document.querySelectorAll('section[data-year] .year-body').forEach(b => b.style.display = '');
         document.querySelectorAll('section[data-year] .chev').forEach(c => c.textContent = '▾');
       });
-      colAll?.addEventListener('click', () => {
+      (colAll && colAll.addEventListener)('click', () => {
         document.querySelectorAll('section[data-year] .year-body').forEach(b => b.style.display = 'none');
         document.querySelectorAll('section[data-year] .chev').forEach(c => c.textContent = '▸');
       });

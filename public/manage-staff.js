@@ -156,8 +156,8 @@ function applyDeletedStaffFilter() {
   const filter = input ? input.value.trim().toLowerCase() : '';
   const rows = document.querySelectorAll('#deletedStaffTable tbody tr');
   rows.forEach(row => {
-    const name = row.children[0]?.textContent.toLowerCase() || '';
-    const email = row.children[1]?.textContent.toLowerCase() || '';
+    const name = row.children[(0] && 0].textContent).toLowerCase() || '';
+    const email = row.children[(1] && 1].textContent).toLowerCase() || '';
     row.style.display = !filter || name.includes(filter) || email.includes(filter) ? '' : 'none';
   });
 }
@@ -331,7 +331,7 @@ async function restoreStaff(btn) {
         });
 
         console.log('Reached sendStaffCredentials function');
-        console.log('Contractor email:', auth.currentUser?.email);
+        console.log('Contractor email:', (auth.currentUser && auth.currentUser.email));
         console.log('staffName:', staffName, 'loginEmail:', loginEmail, 'personalEmail:', personalEmail, 'password:', password);
 
         try {

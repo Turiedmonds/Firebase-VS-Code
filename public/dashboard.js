@@ -342,7 +342,7 @@ function toYMDFromSavedAt(ts) {
 }
 
 function pickFarmName(session) {
-  const names = [session?.stationName, session?.farmName, session?.farm, session?.propertyName];
+  const names = [(session && session.stationName), (session && session.farmName), (session && session.farm), (session && session.propertyName)];
   for (const n of names) {
     if (n && String(n).trim()) {
       return String(n).trim().replace(/\s+/g, ' ');
@@ -352,7 +352,7 @@ function pickFarmName(session) {
 }
 
 function getSessionDateYMD(session) {
-  const val = session?.date || session?.sessionDate || session?.createdAt || session?.timestamp || session?.savedAt;
+  const val = (session && session.date) || (session && session.sessionDate) || (session && session.createdAt) || (session && session.timestamp) || (session && session.savedAt);
   return toYMDFromSavedAt(val);
 }
 
@@ -384,13 +384,13 @@ function sum(arr){ return (arr || []).reduce((a,b)=>a + (Number(b)||0), 0); }
 
 function sumSheep(session) {
   let total = 0;
-  if (Array.isArray(session?.shearerCounts)) {
+  if (Array.isArray((session && session.shearerCounts))) {
     for (const sc of session.shearerCounts) {
-      let n = Number(sc?.total);
+      let n = Number((sc && sc.total));
       if (!Number.isFinite(n)) {
-        const arr = Array.isArray(sc?.stands)
+        const arr = Array.isArray((sc && sc.stands))
           ? sc.stands
-          : (Array.isArray(sc?.counts) ? sc.counts : []);
+          : (Array.isArray((sc && sc.counts)) ? sc.counts : []);
         n = arr.reduce((sum, v) => {
           const m = Number(v);
           return Number.isFinite(m) ? sum + m : sum;
@@ -398,21 +398,21 @@ function sumSheep(session) {
       }
       if (Number.isFinite(n)) total += n;
     }
-  } else if (Array.isArray(session?.tallies)) {
+  } else if (Array.isArray((session && session.tallies))) {
     for (const t of session.tallies) {
-      const n = Number(t?.total ?? t?.count ?? t?.tally);
+      const n = Number((t && t.total) || (t && t.count) || (t && t.tally));
       if (Number.isFinite(n)) total += n;
     }
-  } else if (Array.isArray(session?.shearerTallies)) {
+  } else if (Array.isArray((session && session.shearerTallies))) {
     for (const t of session.shearerTallies) {
-      const n = Number(t?.total ?? t?.count ?? t?.tally);
+      const n = Number((t && t.total) || (t && t.count) || (t && t.tally));
       if (Number.isFinite(n)) total += n;
     }
-  } else if (Array.isArray(session?.shearers)) {
+  } else if (Array.isArray((session && session.shearers))) {
     for (const sh of session.shearers) {
-      if (!Array.isArray(sh?.runs)) continue;
+      if (!Array.isArray((sh && sh.runs))) continue;
       for (const run of sh.runs) {
-        const n = Number(run?.tally ?? run?.count ?? run?.total);
+        const n = Number((run && run.tally) || (run && run.count) || (run && run.total));
         if (Number.isFinite(n)) total += n;
       }
     }
@@ -484,8 +484,8 @@ function calcPeaks(valuesArray, labelsArray) {
     if (v < minVal) { minVal = v; minIdx = i; }
   });
   return {
-    busiest: maxIdx >= 0 ? { label: labelsArray?.[maxIdx] || '', value: maxVal, index: maxIdx } : null,
-    quietest: minIdx >= 0 ? { label: labelsArray?.[minIdx] || '', value: minVal, index: minIdx } : null
+    busiest: maxIdx >= 0 ? { label: (labelsArray && labelsArray[maxIdx]) || '', value: maxVal, index: maxIdx } : null,
+    quietest: minIdx >= 0 ? { label: (labelsArray && labelsArray[minIdx]) || '', value: minVal, index: minIdx } : null
   };
 }
 
@@ -548,10 +548,10 @@ const SessionStore = (() => {
       } catch {}
       return null;
     };
-    let ts = convert(data?.savedAt);
-    if (!ts) ts = convert(data?.date);
-    if (!ts) ts = convert(data?.timestamp);
-    if (!ts) ts = convert(data?.sessionDate);
+    let ts = convert((data && data.savedAt));
+    if (!ts) ts = convert((data && data.date));
+    if (!ts) ts = convert((data && data.timestamp));
+    if (!ts) ts = convert((data && data.sessionDate));
     return ts;
   }
 
@@ -575,7 +575,7 @@ const SessionStore = (() => {
     let year = null;
     try {
       // Prefer explicit session date if available
-      if (data?.date) {
+      if ((data && data.date)) {
         if (typeof data.date === 'string') {
           const ds = data.date.trim();
           let m = ds.match(/^\d{4}-\d{2}-\d{2}$/);
@@ -591,7 +591,7 @@ const SessionStore = (() => {
         }
       }
       // Fallback to savedAt timestamp
-      if (!year && data?.savedAt && typeof data.savedAt.toDate === 'function') {
+      if (!year && (data && data.savedAt) && typeof data.savedAt.toDate === 'function') {
         const d = data.savedAt.toDate();
         if (d && !isNaN(d.getTime())) year = d.getFullYear();
       }
@@ -825,7 +825,7 @@ function initTop5ShearersWidget() {
     }
     // Prefer stored scope; fall back to current auth user
     let contractorId = localStorage.getItem('contractor_id');
-    if (!contractorId && firebase?.auth?.currentUser?.uid) {
+    if (!contractorId && (firebase && firebase.auth)( && .currentUser)( && .uid)) {
       contractorId = firebase.auth().currentUser.uid;
       try { localStorage.setItem('contractor_id', contractorId); } catch {}
       console.debug('[Top5Shearers] contractor_id recovered from auth');
@@ -945,10 +945,10 @@ function initTop5ShearersWidget() {
         const nameByIndex = buildStandIndexNameMap(s);
 
         for (const row of s.shearerCounts) {
-          const sheepType = row?.sheepType || '';
-          const perStand = Array.isArray(row?.stands) && row.stands.length
+          const sheepType = (row && row.sheepType) || '';
+          const perStand = Array.isArray((row && row.stands)) && row.stands.length
             ? row.stands
-            : (Array.isArray(row?.counts) ? row.counts : []);
+            : (Array.isArray((row && row.counts)) ? row.counts : []);
           for (let i = 0; i < perStand.length; i++) {
             const raw = perStand[i];
             // raw may be string like "89" or number
@@ -966,7 +966,7 @@ function initTop5ShearersWidget() {
 
           // Optional fallback: if there were no per-stand entries but row.total exists,
           // we could attribute it to an "Unknown" shearer. For now, skip to preserve per-shearer accuracy.
-          // const totalNum = Number(row?.total);
+          // const totalNum = Number((row && row.total));
           // if ((!perStand.length || perStand.every(v => !Number(v))) && isFinite(totalNum) && totalNum > 0) { ... }
         }
         return;
@@ -1149,7 +1149,7 @@ function initTop5ShearersWidget() {
           }
           return;
         }
-        const workType = tabs.querySelector('.siq-segmented__btn.is-active')?.dataset.worktype || 'shorn';
+        const workType = tabs.querySelector('.siq-segmented__btn.is-active'() && ).dataset).worktype || 'shorn';
         const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
         const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
           const { rows, grandTotal } = aggregateShearers(cachedSessions, mode, year, workType);
@@ -1243,7 +1243,7 @@ function initTop5ShedStaffWidget() {
     }
 
     let contractorId = localStorage.getItem('contractor_id');
-    if (!contractorId && firebase?.auth?.currentUser?.uid) {
+    if (!contractorId && (firebase && firebase.auth)( && .currentUser)( && .uid)) {
       contractorId = firebase.auth().currentUser.uid;
       try { localStorage.setItem('contractor_id', contractorId); } catch {}
       console.debug('[Top5ShedStaff] contractor_id recovered from auth');
@@ -1404,7 +1404,7 @@ function initTop5ShedStaffWidget() {
       for (const entry of arr) {
         if (!entry) continue;
         const name = normalizeName(entry.name || entry.staffName || entry.displayName || entry.id || entry[0]);
-        const hours = parseHoursToDecimal(entry.hoursWorked ?? entry.hours ?? entry.total ?? entry.time ?? entry[1]);
+        const hours = parseHoursToDecimal(entry.hoursWorked || entry.hours || entry.total || entry.time || entry[1]);
         if (!name || !hours) continue;
         yield { name, hours, date };
       }
@@ -1429,7 +1429,7 @@ function initTop5ShedStaffWidget() {
         }
       }
       return Array.from(totals.entries())
-        .map(([name, total]) => ({ name, total, days: days.get(name)?.size || 0 }))
+        .map(([name, total]) => ({ name, total, days: days.get((name) && name).size) || 0 }))
         .sort((a,b) => b.total - a.total);
     }
 
@@ -1579,7 +1579,7 @@ function initTop5FarmsWidget() {
     }
 
     let contractorId = localStorage.getItem('contractor_id');
-    if (!contractorId && firebase?.auth?.currentUser?.uid) {
+    if (!contractorId && (firebase && firebase.auth)( && .currentUser)( && .uid)) {
       contractorId = firebase.auth().currentUser.uid;
       try { localStorage.setItem('contractor_id', contractorId); } catch {}
       console.debug('[Top5Farms] contractor_id recovered from auth');
@@ -1689,7 +1689,7 @@ function initTop5FarmsWidget() {
       }
       return Array.from(totals.entries())
         .map(([name, sheep]) => {
-          const v = visits.get(name)?.size || 0;
+          const v = visits.get((name) && name).size) || 0;
           return { name, sheep, visits: v, avg: v ? sheep / v : 0, last: lastDate.get(name) || '' };
         })
         .sort((a,b) => b.sheep - a.sheep);
@@ -1979,7 +1979,7 @@ document.addEventListener('DOMContentLoaded', () => {
       function closeSettingsModal(){
         if (!settingsModal) return;
         settingsModal.setAttribute('aria-hidden','true');
-        btnSettings?.focus();
+        (btnSettings && btnSettings.focus)();
       }
       function openSettingsModal(){
         if (!settingsModal || document.body.classList.contains('offline-mode')) return;
@@ -1987,12 +1987,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const first = settingsModal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
         first && first.focus();
       }
-      btnSettings?.addEventListener('click', openSettingsModal);
-      settingsModal?.addEventListener('click', e => {
+      (btnSettings && btnSettings.addEventListener)('click', openSettingsModal);
+      (settingsModal && settingsModal.addEventListener)('click', e => {
         if (e.target.matches('[data-close-modal], .siq-modal__backdrop')) closeSettingsModal();
       });
       document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && settingsModal?.getAttribute('aria-hidden') === 'false') closeSettingsModal();
+        if (e.key === 'Escape' && (settingsModal && settingsModal.getAttribute)('aria-hidden') === 'false') closeSettingsModal();
       });
       window.addEventListener('offline', closeSettingsModal);
 
@@ -2084,7 +2084,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.stopPropagation();
     if (helpMenu.hidden) openHelpMenu(); else closeHelpMenu();
   });
-  helpClose?.addEventListener('click', closeHelpMenu);
+  (helpClose && helpClose.addEventListener)('click', closeHelpMenu);
   document.addEventListener('click', (e) => {
     if (!helpMenu.hidden && !helpMenu.contains(e.target) && e.target !== helpBtn) {
       closeHelpMenu();
@@ -2101,10 +2101,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   syncHelpMenuChecks();
 
-  toggleWelcome?.addEventListener('change', () => {
+  (toggleWelcome && toggleWelcome.addEventListener)('change', () => {
     localStorage.setItem('dashboard_welcome_enabled', toggleWelcome.checked ? 'true' : 'false');
   });
-  toggleTour?.addEventListener('change', () => {
+  (toggleTour && toggleTour.addEventListener)('change', () => {
     localStorage.setItem('dashboard_tour_enabled', toggleTour.checked ? 'true' : 'false');
   });
 
@@ -2127,22 +2127,22 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.setAttribute('aria-hidden','false');
     lastFocused = document.activeElement;
     document.addEventListener('keydown', trapFocus);
-    setTimeout(() => (btnOK?.focus()), 0);
+    setTimeout(() => ((btnOK && btnOK.focus)()), 0);
   }
 
   function closeWelcome() {
     overlay.style.display = 'none';
     overlay.setAttribute('aria-hidden','true');
     document.removeEventListener('keydown', trapFocus);
-    if (cbDont?.checked) localStorage.setItem('dashboard_welcome_done','true');
+    if ((cbDont && cbDont.checked)) localStorage.setItem('dashboard_welcome_done','true');
     if (lastFocused && lastFocused.focus) lastFocused.focus();
   }
   window.closeWelcome = closeWelcome; // expose for external use
 
-  btnOK?.addEventListener('click', closeWelcome);
-  btnX?.addEventListener('click', closeWelcome);
-  btnHelp?.addEventListener('click', () => openHelpMenu());
-  overlay?.addEventListener('click', (e) => { if (e.target === overlay) { /* require explicit close */ } });
+  (btnOK && btnOK.addEventListener)('click', closeWelcome);
+  (btnX && btnX.addEventListener)('click', closeWelcome);
+  (btnHelp && btnHelp.addEventListener)('click', () => openHelpMenu());
+  (overlay && overlay.addEventListener)('click', (e) => { if (e.target === overlay) { /* require explicit close */ } });
 
   // Show only on first login (and when enabled)
   function shouldShowWelcome() {
@@ -2261,11 +2261,11 @@ document.addEventListener('DOMContentLoaded', () => {
   window.startDashboardTour = startDashboardTour; // optional external call
 
   // Wire Help menu actions
-  btnStartTour?.addEventListener('click', () => {
+  (btnStartTour && btnStartTour.addEventListener)('click', () => {
     closeHelpMenu();
     startDashboardTour();
   });
-  btnSkipTour?.addEventListener('click', () => {
+  (btnSkipTour && btnSkipTour.addEventListener)('click', () => {
     localStorage.setItem('dashboard_welcome_done','true');
     closeHelpMenu();
     alert('Tour skipped. You can run it later from the Help menu.');
@@ -2429,18 +2429,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // AUTOSAVE on checkbox changes (both places), so choices “stick” even if user closes without pressing Save
-  cbWelM?.addEventListener('change', () => persistFromModal());
-  cbTourM?.addEventListener('change', () => persistFromModal());
-  cbDont?.addEventListener('change', () => persistFromModal({lockDone:true}));
+  (cbWelM && cbWelM.addEventListener)('change', () => persistFromModal());
+  (cbTourM && cbTourM.addEventListener)('change', () => persistFromModal());
+  (cbDont && cbDont.addEventListener)('change', () => persistFromModal({lockDone:true}));
 
-  cbWelH?.addEventListener('change', persistFromHelp);
-  cbTourH?.addEventListener('change', persistFromHelp);
+  (cbWelH && cbWelH.addEventListener)('change', persistFromHelp);
+  (cbTourH && cbTourH.addEventListener)('change', persistFromHelp);
 
-  cbWelS?.addEventListener('change', persistFromSettings);
-  cbTourS?.addEventListener('change', persistFromSettings);
-  cbStaffLoadS?.addEventListener('change', persistFromSettings);
+  (cbWelS && cbWelS.addEventListener)('change', persistFromSettings);
+  (cbTourS && cbTourS.addEventListener)('change', persistFromSettings);
+  (cbStaffLoadS && cbStaffLoadS.addEventListener)('change', persistFromSettings);
 
-  btnClearLocal?.addEventListener('click', async () => {
+  (btnClearLocal && btnClearLocal.addEventListener)('click', async () => {
     if (!confirm('Clear all local data? You will be signed out and the app will reload.')) return;
     try { localStorage.clear(); } catch {}
     if (window.caches) {
@@ -2454,17 +2454,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // SAVE buttons
-  btnSaveM?.addEventListener('click', () => {
+  (btnSaveM && btnSaveM.addEventListener)('click', () => {
     persistFromModal({lockDone:true}); // lock “Don’t show again” if ticked
     if (typeof window.closeWelcome === 'function') {
       window.closeWelcome();
     } else if (overlay) {
       overlay.style.display = 'none';
       overlay.setAttribute('aria-hidden','true');
-      document.getElementById('help-btn')?.focus();
+      document.getElementById('help-btn'() && ).focus)();
     }
   });
-  btnSaveH?.addEventListener('click', () => {
+  (btnSaveH && btnSaveH.addEventListener)('click', () => {
     persistFromHelp();
     // Optional: keep help menu open to confirm, or close it:
     const helpBtn = document.getElementById('help-btn');
@@ -2475,7 +2475,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Start Tour from modal
-  btnStartM?.addEventListener('click', () => {
+  (btnStartM && btnStartM.addEventListener)('click', () => {
     // Ensure tour is enabled; if disabled, enable & save immediately
     if (localStorage.getItem(K_TOUR_ENABLED) === 'false') {
       setPrefs({ tourEnabled: true });
@@ -2489,7 +2489,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // shouldShowWelcome() must check welcomeEnabled && !welcomeDone
   // If you want "Got it" to also mark done when “Don’t show again” is ticked,
   // ensure your existing dw-ok handler calls:
-  //   if (cbDont?.checked) setPrefs({ welcomeDone: true });
+  //   if ((cbDont && cbDont.checked)) setPrefs({ welcomeDone: true });
 })();
 
 // One-time backfill utility for adding savedAt to old session docs
@@ -2581,7 +2581,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   // Find contractor id (same logic you already use)
-  const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+  const contractorId = localStorage.getItem('contractor_id') || ((window.firebase && window.firebase.auth)(() && ).currentUser)( && .uid)) || null;
 
   // Utility: crutched?
   function isCrutched(name){
@@ -2603,7 +2603,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     if (window.__DASHBOARD_SESSIONS && Array.isArray(window.__DASHBOARD_SESSIONS)) {
       const filtered = window.__DASHBOARD_SESSIONS.filter(s => {
         const ts = s.date || s.savedAt || s.updatedAt;
-        const t = ts?.toDate ? ts.toDate() : new Date(ts);
+        const t = (ts && ts.toDate) ? ts.toDate() : new Date(ts);
         return t >= start && t <= end;
       });
       offlineNote.hidden = !(!navigator.onLine);
@@ -2611,7 +2611,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     }
 
     // Firestore fallback (compat assumed)
-    if (!contractorId || !window.firebase?.firestore) {
+    if (!contractorId || !(window.firebase && window.firebase.firestore)) {
       offlineNote.hidden = false;
       return [];
     }
@@ -2637,12 +2637,12 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     // - session.shearerCounts[ ... ] with .sheepType/.type and .total or .stands
     // - session.shearers[ i ].runs[ j ].tally with .sheepType and .count
     // - session.tallies[ ... ] with .sheepType and .count
-    if (Array.isArray(session?.shearerCounts)) {
+    if (Array.isArray((session && session.shearerCounts))) {
       session.shearerCounts.forEach(row => {
-        const type = row?.sheepType || row?.type || 'Unknown';
-        let count = Number(row?.total);
-        if (!Number.isFinite(count) && Array.isArray(row?.stands)) {
-          count = row.stands.reduce((sum, s) => sum + Number(s?.count ?? s ?? 0), 0);
+        const type = (row && row.sheepType) || (row && row.type) || 'Unknown';
+        let count = Number((row && row.total));
+        if (!Number.isFinite(count) && Array.isArray((row && row.stands))) {
+          count = row.stands.reduce((sum, s) => sum + Number((s && s.count) || s || 0), 0);
         }
         if (Number.isFinite(count) && count > 0) {
           fn(type, count, pickFarmName(session), session.date || session.savedAt);
@@ -2650,19 +2650,19 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       });
       return;
     }
-    if (Array.isArray(session?.shearers)) {
+    if (Array.isArray((session && session.shearers))) {
       session.shearers.forEach(sh => {
         (sh.runs || []).forEach(run => {
-          const type = run?.sheepType ?? run?.type ?? 'Unknown';
-          const count = Number(run?.tally ?? run?.count ?? 0);
+          const type = (run && run.sheepType) || (run && run.type) || 'Unknown';
+          const count = Number((run && run.tally) || (run && run.count) || 0);
           if (count) fn(type, count, pickFarmName(session), session.date || session.savedAt);
         });
       });
     }
-    if (Array.isArray(session?.tallies)) {
+    if (Array.isArray((session && session.tallies))) {
       session.tallies.forEach(t => {
-        const type = t?.sheepType ?? t?.type ?? 'Unknown';
-        const count = Number(t?.count ?? 0);
+        const type = (t && t.sheepType) || (t && t.type) || 'Unknown';
+        const count = Number((t && t.count) || 0);
         if (count) fn(type, count, pickFarmName(session), session.date || session.savedAt);
       });
     }
@@ -2733,7 +2733,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   function toDayIso(ts){
-    const d = ts?.toDate ? ts.toDate() : new Date(ts || Date.now());
+    const d = (ts && ts.toDate) ? ts.toDate() : new Date(ts || Date.now());
     // normalise to YYYY-MM-DD (NZ local assumed OK for v1)
     const y = d.getFullYear();
     const m = String(d.getMonth()+1).padStart(2,'0');
@@ -2813,7 +2813,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   if (farmSel) farmSel.addEventListener('change', refresh);
 
   // CSV export (current tables)
-  exportBtn?.addEventListener('click', () => {
+  (exportBtn && exportBtn.addEventListener)('click', () => {
 const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (day)']];
     document.querySelectorAll('#kpiFullSheepTable tbody tr').forEach(tr=>{
       const cells=[...tr.children].map(td=>td.textContent.trim());
@@ -2874,7 +2874,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
     return;
   }
 
-  const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+  const contractorId = localStorage.getItem('contractor_id') || ((window.firebase && window.firebase.auth)(() && ).currentUser)( && .uid)) || null;
 
   // Returns { hours: Number, displayText: String }.
   // displayText prefers the original user-entered string if available.
@@ -2950,12 +2950,12 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
       }
     }
     let maxH = 0;
-    if (Array.isArray(session?.shearers)) {
+    if (Array.isArray((session && session.shearers))) {
       session.shearers.forEach(sh => {
         maxH = Math.max(maxH, parseHours(sh.hoursWorked || sh.totalHours || sh.hours));
       });
     }
-    if (Array.isArray(session?.shedStaff)) {
+    if (Array.isArray((session && session.shedStaff))) {
       session.shedStaff.forEach(ss => {
         maxH = Math.max(maxH, parseHours(ss.hoursWorked || ss.totalHours || ss.hours));
       });
@@ -2978,10 +2978,10 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
     // 1) Try explicit session-level hours fields where your app stores them.
     // Common paths to check; keep them safe and optional:
     const explicit =
-      findHoursWorkedDeep(session?.meta) ||
-      session?.hoursWorked ||
-      session?.summary?.hoursWorked ||
-      session?.totals?.hoursWorked ||
+      findHoursWorkedDeep((session && session.meta)) ||
+      (session && session.hoursWorked) ||
+      (session && session.summary)( && .hoursWorked) ||
+      (session && session.totals)( && .hoursWorked) ||
       findHoursWorkedDeep(session) ||
       null;
 
@@ -3001,8 +3001,8 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
 
     // If you kept a raw input string somewhere like session.meta.hoursInputRaw, prefer it:
     const rawCandidate =
-      session?.meta?.hoursInputRaw ||
-      session?.hoursInputRaw ||
+      (session && session.meta)( && .hoursInputRaw) ||
+      (session && session.hoursInputRaw) ||
       null;
 
     if (rawCandidate) {
@@ -3029,7 +3029,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
   }
 
   function eachShearerHours(session, fn){
-    if (Array.isArray(session?.shearers)) {
+    if (Array.isArray((session && session.shearers))) {
       session.shearers.forEach(sh => {
         const raw = sh.name || sh.shearerName || sh.displayName || sh.shearer || sh.id;
         const name = normalizeName(raw) || 'Unknown';
@@ -3037,23 +3037,23 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
         if (hours > 0) fn(name, hours);
       });
     } else {
-      const rawNames = Array.isArray(session?.stands) ? session.stands : Object.keys(session?.hours || {});
+      const rawNames = Array.isArray((session && session.stands)) ? session.stands : Object.keys((session && session.hours) || {});
       rawNames.forEach(raw => {
         const name = normalizeName(raw) || 'Unknown';
-        const hours = parseHours(session?.hours?.[name] ?? session?.hours?.[raw]);
+        const hours = parseHours((session && (session.hours) && session.hours)[name]) || (session && (session.hours) && session.hours)[raw]));
         if (hours > 0) fn(name, hours);
       });
     }
   }
 
   function iterShearerTallies(session, fn){
-    if (Array.isArray(session?.shearers)) {
+    if (Array.isArray((session && session.shearers))) {
       session.shearers.forEach(sh => {
         const shearerName = normalizeName(sh.name || sh.shearerName || sh.displayName || sh.shearer || sh.id) || 'Unknown';
         const runs = sh.runs || sh.tallies || sh.entries || [];
         runs.forEach(run => {
-          const type = run?.sheepType ?? run?.type ?? 'Unknown';
-          const count = Number(run?.tally ?? run?.count ?? run?.total);
+          const type = (run && run.sheepType) || (run && run.type) || 'Unknown';
+          const count = Number((run && run.tally) || (run && run.count) || (run && run.total));
           if (Number.isFinite(count) && count > 0) fn(shearerName, type, count);
         });
         const total = Number(sh.total);
@@ -3064,13 +3064,13 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
       });
       return;
     }
-    if (Array.isArray(session?.shearerCounts)) {
-      const names = Array.isArray(session?.stands) ? session.stands : [];
+    if (Array.isArray((session && session.shearerCounts))) {
+      const names = Array.isArray((session && session.stands)) ? session.stands : [];
       session.shearerCounts.forEach(row => {
-        const type = row?.sheepType || row?.type || 'Unknown';
-        const perStand = Array.isArray(row?.stands) ? row.stands : (Array.isArray(row?.counts) ? row.counts : []);
+        const type = (row && row.sheepType) || (row && row.type) || 'Unknown';
+        const perStand = Array.isArray((row && row.stands)) ? row.stands : (Array.isArray((row && row.counts)) ? row.counts : []);
         perStand.forEach((raw,i)=>{
-          const cnt = Number(raw?.count ?? raw);
+          const cnt = Number((raw && raw.count) || raw);
           if (!Number.isFinite(cnt) || cnt <= 0) return;
           const rawName = names[i];
           const name = normalizeName(rawName) || `Stand ${i+1}`;
@@ -3079,12 +3079,12 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
       });
       return;
     }
-    if (Array.isArray(session?.tallies)) {
+    if (Array.isArray((session && session.tallies))) {
       session.tallies.forEach(t => {
         const rawName = t.shearerName || t.shearer || t.name;
         const name = normalizeName(rawName) || 'Unknown';
         const type = t.sheepType || t.type || 'Unknown';
-        const cnt = Number(t.count ?? t.tally ?? t.total);
+        const cnt = Number(t.count || t.tally || t.total);
         if (name && Number.isFinite(cnt) && cnt > 0) fn(name, type, cnt);
       });
       return;
@@ -3094,7 +3094,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
         const name = normalizeName(rawName) || 'Unknown';
         (entries || []).forEach(e => {
           const type = e.sheepType || e.type || 'Unknown';
-          const cnt = Number(e.count ?? e.tally ?? e.total);
+          const cnt = Number(e.count || e.tally || e.total);
           if (Number.isFinite(cnt) && cnt > 0) fn(name, type, cnt);
         });
       });
@@ -3106,7 +3106,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
     if (cached.length) {
       return cached.map(doc => ({ id: doc.id, ...doc.data() }));
     }
-    if (!contractorId || !window.firebase?.firestore) return [];
+    if (!contractorId || !(window.firebase && window.firebase.firestore)) return [];
     try {
       const db = firebase.firestore();
       const ref = db.collection('contractors').doc(contractorId).collection('sessions');
@@ -3180,7 +3180,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
 
   function renderTable(rows){
     if (!tblBody) return;
-    const sortBy = sortSel?.value || 'hours';
+    const sortBy = (sortSel && sortSel.value) || 'hours';
     const sorted = [...rows];
     switch (sortBy) {
       case 'sheep':
@@ -3245,13 +3245,13 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
   function openModal(){ modal.hidden = false; refresh(); }
   function closeModal(){ modal.hidden = true; }
 
-  pill?.addEventListener('click', openModal);
-  closeX?.addEventListener('click', closeModal);
-  closeFooter?.addEventListener('click', closeModal);
-  farmSel?.addEventListener('change', refresh);
-  typeSel?.addEventListener('change', refresh);
-  sortSel?.addEventListener('change', refresh);
-  clearBtn?.addEventListener('click', ()=>{ farmSel.value='__ALL__'; typeSel.value='__ALL__'; sortSel.value='hours'; refresh(); });
+  (pill && pill.addEventListener)('click', openModal);
+  (closeX && closeX.addEventListener)('click', closeModal);
+  (closeFooter && closeFooter.addEventListener)('click', closeModal);
+  (farmSel && farmSel.addEventListener)('change', refresh);
+  (typeSel && typeSel.addEventListener)('change', refresh);
+  (sortSel && sortSel.addEventListener)('change', refresh);
+  (clearBtn && clearBtn.addEventListener)('click', ()=>{ farmSel.value='__ALL__'; typeSel.value='__ALL__'; sortSel.value='hours'; refresh(); });
 
   SessionStore.onChange(()=>{ refresh(); });
   if (SessionStore.getAll().length) refresh();
@@ -3276,7 +3276,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
   const tblByMonth = document.querySelector('#kpiTHByMonth tbody');
   const exportBtn = document.getElementById('kpiTHExport');
 
-  const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+  const contractorId = localStorage.getItem('contractor_id') || ((window.firebase && window.firebase.auth)(() && ).currentUser)( && .uid)) || null;
 
   if (dashCache.kpiTotalHours != null && pillVal) {
     pillVal.textContent = dashCache.kpiTotalHours;
@@ -3343,12 +3343,12 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
     //    (safe proxy for the day's operating time; avoids inflated sums)
     let maxH = 0;
 
-    if (Array.isArray(session?.shearers)) {
+    if (Array.isArray((session && session.shearers))) {
       session.shearers.forEach(sh => {
         maxH = Math.max(maxH, parseHours(sh.hoursWorked || sh.totalHours || sh.hours));
       });
     }
-    if (Array.isArray(session?.shedStaff)) {
+    if (Array.isArray((session && session.shedStaff))) {
       session.shedStaff.forEach(ss => {
         maxH = Math.max(maxH, parseHours(ss.hoursWorked || ss.totalHours || ss.hours));
       });
@@ -3363,7 +3363,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
 
   // Helper: iterate shearers with normalized names and hours
   function eachShearerHours(session, fn) {
-    if (Array.isArray(session?.shearers)) {
+    if (Array.isArray((session && session.shearers))) {
       session.shearers.forEach(sh => {
         const raw = sh.name || sh.shearerName || sh.displayName || sh.shearer || sh.id;
         const name = normalizeName(raw) || 'Unknown';
@@ -3371,10 +3371,10 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
         if (hours > 0) fn(name, hours);
       });
     } else {
-      const rawNames = Array.isArray(session?.stands) ? session.stands : Object.keys(session?.hours || {});
+      const rawNames = Array.isArray((session && session.stands)) ? session.stands : Object.keys((session && session.hours) || {});
       rawNames.forEach(raw => {
         const name = normalizeName(raw) || 'Unknown';
-        const hours = parseHours(session?.hours?.[name] ?? session?.hours?.[raw]);
+        const hours = parseHours((session && (session.hours) && session.hours)[name]) || (session && (session.hours) && session.hours)[raw]));
         if (hours > 0) fn(name, hours);
       });
     }
@@ -3389,7 +3389,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
       if (hours > 0) push({ name, role: 'Shearer', dateKey: dayStr, hours });
     });
 
-    if (Array.isArray(session?.shedStaff)) {
+    if (Array.isArray((session && session.shedStaff))) {
       session.shedStaff.forEach(ss => {
         const hours = parseHours(ss.hoursWorked || ss.totalHours || ss.hours);
         if (hours > 0) {
@@ -3406,13 +3406,13 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
     if (window.__DASHBOARD_SESSIONS && Array.isArray(window.__DASHBOARD_SESSIONS)) {
       const filtered = window.__DASHBOARD_SESSIONS.filter(s => {
         const ts = s.date || s.savedAt || s.updatedAt;
-        const t = ts?.toDate ? ts.toDate() : new Date(ts);
+        const t = (ts && ts.toDate) ? ts.toDate() : new Date(ts);
         return t >= start && t <= end;
       });
       offlineNote.hidden = !(!navigator.onLine);
       return filtered;
     }
-    if (!contractorId || !window.firebase?.firestore) {
+    if (!contractorId || !(window.firebase && window.firebase.firestore)) {
       offlineNote.hidden = false;
       return [];
     }
@@ -3538,7 +3538,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
 
       // Session date (for monthly)
       const ts = s.date || s.savedAt || s.updatedAt;
-      const d = ts?.toDate ? ts.toDate() : new Date(ts || Date.now());
+      const d = (ts && ts.toDate) ? ts.toDate() : new Date(ts || Date.now());
       const mKey = monthKey(d);
 
       // Compute sessionHours safely
@@ -3661,11 +3661,11 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
   function closeModal(){ modal.hidden = true; }
 
   // Wire events
-  pill?.addEventListener('click', openModal);
-  closeX?.addEventListener('click', closeModal);
-  closeFooter?.addEventListener('click', closeModal);
-  yearSel?.addEventListener('change', refresh);
-  farmSel?.addEventListener('change', refresh);
+  (pill && pill.addEventListener)('click', openModal);
+  (closeX && closeX.addEventListener)('click', closeModal);
+  (closeFooter && closeFooter.addEventListener)('click', closeModal);
+  (yearSel && yearSel.addEventListener)('change', refresh);
+  (farmSel && farmSel.addEventListener)('change', refresh);
 
   // Init: fill years
   fillYearsSelect(yearSel);
@@ -3699,7 +3699,7 @@ SessionStore.onChange(refresh);
   const exportBtn = document.getElementById('kpiDWExport');
   let exportExtras = new Map();
 
-  const contractorId = localStorage.getItem('contractor_id') || (window.firebase?.auth()?.currentUser?.uid) || null;
+  const contractorId = localStorage.getItem('contractor_id') || ((window.firebase && window.firebase.auth)(() && ).currentUser)( && .uid)) || null;
 
   if (dashCache.kpiDaysWorked != null && pillVal) {
     pillVal.textContent = dashCache.kpiDaysWorked;
@@ -3715,7 +3715,7 @@ SessionStore.onChange(refresh);
     return {start, end};
   }
   function toDayIso(ts){
-    const d = ts?.toDate ? ts.toDate() : new Date(ts || Date.now());
+    const d = (ts && ts.toDate) ? ts.toDate() : new Date(ts || Date.now());
     const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
     return `${y}-${m}-${day}`;
   }
@@ -3800,7 +3800,7 @@ SessionStore.onChange(refresh);
   // Map stand index -> shearer name (normalized); adapted from Top 5 Shearers widget
   function buildStandIndexNameMap(sessionData) {
     const map = {};
-    const arr = Array.isArray(sessionData?.stands) ? sessionData.stands : [];
+    const arr = Array.isArray((sessionData && sessionData.stands)) ? sessionData.stands : [];
     const rawIdx = arr.map((st, i) => (st && st.index != null ? Number(st.index) : i));
     const has0 = rawIdx.includes(0);
     const has1 = rawIdx.includes(1);
@@ -3810,7 +3810,7 @@ SessionStore.onChange(refresh);
       if (!Number.isFinite(i)) i = pos;
       if (looksOneBased) i = i - 1;
       if (i < 0) i = 0;
-      let name = normalizeName(st?.name || st?.shearerName || st?.id);
+      let name = normalizeName((st && st.name) || (st && st.shearerName) || (st && st.id));
       if (!name || /^stand\s+\d+$/i.test(name)) name = null;
       map[i] = name;
     });
@@ -3819,7 +3819,7 @@ SessionStore.onChange(refresh);
 
   // Collect unique shearer names from a session, handling multiple schema shapes
   function collectShearerNames(sessionDoc) {
-    const s = sessionDoc?.data ? sessionDoc.data() : sessionDoc;
+    const s = (sessionDoc && sessionDoc.data) ? sessionDoc.data() : sessionDoc;
     const names = new Set();
 
     if (Array.isArray(s.shearers)) {
@@ -3868,7 +3868,7 @@ SessionStore.onChange(refresh);
 
   // Collect shed staff / crew names from common shapes + merge with shearers
   function collectAllPeople(sessionDoc) {
-    const s = sessionDoc?.data ? sessionDoc.data() : sessionDoc;
+    const s = (sessionDoc && sessionDoc.data) ? sessionDoc.data() : sessionDoc;
     const names = new Set();
 
     // 1) Shearers (reuse existing logic)
@@ -3896,7 +3896,7 @@ SessionStore.onChange(refresh);
     // 3) Generic people blocks (if present)
     if (Array.isArray(s.people)) {
       s.people.forEach(p => {
-        const n = normalizeName(p?.name || p?.displayName || p?.id);
+        const n = normalizeName((p && p.name) || (p && p.displayName) || (p && p.id));
         if (n) names.add(n);
       });
     }
@@ -3909,11 +3909,11 @@ SessionStore.onChange(refresh);
     if (window.__DASHBOARD_SESSIONS && Array.isArray(window.__DASHBOARD_SESSIONS)) {
       return window.__DASHBOARD_SESSIONS.filter(s=>{
         const ts = s.date || s.savedAt || s.updatedAt;
-        const t = ts?.toDate ? ts.toDate() : new Date(ts);
+        const t = (ts && ts.toDate) ? ts.toDate() : new Date(ts);
         return t >= start && t <= end;
       });
     }
-    if (!contractorId || !window.firebase?.firestore) return [];
+    if (!contractorId || !(window.firebase && window.firebase.firestore)) return [];
     const db = firebase.firestore();
     const ref = db.collection('contractors').doc(contractorId).collection('sessions');
     const snap = await ref.where('savedAt', '>=', start).where('savedAt', '<=', end).get();
@@ -4129,12 +4129,12 @@ SessionStore.onChange(refresh);
   function openModal(){ modal.hidden=false; refresh(); }
   function closeModal(){ modal.hidden=true; }
 
-  pill?.addEventListener('click', openModal);
-  closeX?.addEventListener('click', closeModal);
-  closeFooter?.addEventListener('click', closeModal);
-  yearSel?.addEventListener('change', refresh);
-  farmSel?.addEventListener('change', refresh);
-  exportBtn?.addEventListener('click',()=>{
+  (pill && pill.addEventListener)('click', openModal);
+  (closeX && closeX.addEventListener)('click', closeModal);
+  (closeFooter && closeFooter.addEventListener)('click', closeModal);
+  (yearSel && yearSel.addEventListener)('change', refresh);
+  (farmSel && farmSel.addEventListener)('change', refresh);
+  (exportBtn && exportBtn.addEventListener)('click',()=>{
     const rows=[["Metric","Count"]];
     rows.push(["Days Worked (total)",pillVal.textContent]);
     tblByFarm.querySelectorAll('tr').forEach(tr=>{
@@ -4222,10 +4222,10 @@ SessionStore.onChange(refresh);
   }
 
   function hideSessionDetail(){
-    detailModal?.setAttribute('aria-hidden','true');
+    (detailModal && detailModal.setAttribute)('aria-hidden','true');
   }
 
-  detailModal?.addEventListener('click', e => {
+  (detailModal && detailModal.addEventListener)('click', e => {
     if (e.target.matches('[data-close-modal], .siq-modal__backdrop')) hideSessionDetail();
   });
 
@@ -4260,7 +4260,7 @@ SessionStore.onChange(refresh);
   function computeHostHeight(){
     const header = modal.querySelector('.kpi-modal-header');
     const footer = modal.querySelector('.kpi-actions');
-    const chrome = (header?.offsetHeight || 0) + (footer?.offsetHeight || 0);
+    const chrome = ((header && header.offsetHeight) || 0) + ((footer && footer.offsetHeight) || 0);
     const cardMax = Math.floor(window.innerHeight * 0.96); // match card max-height
     const h = Math.max(360, cardMax - chrome);
     host.style.height = h + 'px';
@@ -4270,7 +4270,7 @@ SessionStore.onChange(refresh);
   function sessionsToEvents(docs){
     const events = [];
     for (const doc of (docs || [])) {
-      const s = (typeof doc?.data === 'function') ? doc.data() : doc?.data;
+      const s = (typeof (doc && doc.data) === 'function') ? doc.data() : (doc && doc.data);
       if (!s) continue;
       const ymd = (typeof getSessionDateYMD === 'function') ? getSessionDateYMD(s) : null;
       if (!ymd) continue;
@@ -4298,7 +4298,7 @@ SessionStore.onChange(refresh);
   function decorateListHeaders(){
     if (!calendar) return;
     // Only for list views
-    const viewType = calendar.view?.type || '';
+    const viewType = (calendar.view && calendar.view.type) || '';
     if (!/list/.test(viewType)) return;
 
     const cushions = host.querySelectorAll('.fc-list-day-cushion');
@@ -4308,7 +4308,7 @@ SessionStore.onChange(refresh);
 
       // Anchor usually carries the date attr
       const a = cushion.querySelector('a[data-date]') || cushion.querySelector('a');
-      const dateStr = a?.getAttribute?.('data-date');
+      const dateStr = (a && (a.getAttribute) && a.getAttribute))('data-date');
       if (!dateStr) return;
 
       const d = new Date(dateStr);
@@ -4359,7 +4359,7 @@ SessionStore.onChange(refresh);
       const d = e.start; if(!d) return false;
       const y = d.getFullYear();
       if(y < fromYear || y > toYear) return false;
-      const farm = e.extendedProps?.farm || e.extendedProps?.station || 'Unknown';
+      const farm = (e.extendedProps && e.extendedProps.farm) || (e.extendedProps && e.extendedProps.station) || 'Unknown';
       if(farmSel.value !== '__ALL__' && farmSel.value !== farm) return false;
       return true;
     });
@@ -4368,7 +4368,7 @@ SessionStore.onChange(refresh);
   function populateFilters(events){
     const farms = new Set();
     events.forEach(e => {
-      if(e.extendedProps?.farm) farms.add(e.extendedProps.farm);
+      if((e.extendedProps && e.extendedProps.farm)) farms.add(e.extendedProps.farm);
     });
     function fill(sel, set){
       const cur = sel.value;
@@ -4386,9 +4386,9 @@ SessionStore.onChange(refresh);
     populateFilters(events);
     const data = {};
     events.forEach(e => {
-      const farm = e.extendedProps?.farm || e.extendedProps?.station || 'Unknown';
+      const farm = (e.extendedProps && e.extendedProps.farm) || (e.extendedProps && e.extendedProps.station) || 'Unknown';
       const month = e.start.getMonth();
-      const sheep = Number(e.extendedProps?.totalSheep || e.extendedProps?.sheep || 0);
+      const sheep = Number((e.extendedProps && e.extendedProps.totalSheep) || (e.extendedProps && e.extendedProps.sheep) || 0);
       if(!data[farm]) data[farm] = Array(12).fill(0).map(()=>({days:0,sheep:0}));
       data[farm][month].days += 1;
       data[farm][month].sheep += sheep;
@@ -4422,10 +4422,10 @@ SessionStore.onChange(refresh);
     const events = getEvents();
     const data = {};
     events.forEach(e => {
-      const farm = e.extendedProps?.farm || e.extendedProps?.station || 'Unknown';
+      const farm = (e.extendedProps && e.extendedProps.farm) || (e.extendedProps && e.extendedProps.station) || 'Unknown';
       const month = e.start.getMonth();
       const year = e.start.getFullYear();
-      const sheep = Number(e.extendedProps?.totalSheep || e.extendedProps?.sheep || 0);
+      const sheep = Number((e.extendedProps && e.extendedProps.totalSheep) || (e.extendedProps && e.extendedProps.sheep) || 0);
       if(!data[farm]) data[farm] = Array(12).fill(0).map(()=>({days:0,sheep:0,years:new Set()}));
       const cell=data[farm][month];
       cell.days += 1;
@@ -4510,7 +4510,7 @@ SessionStore.onChange(refresh);
   }
 
   function refreshActive(){
-    const active = modal.querySelector('.fm-tab.is-active')?.dataset.tab;
+    const active = modal.querySelector('.fm-tab.is-active'() && ).dataset).tab;
     if(active==='summary') renderSummary();
     if(active==='planner') renderPlannerTable();
   }
@@ -4556,7 +4556,7 @@ SessionStore.onChange(refresh);
 
     // Seed with cached sessions if available
     try {
-      const cached = (typeof SessionStore?.getAll === 'function') ? SessionStore.getAll() : [];
+      const cached = (typeof (SessionStore && SessionStore.getAll) === 'function') ? SessionStore.getAll() : [];
       calendar.addEventSource(sessionsToEvents(cached));
     } catch (e) { console.warn('[Calendar] preload events failed', e); }
   }
@@ -4593,7 +4593,7 @@ SessionStore.onChange(refresh);
     });
 
     // Live updates
-    if (!unlisten && typeof SessionStore?.onChange === 'function') {
+    if (!unlisten && typeof (SessionStore && SessionStore.onChange) === 'function') {
       unlisten = SessionStore.onChange(docs => {
         try {
           const events = sessionsToEvents(docs);
@@ -4625,17 +4625,17 @@ SessionStore.onChange(refresh);
   }
 
   btn.addEventListener('click', openCalendarModal);
-  btnCloseX?.addEventListener('click', closeCalendarModal);
-  btnCloseFooter?.addEventListener('click', closeCalendarModal);
+  (btnCloseX && btnCloseX.addEventListener)('click', closeCalendarModal);
+  (btnCloseFooter && btnCloseFooter.addEventListener)('click', closeCalendarModal);
   modal.addEventListener('click', (e)=>{
     if (e.target === modal) closeCalendarModal();
   });
   calTabs.forEach(tab=>tab.addEventListener('click',()=>showTab(tab.dataset.tab)));
-  exportBtn?.addEventListener('click', exportCSV);
-  genBtn?.addEventListener('click', generateDraft);
-  lockChk?.addEventListener('change', renderPlannerTable);
-  [farmSel, fromInput, toInput].forEach(el=>el?.addEventListener('change', ()=>{savePrefs();refreshActive();updateFilterIndicators();}));
-  resetBtn?.addEventListener('click', ()=>{
+  (exportBtn && exportBtn.addEventListener)('click', exportCSV);
+  (genBtn && genBtn.addEventListener)('click', generateDraft);
+  (lockChk && lockChk.addEventListener)('change', renderPlannerTable);
+  [farmSel, fromInput, toInput].forEach(el=>(el && el.addEventListener)('change', ()=>{savePrefs();refreshActive();updateFilterIndicators();}));
+  (resetBtn && resetBtn.addEventListener)('click', ()=>{
     farmSel.value='__ALL__';
     fromInput.value=`${currentYear}-01`;
     toInput.value=`${currentYear}-12`;

@@ -50,7 +50,7 @@ function exportFarmSummaryCSV() {
     const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(','))
         .join('\r\n');
 
-    const farmName = document.getElementById('stationSelect')?.value.trim() || 'FarmSummary';
+    const farmName = document.getElementById('stationSelect'() && ).value).trim() || 'FarmSummary';
     const date = new Date();
     const formatted = date.toLocaleDateString('en-NZ').replace(/\//g, '-');
     const fileName = `FarmSummary_${farmName}_${formatted}.csv`;
@@ -142,7 +142,7 @@ function exportDailySummaryCSV() {
        rows.push([s.name, s.hours]);
     });
 
-    const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const csv = rows.map(r => r.map(v => `"${String(v || '').replace(/"/g,'""')}"`).join(',')).join('\r\n');
 
     let fileName = 'export.csv';
     if (data.stationName && data.date) {
@@ -209,7 +209,7 @@ function loadPreviousSession() {
     const headerRow = document.getElementById('headerRow');
     if (headerRow && Array.isArray(data.stands)) {
         data.stands.forEach((st, idx) => {
-            const input = headerRow.children[idx + 1]?.querySelector('input');
+            const input = headerRow.children[idx + (1] && 1].querySelector)('input');
             if (input) {
                 input.value = st.name || '';
                 adjustStandNameWidth(input);
@@ -239,7 +239,7 @@ function loadPreviousSession() {
             if (!row) return;
             const values = Array.isArray(run.stands) ? run.stands : Array.isArray(run.counts) ? run.counts : [];
             values.forEach((val, sIdx) => {
-                const input = row.children[sIdx + 1]?.querySelector('input[type="number"]');
+                const input = row.children[sIdx + (1] && 1].querySelector)('input[type="number"]');
                 if (input) input.value = val;
             });
             const typeInput = row.querySelector('.sheep-type input');
@@ -288,7 +288,7 @@ window.exportDailySummaryCSV = exportDailySummaryCSV;
 function exportCSV() {
     const data = collectExportData();
     const { rows } = buildExportRows(data);
-    const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const csv = rows.map(r => r.map(v => `"${String(v || '').replace(/"/g,'""')}"`).join(',')).join('\r\n');
     let fileName = 'export.csv';
     if (data.stationName && data.date) {
         const parts = data.date.split('-');

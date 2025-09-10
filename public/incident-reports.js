@@ -7,7 +7,7 @@ function formatNZDate(d) {
 }
 
 function parseSessionDate(s) {
-  const val = s?.date || s?.savedAt;
+  const val = (s && s.date) || (s && s.savedAt);
   if (!val) return null;
   if (typeof val === 'object' && typeof val.toDate === 'function') return val.toDate();
   const d = new Date(val);
@@ -65,14 +65,14 @@ document.addEventListener('DOMContentLoaded', () => {
     toInput.value = '';
     render(allIncidents);
   });
-  backBtn?.addEventListener('click', () => window.history.back());
-  exportBtn?.addEventListener('click', () => {
+  (backBtn && backBtn.addEventListener)('click', () => window.history.back());
+  (exportBtn && exportBtn.addEventListener)('click', () => {
     window.exportTableToCSV('incidentTable', 'incident_reports');
   });
 
   async function loadIncidents() {
     const user = firebase.auth().currentUser;
-    const contractorId = localStorage.getItem('contractor_id') || user?.uid || null;
+    const contractorId = localStorage.getItem('contractor_id') || (user && user.uid) || null;
     if (!contractorId || !user) {
       render([]);
       return;
