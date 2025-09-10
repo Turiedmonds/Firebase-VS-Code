@@ -60,14 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
   backBtn?.addEventListener('click', () => window.history.back());
 
   async function loadIncidents() {
-    // Look up the current contractor. Fall back to the signed-in user if
-    // contractor_id isn't stored locally so the page works for contractors
-    // who haven't explicitly set the value.
-    const contractorId =
-      localStorage.getItem('contractor_id') ||
-      firebase.auth()?.currentUser?.uid ||
-      null;
-    if (!contractorId) {
+    const user = firebase.auth().currentUser;
+    const contractorId = localStorage.getItem('contractor_id') || user?.uid || null;
+    if (!contractorId || !user) {
       render([]);
       return;
     }
@@ -96,5 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  loadIncidents();
+  firebase.auth().onAuthStateChanged(() => {
+    loadIncidents();
+  });
 });
