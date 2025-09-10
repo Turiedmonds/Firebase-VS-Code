@@ -2755,7 +2755,7 @@ function buildExportRows(data) {
 
 function updateUIForRole(role) {
     const isContractor = role === 'contractor';
-    const ids = ['saveCloudBtn', 'saveBothBtn', 'loadCloudBtn'];
+    const ids = ['saveCloudBtn', 'saveBothBtn'];
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -2763,6 +2763,14 @@ function updateUIForRole(role) {
             else el.setAttribute('disabled', 'disabled');
         }
     });
+    const loadCloudBtn = document.getElementById('loadCloudBtn');
+    if (loadCloudBtn) {
+        if (isContractor || (role === 'staff' && window.staffCanLoadSessions !== false)) {
+            loadCloudBtn.removeAttribute('disabled');
+        } else {
+            loadCloudBtn.setAttribute('disabled', 'disabled');
+        }
+    }
     const loadBtn = document.getElementById('loadSessionBtn');
     if (loadBtn) {
         if (role === 'staff' && window.staffCanLoadSessions === false) {
