@@ -14,6 +14,13 @@ function parseSessionDate(s) {
   return isNaN(d) ? null : d;
 }
 
+function getIncidentSessionKey(s){
+  const date = parseSessionDate(s);
+  const ymd = date ? date.toISOString().slice(0,10) : '';
+  const station = (s.stationName || s.station || '').trim();
+  return `${ymd}_${station}`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const tbody = document.getElementById('incidentBody');
   const fromInput = document.getElementById('filterFrom');
@@ -79,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const date = parseSessionDate(data);
         const station = data.stationName || '';
         if (Array.isArray(data.incidents)) {
-          const sessionKey = formatNZDate(date) + '_' + station;
+          const sessionKey = getIncidentSessionKey({ date, stationName: station });
           if (data.incidents.length) seenKeys.push(sessionKey);
           data.incidents.forEach(i => {
             allIncidents.push({ date, station, time: i.time, name: i.name, description: i.description });
@@ -93,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       render(allIncidents);
       seenKeys.forEach(k => localStorage.setItem('incident_seen_' + k, '1'));
+      localStorage.setItem('incident_seen_last_update', Date.now().toString());
     } catch (e) {
       console.error('Failed to load incidents', e);
       render([]);
