@@ -825,7 +825,13 @@ function initTop5ShearersWidget() {
     }
     // Prefer stored scope; fall back to current auth user
     let contractorId = localStorage.getItem('contractor_id');
-    if (!contractorId && (firebase && firebase.auth)( && .currentUser)( && .uid)) {
+    if (
+      !contractorId &&
+      firebase &&
+      typeof firebase.auth === 'function' &&
+      firebase.auth().currentUser &&
+      firebase.auth().currentUser.uid
+    ) {
       contractorId = firebase.auth().currentUser.uid;
       try { localStorage.setItem('contractor_id', contractorId); } catch {}
       console.debug('[Top5Shearers] contractor_id recovered from auth');
@@ -1149,7 +1155,8 @@ function initTop5ShearersWidget() {
           }
           return;
         }
-        const workType = tabs.querySelector('.siq-segmented__btn.is-active'() && ).dataset).worktype || 'shorn';
+        const activeTab = tabs.querySelector('.siq-segmented__btn.is-active');
+        const workType = (activeTab && activeTab.dataset && activeTab.dataset.worktype) || 'shorn';
         const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
         const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
           const { rows, grandTotal } = aggregateShearers(cachedSessions, mode, year, workType);
@@ -1243,7 +1250,13 @@ function initTop5ShedStaffWidget() {
     }
 
     let contractorId = localStorage.getItem('contractor_id');
-    if (!contractorId && (firebase && firebase.auth)( && .currentUser)( && .uid)) {
+    if (
+      !contractorId &&
+      firebase &&
+      typeof firebase.auth === 'function' &&
+      firebase.auth().currentUser &&
+      firebase.auth().currentUser.uid
+    ) {
       contractorId = firebase.auth().currentUser.uid;
       try { localStorage.setItem('contractor_id', contractorId); } catch {}
       console.debug('[Top5ShedStaff] contractor_id recovered from auth');
@@ -1429,8 +1442,12 @@ function initTop5ShedStaffWidget() {
         }
       }
       return Array.from(totals.entries())
-        .map(([name, total]) => ({ name, total, days: days.get((name) && name).size) || 0 }))
-        .sort((a,b) => b.total - a.total);
+        .map(([name, total]) => ({
+          name,
+          total,
+          days: (days.get(name) && days.get(name).size) || 0
+        }))
+        .sort((a, b) => b.total - a.total);
     }
 
     function renderFullShedStaff(rows, tableBody) {
@@ -1579,7 +1596,13 @@ function initTop5FarmsWidget() {
     }
 
     let contractorId = localStorage.getItem('contractor_id');
-    if (!contractorId && (firebase && firebase.auth)( && .currentUser)( && .uid)) {
+    if (
+      !contractorId &&
+      firebase &&
+      typeof firebase.auth === 'function' &&
+      firebase.auth().currentUser &&
+      firebase.auth().currentUser.uid
+    ) {
       contractorId = firebase.auth().currentUser.uid;
       try { localStorage.setItem('contractor_id', contractorId); } catch {}
       console.debug('[Top5Farms] contractor_id recovered from auth');
@@ -1689,10 +1712,10 @@ function initTop5FarmsWidget() {
       }
       return Array.from(totals.entries())
         .map(([name, sheep]) => {
-          const v = visits.get((name) && name).size) || 0;
+          const v = (visits.get(name) && visits.get(name).size) || 0;
           return { name, sheep, visits: v, avg: v ? sheep / v : 0, last: lastDate.get(name) || '' };
         })
-        .sort((a,b) => b.sheep - a.sheep);
+        .sort((a, b) => b.sheep - a.sheep);
     }
 
     function renderFullFarms(rows, tableBody) {
@@ -2461,7 +2484,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (overlay) {
       overlay.style.display = 'none';
       overlay.setAttribute('aria-hidden','true');
-      document.getElementById('help-btn'() && ).focus)();
+      const helpBtn = document.getElementById('help-btn');
+      if (helpBtn) helpBtn.focus();
     }
   });
   (btnSaveH && btnSaveH.addEventListener)('click', () => {
@@ -2581,7 +2605,13 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   // Find contractor id (same logic you already use)
-  const contractorId = localStorage.getItem('contractor_id') || ((window.firebase && window.firebase.auth)(() && ).currentUser)( && .uid)) || null;
+  const contractorId =
+    localStorage.getItem('contractor_id') ||
+    (window.firebase &&
+      typeof window.firebase.auth === 'function' &&
+      window.firebase.auth().currentUser &&
+      window.firebase.auth().currentUser.uid) ||
+    null;
 
   // Utility: crutched?
   function isCrutched(name){
@@ -2874,7 +2904,13 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
     return;
   }
 
-  const contractorId = localStorage.getItem('contractor_id') || ((window.firebase && window.firebase.auth)(() && ).currentUser)( && .uid)) || null;
+  const contractorId =
+    localStorage.getItem('contractor_id') ||
+    (window.firebase &&
+      typeof window.firebase.auth === 'function' &&
+      window.firebase.auth().currentUser &&
+      window.firebase.auth().currentUser.uid) ||
+    null;
 
   // Returns { hours: Number, displayText: String }.
   // displayText prefers the original user-entered string if available.
@@ -2980,8 +3016,8 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
     const explicit =
       findHoursWorkedDeep((session && session.meta)) ||
       (session && session.hoursWorked) ||
-      (session && session.summary)( && .hoursWorked) ||
-      (session && session.totals)( && .hoursWorked) ||
+      (session && session.summary && session.summary.hoursWorked) ||
+      (session && session.totals && session.totals.hoursWorked) ||
       findHoursWorkedDeep(session) ||
       null;
 
@@ -3001,7 +3037,7 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
 
     // If you kept a raw input string somewhere like session.meta.hoursInputRaw, prefer it:
     const rawCandidate =
-      (session && session.meta)( && .hoursInputRaw) ||
+      (session && session.meta && session.meta.hoursInputRaw) ||
       (session && session.hoursInputRaw) ||
       null;
 
@@ -3040,7 +3076,9 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
       const rawNames = Array.isArray((session && session.stands)) ? session.stands : Object.keys((session && session.hours) || {});
       rawNames.forEach(raw => {
         const name = normalizeName(raw) || 'Unknown';
-        const hours = parseHours((session && (session.hours) && session.hours)[name]) || (session && (session.hours) && session.hours)[raw]));
+        const hours =
+          parseHours(session && session.hours && session.hours[name]) ||
+          (session && session.hours && session.hours[raw]);
         if (hours > 0) fn(name, hours);
       });
     }
@@ -3276,7 +3314,13 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
   const tblByMonth = document.querySelector('#kpiTHByMonth tbody');
   const exportBtn = document.getElementById('kpiTHExport');
 
-  const contractorId = localStorage.getItem('contractor_id') || ((window.firebase && window.firebase.auth)(() && ).currentUser)( && .uid)) || null;
+  const contractorId =
+    localStorage.getItem('contractor_id') ||
+    (window.firebase &&
+      typeof window.firebase.auth === 'function' &&
+      window.firebase.auth().currentUser &&
+      window.firebase.auth().currentUser.uid) ||
+    null;
 
   if (dashCache.kpiTotalHours != null && pillVal) {
     pillVal.textContent = dashCache.kpiTotalHours;
@@ -3374,7 +3418,9 @@ const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (da
       const rawNames = Array.isArray((session && session.stands)) ? session.stands : Object.keys((session && session.hours) || {});
       rawNames.forEach(raw => {
         const name = normalizeName(raw) || 'Unknown';
-        const hours = parseHours((session && (session.hours) && session.hours)[name]) || (session && (session.hours) && session.hours)[raw]));
+        const hours =
+          parseHours(session && session.hours && session.hours[name]) ||
+          (session && session.hours && session.hours[raw]);
         if (hours > 0) fn(name, hours);
       });
     }
@@ -3699,7 +3745,13 @@ SessionStore.onChange(refresh);
   const exportBtn = document.getElementById('kpiDWExport');
   let exportExtras = new Map();
 
-  const contractorId = localStorage.getItem('contractor_id') || ((window.firebase && window.firebase.auth)(() && ).currentUser)( && .uid)) || null;
+  const contractorId =
+    localStorage.getItem('contractor_id') ||
+    (window.firebase &&
+      typeof window.firebase.auth === 'function' &&
+      window.firebase.auth().currentUser &&
+      window.firebase.auth().currentUser.uid) ||
+    null;
 
   if (dashCache.kpiDaysWorked != null && pillVal) {
     pillVal.textContent = dashCache.kpiDaysWorked;
@@ -4308,7 +4360,7 @@ SessionStore.onChange(refresh);
 
       // Anchor usually carries the date attr
       const a = cushion.querySelector('a[data-date]') || cushion.querySelector('a');
-      const dateStr = (a && (a.getAttribute) && a.getAttribute))('data-date');
+      const dateStr = a && a.getAttribute ? a.getAttribute('data-date') : null;
       if (!dateStr) return;
 
       const d = new Date(dateStr);
@@ -4510,7 +4562,8 @@ SessionStore.onChange(refresh);
   }
 
   function refreshActive(){
-    const active = modal.querySelector('.fm-tab.is-active'() && ).dataset).tab;
+    const activeEl = modal.querySelector('.fm-tab.is-active');
+    const active = activeEl && activeEl.dataset ? activeEl.dataset.tab : null;
     if(active==='summary') renderSummary();
     if(active==='planner') renderPlannerTable();
   }
