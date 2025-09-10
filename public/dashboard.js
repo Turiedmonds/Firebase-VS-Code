@@ -2111,8 +2111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { sel: '#btnStartNewDay', text: 'Start New Day — begin today’s tally.' },
     { sel: '#farm-summary-btn', text: 'Farm Summary — compare farm totals and visits.' },
     { sel: '#btnChangePin', text: 'Change Contractor PIN — secure control for edits.' },
-    { sel: '#btnChangePassword', text: 'Change Password — update your login password securely.' },
-    { sel: '#btnSettings', text: 'Settings / Preferences — coming soon (not yet enabled).' },
+    { sel: '#btnSettings', text: 'Settings / Preferences — adjust preferences and change your password.' },
     { sel: '#logoutBtn', text: 'Logout — safely sign out.' }
   ];
 
