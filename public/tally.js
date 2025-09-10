@@ -3517,7 +3517,7 @@ const interceptReset = (full) => (e) => {
 
     const exportBtn = document.getElementById('exportFarmSummaryBtn');
     exportBtn?.addEventListener('click', () => {
-        exportFarmSummaryCSV();
+        exportFarmSummary();
     });
 
     document.addEventListener('focusin', async (e) => {

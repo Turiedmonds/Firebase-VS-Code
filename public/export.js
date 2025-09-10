@@ -67,6 +67,66 @@ function exportFarmSummaryCSV() {
 }
 window.exportFarmSummaryCSV = exportFarmSummaryCSV;
 
+function exportFarmSummaryExcel() {
+    if (typeof XLSX === 'undefined') {
+        alert('Excel export not available');
+        return;
+    }
+
+    const tables = [
+        ['stationShearerTable', 'Shearer Summary'],
+        ['stationStaffTable', 'Shed Staff'],
+        ['stationLeaderTable', 'Team Leaders'],
+        ['stationCombTable', 'Comb Types'],
+        ['stationTotalTable', 'Sheep Type Totals']
+    ];
+
+    const rows = [];
+    const appendTable = (id, title) => {
+        const table = document.getElementById(id);
+        if (!table) return;
+        if (rows.length) rows.push([]);
+        rows.push([title]);
+        table.querySelectorAll('tr').forEach(tr => {
+            const cols = Array.from(tr.querySelectorAll('th,td'))
+                .map(td => td.textContent.trim());
+            rows.push(cols);
+        });
+    };
+    tables.forEach(t => appendTable(t[0], t[1]));
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    const colWidths = new Array(range.e.c - range.s.c + 1).fill(0);
+    for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+            const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+            if (!cell) continue;
+            const text = cell.v != null ? String(cell.v) : '';
+            colWidths[C] = Math.max(colWidths[C], text.length);
+        }
+    }
+    ws['!cols'] = colWidths.map(w => ({ wch: w + 2 }));
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Summary');
+
+    const farmName = document.getElementById('stationSelect')?.value.trim() || 'FarmSummary';
+    const date = new Date();
+    const formatted = date.toLocaleDateString('en-NZ').replace(/\//g, '-');
+    const fileName = `FarmSummary_${farmName}_${formatted}.xlsx`;
+
+    XLSX.writeFile(wb, fileName);
+}
+window.exportFarmSummaryExcel = exportFarmSummaryExcel;
+
+function exportFarmSummary() {
+    const useExcel = window.confirm('Export as Excel (.xlsx)? Click Cancel for CSV.');
+    if (useExcel) exportFarmSummaryExcel();
+    else exportFarmSummaryCSV();
+}
+window.exportFarmSummary = exportFarmSummary;
+
 function exportDailySummaryCSV() {
     const data = collectExportData();
 
