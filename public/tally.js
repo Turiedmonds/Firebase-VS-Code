@@ -2173,27 +2173,22 @@ document.addEventListener('DOMContentLoaded', () => {
          names.push(name);
      }
  
-     const optionSet = new Set(Array.from(document.querySelectorAll('#sheepTypes option')).map(o => o.value));
-     const totals = {};
-     const standTotals = new Array(numStandsLocal).fill(0);
-     Array.from(tallyBody.querySelectorAll('tr')).forEach(row => {
-        const tallyInputs = row.querySelectorAll('td input[type="number"]');
-        const hasTally = Array.from(tallyInputs).some(inp => inp.value.trim() !== '');
-        if (!hasTally) return; // skip empty row
-       
-        const typeInput = row.querySelector('.sheep-type input');
-        let typeRaw = typeInput ? typeInput.value.trim() : '';
-        if (typeRaw === '') {
-            typeRaw = '❓ Missing Type';
-        }
-        const type = (optionSet.has(typeRaw) || typeRaw === '❓ Missing Type') ? typeRaw : 'Other';
-         if (!totals[type]) totals[type] = new Array(numStandsLocal).fill(0);
-        for (let s = 1; s <= numStandsLocal; s++) {
-            const val = parseInt(row.children[s]?.querySelector('input')?.value) || 0;
-            totals[type][s-1] += val;
-            standTotals[s-1] += val;
-        }
-    });
+    const totals = {};
+    const standTotals = new Array(numStandsLocal).fill(0);
+    Array.from(tallyBody.querySelectorAll('tr')).forEach(row => {
+       const tallyInputs = row.querySelectorAll('td input[type="number"]');
+       const hasTally = Array.from(tallyInputs).some(inp => inp.value.trim() !== '');
+       if (!hasTally) return; // skip empty row
+
+       const typeInput = row.querySelector('.sheep-type input');
+       const type = (typeInput ? typeInput.value.trim() : '') || '❓ Missing Type';
+       if (!totals[type]) totals[type] = new Array(numStandsLocal).fill(0);
+       for (let s = 1; s <= numStandsLocal; s++) {
+           const val = parseInt(row.children[s]?.querySelector('input')?.value) || 0;
+           totals[type][s-1] += val;
+           standTotals[s-1] += val;
+       }
+   });
  
      const types = Object.keys(totals);
      const theadRow = document.querySelector('#summaryTable thead tr');
@@ -2314,22 +2309,17 @@ async function populateStationDropdown() {
 }
  
  function aggregateStationData(sessions) {
-     const optionSet = new Set(Array.from(document.querySelectorAll('#sheepTypes option')).map(o => o.value));
      const shearerData = {};
      const staffData = {};
      const leaders = {};
      const combs = {};
      const totalByType = {};
      let grandTotal = 0;
- 
+
      sessions.forEach(s => {
          const standNames = (s.stands || []).map(st => st.name || '');
          (s.shearerCounts || []).forEach(run => {
-        let rawType = (run.sheepType || '').trim();
-            if (rawType === '') {
-                rawType = '❓ Missing Type';
-            }
-            const type = (optionSet.has(rawType) || rawType === '❓ Missing Type') ? rawType : 'Other';
+            const type = (run.sheepType || '').trim() || '❓ Missing Type';
              run.stands.forEach((val, idx) => {
                  const name = standNames[idx] || `Stand ${idx+1}`;
                  const num = parseInt(val) || 0;
@@ -2345,7 +2335,7 @@ async function populateStationDropdown() {
                  grandTotal += num;
              });
          });
- 
+
          if (Array.isArray(s.shedStaff)) {
             s.shedStaff.forEach(st => {
                 const h = parseHoursWorked(st.hours);
@@ -2353,20 +2343,20 @@ async function populateStationDropdown() {
                 staffData[st.name] = (staffData[st.name] || 0) + h;
             });
         }
- 
+
          if (s.teamLeader) {
              const totalSheep = (s.shearerCounts || []).reduce((a,b) => a + (parseInt(b.total)||0), 0);
              if (!leaders[s.teamLeader]) leaders[s.teamLeader] = { total: 0, dates: new Set() };
              leaders[s.teamLeader].total += totalSheep;
              leaders[s.teamLeader].dates.add(s.date);
          }
- 
+
          if (s.combType) {
              if (!combs[s.combType]) combs[s.combType] = new Set();
              combs[s.combType].add(s.date);
          }
      });
- 
+
      return { shearerData, staffData, leaders, combs, totalByType, grandTotal };
 }
 
