@@ -106,9 +106,11 @@ if (localStorage.getItem('hours_modal_enabled') == null) localStorage.setItem('h
 if (localStorage.getItem('tally_autosave_mode') == null) localStorage.setItem('tally_autosave_mode','both');
 
 // ===== Help/Tour global runtime state (safe default) =====
+var _guidePref = localStorage.getItem('tally_guide_enabled');
+if (_guidePref === null || _guidePref === undefined) _guidePref = 'true';
 window.TT_STATE = window.TT_STATE || {
   tooltipsEnabled: false,
-  guideEnabled:    (localStorage.getItem('tally_guide_enabled') ?? 'true') === 'true',
+  guideEnabled: _guidePref === 'true',
 };
 
 function isSetupModalEnabled(){
@@ -135,7 +137,10 @@ window.renderHelpMenu = function () {
     </label>
     <button id="start" style="margin-top:8px;">Start guide now</button>
   `;
-  const gb = k => (localStorage.getItem(k) ?? 'true') === 'true';
+  var gb = function(k){
+    var v = localStorage.getItem(k);
+    return ((v === null || v === undefined ? 'true' : v) === 'true');
+  };
   const sb = (k,v) => localStorage.setItem(k, v ? 'true' : 'false');
   const tour = m.querySelector('#tour');
   const hoursModalToggle = m.querySelector('#hoursModalToggle');
@@ -150,7 +155,7 @@ window.renderHelpMenu = function () {
     <option value="cloud">Cloud</option>
     <option value="both">Both</option>
   </select>`;
-  start?.before(autosaveRow);
+  if (start) start.before(autosaveRow);
   const autosaveSelect = autosaveRow.querySelector('#autosaveMode');
   if (autosaveSelect){
     autosaveSelect.value = localStorage.getItem('tally_autosave_mode') || 'both';
@@ -166,7 +171,7 @@ window.renderHelpMenu = function () {
       <input type="checkbox" id="toggleSetupModal"> Enable Setup Day popup
     </label>
   `;
-  start?.before(setupToggleRow);
+  if (start) start.before(setupToggleRow);
   const toggleSetupBox = setupToggleRow.querySelector('#toggleSetupModal');
   if (toggleSetupBox){
     toggleSetupBox.checked = isSetupModalEnabled();

@@ -1,4 +1,4 @@
-(async function() {
+(function() {
   const firebaseConfig = {
     apiKey: "AIzaSyD529f2jn9mb8OAip4x6l3IQb7KOaPNxaM",
     authDomain: "sheariq-tally-app.firebaseapp.com",
@@ -11,12 +11,13 @@
   if (typeof firebase !== 'undefined' && (!firebase.apps || !firebase.apps.length)) {
     firebase.initializeApp(firebaseConfig);
     if (firebase.firestore) {
-      const db = firebase.firestore();
-      try {
-        await db.enablePersistence();
-        console.info('IndexedDB persistence enabled');
-      } catch (err) {
-        console.warn('Failed to enable persistence', err);
+      var db = firebase.firestore();
+      if (db && db.enablePersistence) {
+        db.enablePersistence().then(function() {
+          console.info('IndexedDB persistence enabled');
+        }).catch(function(err) {
+          console.warn('Failed to enable persistence', err);
+        });
       }
     }
   }
