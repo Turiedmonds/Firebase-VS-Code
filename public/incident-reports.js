@@ -73,11 +73,14 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const snap = await firebase.firestore().collection('contractors').doc(contractorId).collection('sessions').get();
       allIncidents = [];
+      const seenKeys = [];
       snap.forEach(doc => {
         const data = doc.data();
         const date = parseSessionDate(data);
         const station = data.stationName || '';
         if (Array.isArray(data.incidents)) {
+          const sessionKey = formatNZDate(date) + '_' + station;
+          if (data.incidents.length) seenKeys.push(sessionKey);
           data.incidents.forEach(i => {
             allIncidents.push({ date, station, time: i.time, name: i.name, description: i.description });
           });
@@ -89,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return bd - ad;
       });
       render(allIncidents);
+      seenKeys.forEach(k => localStorage.setItem('incident_seen_' + k, '1'));
     } catch (e) {
       console.error('Failed to load incidents', e);
       render([]);
