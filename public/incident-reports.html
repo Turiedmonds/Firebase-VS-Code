@@ -57,7 +57,11 @@
     </thead>
     <tbody id="incidentBody"></tbody>
   </table>
-  <button id="backBtn" class="tab-button" style="margin-top:20px;">Back</button>
+  <div style="margin-top:20px;display:flex;gap:10px;">
+    <button id="exportBtn" class="tab-button" type="button">Export</button>
+    <button id="backBtn" class="tab-button" type="button">Back</button>
+  </div>
+  <script src="/export.js"></script>
   <script type="module" src="incident-reports.js"></script>
 </body>
 </html>
