@@ -2121,6 +2121,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const msgEl   = document.getElementById('stationNoData');
   const lastNInput = document.getElementById('lastNDaysInput');
   const lastNBtn   = document.getElementById('summaryApplyLastN');
+  const farmDataTitle = document.getElementById('farmDataTitle');
+
+  function updateFarmDataTitle() {
+    if (!farmDataTitle) return;
+    const farmName = farmSel?.selectedOptions[0]?.textContent?.trim() || '';
+    farmDataTitle.textContent = farmName ? `${farmName} — Farm Data` : '';
+  }
 
   // Keep farm list fresh on load (no auto-build)
   if (farmSel && typeof populateStationDropdown === 'function') {
@@ -2183,6 +2190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       hideMsg();
+      updateFarmDataTitle();
       // Build summary now that inputs are valid
       if (typeof buildStationSummary === 'function') buildStationSummary();
     });
@@ -2199,6 +2207,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showMsg('Select a farm and date range, or tick “All time for this farm”, then press Apply.');
     });
   }
+  updateFarmDataTitle();
 });
  
  function buildSummary() {
