@@ -5,12 +5,6 @@ firebase.auth().onAuthStateChanged(user => {
 });
 
 export function handleLogout() {
-  const confirmed = confirm(
-    'Warning: You won’t be able to log back in without internet access. Are you sure you want to log out?'
-  );
-  if (!confirmed) {
-    return;
-  }
   const overlay = document.getElementById('loading-overlay');
   if (overlay) {
     overlay.style.display = 'flex';
@@ -49,4 +43,23 @@ export function handleLogout() {
   });
 }
 
-document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+function setupLogoutModal() {
+  const modal = document.getElementById('logoutModal');
+  const confirmBtn = document.getElementById('logoutConfirmBtn');
+  const cancelBtn = document.getElementById('logoutCancelBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (!modal || !confirmBtn || !cancelBtn || !logoutBtn) return;
+  logoutBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    modal.style.display = 'flex';
+  });
+  confirmBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+    handleLogout();
+  });
+  cancelBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', setupLogoutModal);
