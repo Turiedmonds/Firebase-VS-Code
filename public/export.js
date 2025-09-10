@@ -124,10 +124,35 @@ function exportFarmSummaryExcel() {
 }
 window.exportFarmSummaryExcel = exportFarmSummaryExcel;
 
-function exportFarmSummary() {
-    const useExcel = window.confirm('Export as Excel (.xlsx)? Click Cancel for CSV.');
-    if (useExcel) exportFarmSummaryExcel();
-    else exportFarmSummaryCSV();
+function showExportFormatModal() {
+    return new Promise(resolve => {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+      <div class="modal-box">
+        <p>Export as Excel (.xlsx) or CSV?</p>
+        <div class="modal-buttons">
+          <button class="export-excel">Excel</button>
+          <button class="export-csv">CSV</button>
+        </div>
+      </div>`;
+        document.body.appendChild(modal);
+        modal.style.display = 'flex';
+        modal.querySelector('.export-excel').addEventListener('click', () => {
+            modal.remove();
+            resolve('excel');
+        });
+        modal.querySelector('.export-csv').addEventListener('click', () => {
+            modal.remove();
+            resolve('csv');
+        });
+    });
+}
+
+async function exportFarmSummary() {
+    const choice = await showExportFormatModal();
+    if (choice === 'excel') exportFarmSummaryExcel();
+    else if (choice === 'csv') exportFarmSummaryCSV();
 }
 window.exportFarmSummary = exportFarmSummary;
 
@@ -506,10 +531,10 @@ function exportDailySummaryExcel() {
     XLSX.writeFile(wb, fileName);
 }
 
-function showExportPrompt() {
-    const useExcel = window.confirm('Export as Excel (.xlsx)? Click Cancel for CSV.');
-    if (useExcel) exportDailySummaryExcel();
-    else exportDailySummaryCSV();
+async function showExportPrompt() {
+    const choice = await showExportFormatModal();
+    if (choice === 'excel') exportDailySummaryExcel();
+    else if (choice === 'csv') exportDailySummaryCSV();
 }
 
 // Expose functions used by inline handlers
