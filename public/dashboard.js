@@ -23,6 +23,13 @@ function markDashboardWelcomeSeen(){
   try { localStorage.setItem('dashboard_welcome_seen','true'); } catch(e){}
 }
 
+firebase.auth().onAuthStateChanged(function(user){
+  if (!user) {
+    window.location.replace('/login.html?v=' + Date.now());
+    return;
+  }
+});
+
 // If your app already exposes a function to open the dashboard welcome modal,
 // wrap it so it only opens once automatically. We leave a manual "force" path.
 (function(){
@@ -183,7 +190,7 @@ function checkIncidentNotifications(){
 async function refreshSessionsFromCloud(){
   try {
     const user = firebase.auth().currentUser;
-    const contractorId = localStorage.getItem('contractor_id') || user?.uid || null;
+    const contractorId = localStorage.getItem('contractor_id') || (user && user.uid) || null;
     if (!contractorId || !user) {
       checkIncidentNotifications();
       return;
