@@ -1588,9 +1588,10 @@ function initTop5FarmsWidget() {
     const viewSel = rootEl.querySelector('#farms-view');
     const yearSel = rootEl.querySelector('#farms-year');
     const viewAllBtn = rootEl.querySelector('#farms-viewall');
+    const tabs = rootEl.querySelector('#farms-worktype-tabs');
     const modal = document.getElementById('farms-full-modal');
     const modalBodyTbody = document.querySelector('#farms-full-table tbody');
-    if (!listEl || !viewSel || !yearSel || !viewAllBtn || !modal || !modalBodyTbody) {
+    if (!listEl || !viewSel || !yearSel || !viewAllBtn || !tabs || !modal || !modalBodyTbody) {
       console.warn('[Top5Farms] Missing elements');
       return;
     }
@@ -1627,6 +1628,12 @@ function initTop5FarmsWidget() {
       } catch {}
     }
 
+    function isCrutchedType(sheepType) {
+      if (!sheepType) return false;
+      const s = String(sheepType).toLowerCase();
+      return s.includes('crutch');
+    }
+
     function getDateRange(mode, year) {
       const today = new Date();
       if (mode === '12m') {
@@ -1655,16 +1662,16 @@ function initTop5FarmsWidget() {
       return isNaN(dt.getTime()) ? null : dt;
     }
 
-    function aggregateFarms(sessions, mode, year) {
+    function aggregateFarms(sessions, mode, year, workType) {
       const { start, end } = getDateRange(mode, year);
+      const wantCrutched = (workType === 'crutched');
       const totals = new Map();
       const visits = new Map();
       const lastDate = new Map();
       for (const doc of sessions) {
         const s = doc.data ? doc.data() : doc;
-        const sheep = sumSheep(s);
         const farm = pickFarmName(s);
-        if (!sheep || !farm || farm === 'Unknown') continue;
+        if (!farm || farm === 'Unknown') continue;
         const date = getSessionDateYMD(s);
         if (mode !== 'all') {
           const dt = sessionDateToJS(date);
@@ -1672,7 +1679,15 @@ function initTop5FarmsWidget() {
           if (start && dt < start) continue;
           if (end && dt > end) continue;
         }
-        totals.set(farm, (totals.get(farm) || 0) + sheep);
+        let sessionTotal = 0;
+        for (const t of iterateTalliesFromSession(doc)) {
+          const isCrutch = isCrutchedType(t.sheepType);
+          if (wantCrutched && !isCrutch) continue;
+          if (!wantCrutched && isCrutch) continue;
+          sessionTotal += t.count || 0;
+        }
+        if (!sessionTotal) continue;
+        totals.set(farm, (totals.get(farm) || 0) + sessionTotal);
         if (!visits.has(farm)) visits.set(farm, new Set());
         if (date) visits.get(farm).add(date);
         if (date) {
@@ -1685,7 +1700,7 @@ function initTop5FarmsWidget() {
           const v = visits.get(name)?.size || 0;
           return { name, sheep, visits: v, avg: v ? sheep / v : 0, last: lastDate.get(name) || '' };
         })
-        .sort((a,b) => b.sheep - a.sheep);
+        .sort((a, b) => b.sheep - a.sheep);
     }
 
     function renderFullFarms(rows, tableBody) {
@@ -1772,7 +1787,8 @@ function initTop5FarmsWidget() {
       }
       const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
       const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
-        const rows = aggregateFarms(cachedSessions, mode, year);
+      const workType = tabs.querySelector('.siq-segmented__btn.is-active')?.dataset.worktype || 'shorn';
+        const rows = aggregateFarms(cachedSessions, mode, year, workType);
         if (!shouldRerender(cachedRows, rows)) return;
         cachedRows = rows;
         renderTop5Farms(rows, listEl);
@@ -1792,6 +1808,14 @@ function initTop5FarmsWidget() {
     }
     // Kick off an initial render so cached sessions populate the view
     scheduleRender();
+
+    tabs.addEventListener('click', e => {
+      const btn = e.target.closest('.siq-segmented__btn');
+      if (!btn) return;
+      tabs.querySelectorAll('.siq-segmented__btn').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      scheduleRender();
+    });
 
     viewSel.addEventListener('change', () => {
         const v = viewSel.value;
