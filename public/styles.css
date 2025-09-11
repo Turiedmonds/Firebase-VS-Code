@@ -139,12 +139,16 @@ td[contenteditable="true"]:focus {
 /* Increase input padding for touch devices */
 input[type="number"],
 input[type="text"],
-input[type="time"],
 select,
 textarea {
   width: 100%;
   padding: 8px 6px;
   box-sizing: border-box;
+}
+/* Time inputs are narrower to fit within layout boundaries */
+input[type="time"] {
+  width: auto;
+  max-width: 120px;
 }
 /* Small inputs align with the date field size */
 input.small-input { width: auto; }
@@ -396,7 +400,8 @@ button {
   }
 
   #incidentTable input[type="time"] {
-    width: 100%;
+    width: auto;
+    max-width: 120px;
     min-width: 0;
   }
 
@@ -1785,11 +1790,15 @@ button {
     font-weight: 600;
     margin-bottom: 4px;
   }
-  #incidentTable input,
+  #incidentTable input[type="text"],
   #incidentTable textarea {
     width: 100%;
     box-sizing: border-box;
     min-width: 0;
+  }
+  #incidentTable input[type="time"] {
+    width: auto;
+    max-width: 120px;
   }
   body {
     padding: 0;
