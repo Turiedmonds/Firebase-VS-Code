@@ -1509,7 +1509,27 @@ button {
 .kpi-table th, .kpi-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-color, #2c2c2c); }
 .kpi-table td, .kpi-table th { white-space: nowrap; }
 .kpi-table th { text-align: left; opacity: .85; }
+
 .kpi-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 12px 16px; border-top: 1px solid var(--border-color, #2c2c2c); }
+
+/* Sheep KPI modal dynamic sections */
+#kpiSheepCompare { min-width: 140px; }
+
+#kpiSheepMonthly,
+#kpiSheepYearly {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding: 0 16px 16px;
+}
+
+#kpiSheepMonthly h3,
+#kpiSheepYearly h3 { margin: 10px 0; }
+
+@media (max-width: 480px) {
+  #kpiSheepMonthly,
+  #kpiSheepYearly { padding: 0 12px 12px; }
+}
 
 /* Extra breathing room above existing widgets */
 #siq-widgets-grid { margin-top: 8px; }
