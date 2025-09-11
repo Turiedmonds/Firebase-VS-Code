@@ -1662,6 +1662,123 @@ function initTop5FarmsWidget() {
       return isNaN(dt.getTime()) ? null : dt;
     }
 
+    // Map stand index → name from session.stands[], normalizing 1-based indices
+    function buildStandIndexNameMap(sessionData) {
+      const map = {};
+      const arr = Array.isArray(sessionData.stands) ? sessionData.stands : [];
+
+      // Detect if indices look 1-based (no 0 but there is a 1)
+      const rawIdx = arr.map((st, i) => (st && st.index != null ? Number(st.index) : i));
+      const has0 = rawIdx.includes(0);
+      const has1 = rawIdx.includes(1);
+      const looksOneBased = !has0 && has1; // e.g., [1,2,3...]
+
+      arr.forEach((st, pos) => {
+        // numeric index or fallback to position
+        let i = (st && st.index != null) ? Number(st.index) : pos;
+        if (!Number.isFinite(i)) i = pos;
+        if (looksOneBased) i = i - 1;   // normalize 1-based → 0-based
+        if (i < 0) i = 0;
+
+        // resolve name; treat placeholders as missing
+        let name = '';
+        if (st) name = String(st.name || st.shearerName || st.id || '').trim();
+        if (!name || /^stand\s+\d+$/i.test(name)) name = null;
+
+        map[i] = name; // may be null; iterator will handle as unassigned if needed
+      });
+
+      return map;
+    }
+
+    // Extract tallies (shearerName, count, sheepType, date) from a session doc
+    function* iterateTalliesFromSession(sessionDoc) {
+      const s = sessionDoc.data ? sessionDoc.data() : sessionDoc; // QueryDocumentSnapshot or plain object
+      const sessionDate = sessionDateToJS(s.date || s.sessionDate || s.createdAt || s.timestamp || s.savedAt);
+
+      // Preferred path: shearerCounts[].stands[] + session.stands name map
+      if (Array.isArray(s.shearerCounts)) {
+        const nameByIndex = buildStandIndexNameMap(s);
+
+        for (const row of s.shearerCounts) {
+          const sheepType = row?.sheepType || '';
+          const perStand = Array.isArray(row?.stands) && row.stands.length
+            ? row.stands
+            : (Array.isArray(row?.counts) ? row.counts : []);
+          for (let i = 0; i < perStand.length; i++) {
+            const raw = perStand[i];
+            // raw may be string like "89" or number
+            const num = Number(raw);
+            if (!isFinite(num) || num <= 0) continue;
+
+            const shearerName = nameByIndex[i] || `Stand ${i + 1}`;
+            yield {
+              shearerName,
+              count: num,
+              sheepType,
+              date: sessionDate
+            };
+          }
+
+          // Optional fallback: if there were no per-stand entries but row.total exists,
+          // we could attribute it to an "Unknown" shearer. For now, skip to preserve per-shearer accuracy.
+          // const totalNum = Number(row?.total);
+          // if ((!perStand.length || perStand.every(v => !Number(v))) && isFinite(totalNum) && totalNum > 0) { ... }
+        }
+        return;
+      }
+
+      // Existing generic fallbacks (keep in case of future shapes)
+      if (Array.isArray(s.tallies)) {
+        for (const t of s.tallies) {
+          yield {
+            shearerName: t.shearerName || t.shearer || t.name,
+            count: Number(t.count || t.tally || 0),
+            sheepType: t.sheepType || t.type,
+            date: sessionDate
+          };
+        }
+        return;
+      }
+
+      if (Array.isArray(s.shearers)) {
+        for (const sh of s.shearers) {
+          const shearerName = normalizeName(sh.name || sh.shearerName || sh.displayName || sh.shearer || sh.id) || 'Unknown';
+          const runs = sh.runs || sh.tallies || sh.entries || [];
+          for (const r of (runs || [])) {
+            yield {
+              shearerName,
+              count: Number(r.count || r.tally || 0),
+              sheepType: r.sheepType || r.type,
+              date: sessionDate
+            };
+          }
+          if (typeof sh.total === 'number') {
+            yield {
+              shearerName,
+              count: Number(sh.total),
+              sheepType: sh.sheepType || null,
+              date: sessionDate
+            };
+          }
+        }
+        return;
+      }
+
+      if (s.shearerTallies && typeof s.shearerTallies === 'object') {
+        for (const [shearerName, entries] of Object.entries(s.shearerTallies)) {
+          for (const e of (entries || [])) {
+            yield {
+              shearerName,
+              count: Number(e.count || e.tally || 0),
+              sheepType: e.sheepType || e.type,
+              date: sessionDate
+            };
+          }
+        }
+      }
+    }
+
     function aggregateFarms(sessions, mode, year, workType) {
       const { start, end } = getDateRange(mode, year);
       const wantCrutched = (workType === 'crutched');
