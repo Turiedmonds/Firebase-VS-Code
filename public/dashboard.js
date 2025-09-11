@@ -448,12 +448,13 @@ function renderSparkline(containerEl, valuesArray, labelsArray = [], title) {
   const yAxisTitle = containerEl.getAttribute('data-y-label') || '';
 
   const height = containerEl.clientHeight || 80;
-  const margin = { top: 20, right: 10, bottom: 30, left: 40 };
+  const max = Math.max(...valuesArray);
+  const maxLabelWidth = max.toLocaleString().length * 7; // approx digit width
+  const yAxisOffset = yAxisTitle ? 20 : 0;
+  const margin = { top: 20, right: 10, bottom: 30, left: maxLabelWidth + yAxisOffset + 20 };
   const width = Math.max(containerEl.clientWidth || 0, valuesArray.length * 30 + margin.left + margin.right);
   const innerW = width - margin.left - margin.right;
   const innerH = height - margin.top - margin.bottom;
-
-  const max = Math.max(...valuesArray);
 
   const points = valuesArray.map((v, i) => {
     const x = margin.left + (i / ((valuesArray.length - 1) || 1)) * innerW;
@@ -490,7 +491,7 @@ function renderSparkline(containerEl, valuesArray, labelsArray = [], title) {
     svg += `<text class="axis-label x-axis-label" x="${margin.left + innerW / 2}" y="${xLabY}" text-anchor="middle">${xAxisTitle}</text>`;
   }
   if (yAxisTitle) {
-    const yLabX = margin.left - 28;
+    const yLabX = margin.left - maxLabelWidth - yAxisOffset;
     const yLabY = margin.top + innerH / 2;
     svg += `<text class="axis-label y-axis-label" x="${yLabX}" y="${yLabY}" text-anchor="middle" transform="rotate(-90 ${yLabX} ${yLabY})">${yAxisTitle}</text>`;
   }
