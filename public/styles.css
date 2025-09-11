@@ -1548,7 +1548,7 @@ button {
   display: inline-block;
 }
 .kpi-spark {
-  height:36px;
+  height:80px;
   color:#3b82f6;
 }
 
@@ -1557,9 +1557,9 @@ button {
   height:100%;
 }
 
-.kpi-spark .spark-fill {
-  fill:currentColor;
-  fill-opacity:.15;
+.kpi-spark .axis {
+  stroke:#9ca3af;
+  stroke-width:1;
 }
 
 .kpi-spark .spark-line {
@@ -1570,8 +1570,19 @@ button {
   stroke-linejoin:round;
 }
 
-.kpi-spark circle {
+.kpi-spark .spark-dot {
   fill:currentColor;
+}
+
+.kpi-spark text {
+  fill:#374151;
+  font-size:10px;
+}
+
+.kpi-spark .title {
+  font-size:12px;
+  font-weight:600;
+  fill:#111827;
 }
 
 /* Calendar modal sizing */

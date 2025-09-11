@@ -431,9 +431,11 @@ function formatHoursHM(decHours) {
   return `${h}:${String(m).padStart(2, '0')}`;
 }
 
-// Render a minimalist sparkline used by KPI modals.
-// Mirrors the implementation used for the Days Worked graph.
-function renderSparkline(containerEl, valuesArray) {
+// Render a small line chart with axes and a title.
+// valuesArray: array of numeric values
+// labelsArray: optional labels for each x-value
+// title: optional chart title (defaults to container's aria-label)
+function renderSparkline(containerEl, valuesArray, labelsArray = [], title) {
   if (!containerEl) return;
   containerEl.innerHTML = '';
   if (!Array.isArray(valuesArray) || valuesArray.length === 0) {
@@ -441,29 +443,56 @@ function renderSparkline(containerEl, valuesArray) {
     return;
   }
 
-  const height = containerEl.clientHeight || 36;
+  const chartTitle = title || containerEl.getAttribute('aria-label') || '';
 
-  // Single value: render a centered dot
-  if (valuesArray.length === 1) {
-    const max = valuesArray[0] || 0;
-    const y = height - (max ? (valuesArray[0]/max) * height : 0);
-    containerEl.innerHTML =
-      `<svg width="16" height="${height}" viewBox="0 0 16 ${height}">` +
-      `<circle cx="8" cy="${y}" r="2" stroke="currentColor" fill="currentColor"/></svg>`;
-    return;
-  }
+  const height = containerEl.clientHeight || 80;
+  const margin = { top: 20, right: 10, bottom: 30, left: 40 };
+  const width = Math.max(containerEl.clientWidth || 0, valuesArray.length * 30 + margin.left + margin.right);
+  const innerW = width - margin.left - margin.right;
+  const innerH = height - margin.top - margin.bottom;
 
   const max = Math.max(...valuesArray);
-  const width = (valuesArray.length - 1) * 8; // consistent spacing
+
   const points = valuesArray.map((v, i) => {
-    const x = (i / (valuesArray.length - 1)) * width;
-    const y = height - (max ? (v / max) * height : 0);
+    const x = margin.left + (i / ((valuesArray.length - 1) || 1)) * innerW;
+    const y = margin.top + innerH - (max ? (v / max) * innerH : 0);
     return `${x},${y}`;
   }).join(' ');
 
-  containerEl.innerHTML =
-    `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
-    `<polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  // Build x-axis labels if provided
+  let xLabels = '';
+  if (Array.isArray(labelsArray) && labelsArray.length === valuesArray.length) {
+    xLabels = labelsArray.map((lab, i) => {
+      const x = margin.left + (i / ((labelsArray.length - 1) || 1)) * innerW;
+      const y = margin.top + innerH + 12;
+      return `<text x="${x}" y="${y}" text-anchor="middle">${lab}</text>`;
+    }).join('');
+  }
+
+  // Y-axis labels (0 and max)
+  const yLabels = [
+    `<text x="${margin.left - 6}" y="${margin.top + innerH}" text-anchor="end">0</text>`,
+    `<text x="${margin.left - 6}" y="${margin.top + 4}" text-anchor="end">${max.toLocaleString()}</text>`
+  ].join('');
+
+  let svg = `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+  if (chartTitle) {
+    svg += `<text x="${width / 2}" y="14" text-anchor="middle" class="title">${chartTitle}</text>`;
+  }
+  svg += `<line class="axis" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + innerH}"/>` +
+         `<line class="axis" x1="${margin.left}" y1="${margin.top + innerH}" x2="${margin.left + innerW}" y2="${margin.top + innerH}"/>` +
+         xLabels + yLabels;
+
+  if (valuesArray.length === 1) {
+    const x = margin.left + innerW / 2;
+    const y = margin.top + innerH - (max ? (valuesArray[0] / max) * innerH : 0);
+    svg += `<circle cx="${x}" cy="${y}" r="3" class="spark-dot"/>`;
+  } else {
+    svg += `<polyline class="spark-line" points="${points}"/>`;
+  }
+
+  svg += '</svg>';
+  containerEl.innerHTML = svg;
 }
 
 // Determine busiest and quietest labels/values
@@ -2959,10 +2988,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       return `<tr><td>${m}</td><td>${full.toLocaleString()}</td><td>${crut.toLocaleString()}</td><td>${total.toLocaleString()}</td></tr>`;
     }).join('');
     monthlyContainer.innerHTML =
-      `<div class="spark"></div>`+
+      `<div class="kpi-spark" role="img" aria-label="Monthly sheep total trend"></div>`+
       `<table class="kpi-table"><thead><tr><th>Month</th><th>Shorn</th><th>Crutched</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
-    const spark = monthlyContainer.querySelector('.spark');
-    if (spark) renderSparkline(spark, data.total);
+    const spark = monthlyContainer.querySelector('.kpi-spark');
+    if (spark) renderSparkline(spark, data.total, monthNames);
   }
 
   function renderYearly(data){
@@ -2974,10 +3003,10 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       return `<tr><td>${y}</td><td>${full.toLocaleString()}</td><td>${crut.toLocaleString()}</td><td>${total.toLocaleString()}</td></tr>`;
     }).join('');
     yearlyContainer.innerHTML =
-      `<div class="spark"></div>`+
+      `<div class="kpi-spark" role="img" aria-label="Yearly sheep total trend"></div>`+
       `<table class="kpi-table"><thead><tr><th>Year</th><th>Shorn</th><th>Crutched</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
-    const spark = yearlyContainer.querySelector('.spark');
-    if (spark) renderSparkline(spark, data.total);
+    const spark = yearlyContainer.querySelector('.kpi-spark');
+    if (spark) renderSparkline(spark, data.total, data.years.map(y=>String(y)));
   }
 
   function updatePill(full, crutched){
@@ -3905,7 +3934,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     const quietestEl = document.getElementById('kpiTHQuietestBadge');
 
     if (sparkHost && monthData && Array.isArray(monthData.monthTotals)) {
-      renderSparkline(sparkHost, monthData.monthTotals);
+      renderSparkline(sparkHost, monthData.monthTotals, monthData.monthLabels);
 
       const peaks = calcPeaks(monthData.monthTotals, monthData.monthLabels);
       if (peaks && peaks.busiest) {
@@ -4347,7 +4376,7 @@ SessionStore.onChange(refresh);
     const monthLabels = agg.monthRows.map(r=> shortMonthNames[Number(r.month.slice(5))-1]);
     monthTrendEl && (monthTrendEl.hidden = agg.allDays.size === 0);
     if (agg.allDays.size && monthTotals.length){
-      renderSparkline(monthSparkEl, monthTotals);
+      renderSparkline(monthSparkEl, monthTotals, monthLabels);
     } else if (monthSparkEl) {
       monthSparkEl.textContent='';
     }
