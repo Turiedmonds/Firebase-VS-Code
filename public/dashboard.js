@@ -444,6 +444,8 @@ function renderSparkline(containerEl, valuesArray, labelsArray = [], title) {
   }
 
   const chartTitle = title || containerEl.getAttribute('aria-label') || '';
+  const xAxisTitle = containerEl.getAttribute('data-x-label') || '';
+  const yAxisTitle = containerEl.getAttribute('data-y-label') || '';
 
   const height = containerEl.clientHeight || 80;
   const margin = { top: 20, right: 10, bottom: 30, left: 40 };
@@ -482,6 +484,16 @@ function renderSparkline(containerEl, valuesArray, labelsArray = [], title) {
   svg += `<line class="axis" x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + innerH}"/>` +
          `<line class="axis" x1="${margin.left}" y1="${margin.top + innerH}" x2="${margin.left + innerW}" y2="${margin.top + innerH}"/>` +
          xLabels + yLabels;
+
+  if (xAxisTitle) {
+    const xLabY = margin.top + innerH + 24;
+    svg += `<text class="axis-label x-axis-label" x="${margin.left + innerW / 2}" y="${xLabY}" text-anchor="middle">${xAxisTitle}</text>`;
+  }
+  if (yAxisTitle) {
+    const yLabX = margin.left - 28;
+    const yLabY = margin.top + innerH / 2;
+    svg += `<text class="axis-label y-axis-label" x="${yLabX}" y="${yLabY}" text-anchor="middle" transform="rotate(-90 ${yLabX} ${yLabY})">${yAxisTitle}</text>`;
+  }
 
   if (valuesArray.length === 1) {
     const x = margin.left + innerW / 2;
@@ -2988,7 +3000,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       return `<tr><td>${m}</td><td>${full.toLocaleString()}</td><td>${crut.toLocaleString()}</td><td>${total.toLocaleString()}</td></tr>`;
     }).join('');
     monthlyContainer.innerHTML =
-      `<div class="kpi-spark" role="img" aria-label="Monthly sheep total trend"></div>`+
+      `<div class="kpi-spark" role="img" aria-label="Monthly sheep total trend" data-x-label="Month" data-y-label="Sheep"></div>`+
       `<table class="kpi-table"><thead><tr><th>Month</th><th>Shorn</th><th>Crutched</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
     const spark = monthlyContainer.querySelector('.kpi-spark');
     if (spark) renderSparkline(spark, data.total, monthNames);
@@ -3003,7 +3015,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       return `<tr><td>${y}</td><td>${full.toLocaleString()}</td><td>${crut.toLocaleString()}</td><td>${total.toLocaleString()}</td></tr>`;
     }).join('');
     yearlyContainer.innerHTML =
-      `<div class="kpi-spark" role="img" aria-label="Yearly sheep total trend"></div>`+
+      `<div class="kpi-spark" role="img" aria-label="Yearly sheep total trend" data-x-label="Year" data-y-label="Sheep"></div>`+
       `<table class="kpi-table"><thead><tr><th>Year</th><th>Shorn</th><th>Crutched</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
     const spark = yearlyContainer.querySelector('.kpi-spark');
     if (spark) renderSparkline(spark, data.total, data.years.map(y=>String(y)));

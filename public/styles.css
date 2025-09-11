@@ -1579,6 +1579,10 @@ button {
   font-size:10px;
 }
 
+.kpi-spark .axis-label {
+  font-size:11px;
+}
+
 .kpi-spark .title {
   font-size:12px;
   font-weight:600;
