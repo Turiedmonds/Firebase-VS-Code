@@ -899,6 +899,105 @@ function initTop5ShearersWidget() {
       return isNaN(dt.getTime()) ? null : dt;
     }
 
+    function buildStandIndexNameMap(sessionData) {
+      const map = {};
+      const arr = Array.isArray(sessionData.stands) ? sessionData.stands : [];
+
+      const rawIdx = arr.map((st, i) => (st && st.index != null ? Number(st.index) : i));
+      const has0 = rawIdx.includes(0);
+      const has1 = rawIdx.includes(1);
+      const looksOneBased = !has0 && has1;
+
+      arr.forEach((st, pos) => {
+        let i = (st && st.index != null) ? Number(st.index) : pos;
+        if (!Number.isFinite(i)) i = pos;
+        if (looksOneBased) i = i - 1;
+        if (i < 0) i = 0;
+
+        let name = '';
+        if (st) name = String(st.name || st.shearerName || st.id || '').trim();
+        if (!name || /^stand\s+\d+$/i.test(name)) name = null;
+
+        map[i] = name;
+      });
+
+      return map;
+    }
+
+    function* iterateTalliesFromSession(sessionDoc) {
+      const s = sessionDoc.data ? sessionDoc.data() : sessionDoc;
+      const sessionDate = sessionDateToJS(s.date || s.sessionDate || s.createdAt || s.timestamp || s.savedAt);
+
+      if (Array.isArray(s.shearerCounts)) {
+        const nameByIndex = buildStandIndexNameMap(s);
+
+        for (const row of s.shearerCounts) {
+          const sheepType = row?.sheepType || '';
+          const perStand = Array.isArray(row?.stands) && row.stands.length
+            ? row.stands
+            : (Array.isArray(row?.counts) ? row.counts : []);
+          for (let i = 0; i < perStand.length; i++) {
+            const raw = perStand[i];
+            const num = Number(raw);
+            if (!isFinite(num) || num <= 0) continue;
+
+            const shearerName = nameByIndex[i] || `Stand ${i + 1}`;
+            yield { shearerName, count: num, sheepType, date: sessionDate };
+          }
+        }
+        return;
+      }
+
+      if (Array.isArray(s.tallies)) {
+        for (const t of s.tallies) {
+          yield {
+            shearerName: t.shearerName || t.shearer || t.name,
+            count: Number(t.count || t.tally || 0),
+            sheepType: t.sheepType || t.type,
+            date: sessionDate
+          };
+        }
+        return;
+      }
+
+      if (Array.isArray(s.shearers)) {
+        for (const sh of s.shearers) {
+          const shearerName = normalizeName(sh.name || sh.shearerName || sh.displayName || sh.shearer || sh.id) || 'Unknown';
+          const runs = sh.runs || sh.tallies || sh.entries || [];
+          for (const r of (runs || [])) {
+            yield {
+              shearerName,
+              count: Number(r.count || r.tally || 0),
+              sheepType: r.sheepType || r.type,
+              date: sessionDate
+            };
+          }
+          if (typeof sh.total === 'number') {
+            yield {
+              shearerName,
+              count: Number(sh.total),
+              sheepType: sh.sheepType || null,
+              date: sessionDate
+            };
+          }
+        }
+        return;
+      }
+
+      if (s.shearerTallies && typeof s.shearerTallies === 'object') {
+        for (const [shearerName, entries] of Object.entries(s.shearerTallies)) {
+          for (const e of (entries || [])) {
+            yield {
+              shearerName,
+              count: Number(e.count || e.tally || 0),
+              sheepType: e.sheepType || e.type,
+              date: sessionDate
+            };
+          }
+        }
+      }
+    }
+
     // Map stand index → name from session.stands[], normalizing 1-based indices
     function buildStandIndexNameMap(sessionData) {
       const map = {};
@@ -1562,7 +1661,7 @@ function initTop5ShedStaffWidget() {
       })();
   }
 
-function initTop5FarmsWidget() {
+function initTop5FarmsWidget(defaultWorkType = 'shorn') {
   (function () {
     const flag = localStorage.getItem('dash_top5_farms_enabled');
     const rootEl = document.getElementById('top5-farms');
@@ -1588,11 +1687,18 @@ function initTop5FarmsWidget() {
     const viewSel = rootEl.querySelector('#farms-view');
     const yearSel = rootEl.querySelector('#farms-year');
     const viewAllBtn = rootEl.querySelector('#farms-viewall');
+    const tabs = rootEl.querySelector('#farms-worktype-tabs');
     const modal = document.getElementById('farms-full-modal');
     const modalBodyTbody = document.querySelector('#farms-full-table tbody');
-    if (!listEl || !viewSel || !yearSel || !viewAllBtn || !modal || !modalBodyTbody) {
+    if (!listEl || !viewSel || !yearSel || !viewAllBtn || !tabs || !modal || !modalBodyTbody) {
       console.warn('[Top5Farms] Missing elements');
       return;
+    }
+
+    const initialBtn = tabs.querySelector(`[data-worktype="${defaultWorkType}"]`);
+    if (initialBtn) {
+      tabs.querySelectorAll('.siq-segmented__btn').forEach(b => b.classList.remove('is-active'));
+      initialBtn.classList.add('is-active');
     }
 
 
@@ -1643,6 +1749,12 @@ function initTop5FarmsWidget() {
       return { start: null, end: null };
     }
 
+    function isCrutchedType(sheepType) {
+      if (!sheepType) return false;
+      const s = String(sheepType).toLowerCase();
+      return s.includes('crutch');
+    }
+
     function sessionDateToJS(d) {
       if (!d) return null;
       if (typeof d === 'object' && d.toDate) return d.toDate();
@@ -1655,29 +1767,35 @@ function initTop5FarmsWidget() {
       return isNaN(dt.getTime()) ? null : dt;
     }
 
-    function aggregateFarms(sessions, mode, year) {
+    function aggregateFarms(sessions, mode, year, workType) {
       const { start, end } = getDateRange(mode, year);
+      const wantCrutched = (workType === 'crutched');
       const totals = new Map();
       const visits = new Map();
       const lastDate = new Map();
       for (const doc of sessions) {
         const s = doc.data ? doc.data() : doc;
-        const sheep = sumSheep(s);
         const farm = pickFarmName(s);
-        if (!sheep || !farm || farm === 'Unknown') continue;
-        const date = getSessionDateYMD(s);
-        if (mode !== 'all') {
-          const dt = sessionDateToJS(date);
-          if (!dt) continue;
-          if (start && dt < start) continue;
-          if (end && dt > end) continue;
-        }
-        totals.set(farm, (totals.get(farm) || 0) + sheep);
-        if (!visits.has(farm)) visits.set(farm, new Set());
-        if (date) visits.get(farm).add(date);
-        if (date) {
-          const prev = lastDate.get(farm);
-          if (!prev || date > prev) lastDate.set(farm, date);
+        if (!farm || farm === 'Unknown') continue;
+        for (const t of iterateTalliesFromSession(doc)) {
+          if (!t || !t.count) continue;
+          if (mode !== 'all') {
+            if (!t.date) continue;
+            if (start && t.date < start) continue;
+            if (end && t.date > end) continue;
+          }
+          const isCrutch = isCrutchedType(t.sheepType);
+          if (wantCrutched && !isCrutch) continue;
+          if (!wantCrutched && isCrutch) continue;
+          const count = t.count || 0;
+          totals.set(farm, (totals.get(farm) || 0) + count);
+          const ymd = toYMDFromSavedAt(t.date);
+          if (!visits.has(farm)) visits.set(farm, new Set());
+          if (ymd) visits.get(farm).add(ymd);
+          if (ymd) {
+            const prev = lastDate.get(farm);
+            if (!prev || ymd > prev) lastDate.set(farm, ymd);
+          }
         }
       }
       return Array.from(totals.entries())
@@ -1770,9 +1888,10 @@ function initTop5FarmsWidget() {
         }
         return;
       }
+      const workType = tabs.querySelector('.siq-segmented__btn.is-active')?.dataset.worktype || defaultWorkType;
       const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
       const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
-        const rows = aggregateFarms(cachedSessions, mode, year);
+        const rows = aggregateFarms(cachedSessions, mode, year, workType);
         if (!shouldRerender(cachedRows, rows)) return;
         cachedRows = rows;
         renderTop5Farms(rows, listEl);
@@ -1792,6 +1911,14 @@ function initTop5FarmsWidget() {
     }
     // Kick off an initial render so cached sessions populate the view
     scheduleRender();
+
+    tabs.addEventListener('click', e => {
+      const btn = e.target.closest('.siq-segmented__btn');
+      if (!btn) return;
+      tabs.querySelectorAll('.siq-segmented__btn').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      scheduleRender();
+    });
 
     viewSel.addEventListener('change', () => {
         const v = viewSel.value;
@@ -2018,7 +2145,7 @@ document.addEventListener('DOMContentLoaded', () => {
           try { initTop5ShedStaffWidget(); } catch (e) { console.error('[Dashboard] initTop5ShedStaffWidget failed:', e); }
         }
         if (typeof initTop5FarmsWidget === 'function') {
-          try { initTop5FarmsWidget(); } catch (e) { console.error('[Dashboard] initTop5FarmsWidget failed:', e); }
+          try { initTop5FarmsWidget('shorn'); } catch (e) { console.error('[Dashboard] initTop5FarmsWidget failed:', e); }
         }
       }
     } catch (err) {
