@@ -1511,7 +1511,9 @@ function addIncident() {
     const body = document.getElementById('incidentBody');
     if (!body) return;
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td><input type="time" /></td><td><input type="text" placeholder="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
+    tr.innerHTML = '<td data-label="Time"><input type="time" /></td>' +
+                   '<td data-label="Name"><input type="text" placeholder="Name" /></td>' +
+                   '<td data-label="Description"><textarea placeholder="Describe incident..."></textarea></td>';
     body.appendChild(tr);
 }
 
