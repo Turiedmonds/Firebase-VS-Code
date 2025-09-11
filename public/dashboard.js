@@ -4074,11 +4074,13 @@ SessionStore.onChange(refresh);
     const personDayMap = new Map(); // person|role -> Set(days)
     const monthDayMap = new Map();  // month -> Set(days)
     const farmsSet = new Set();
+    let sessionCount = 0;
 
     sessions.forEach(s=>{
       const farm = pickFarmName(s) || 'Unknown Farm';
       if (farmFilter && farmFilter !== '__ALL__' && farm !== farmFilter) return;
 
+      sessionCount++;
       farmsSet.add(farm);
       const dayStr = toDayIso(s.date || s.savedAt || s.updatedAt);
       allDaySet.add(dayStr);
@@ -4135,7 +4137,7 @@ SessionStore.onChange(refresh);
       .map(([month,set])=>({month, days:set.size}))
       .sort((a,b)=>a.month.localeCompare(b.month));
 
-    return { total: allDaySet.size, allDays: allDaySet, farmRows, personRows, monthRows, personDayMap, farms:Array.from(farmsSet).sort() };
+    return { total: allDaySet.size, sessionCount, allDays: allDaySet, farmRows, personRows, monthRows, personDayMap, farms:Array.from(farmsSet).sort() };
   }
 
   function renderPill(val){
@@ -4144,8 +4146,11 @@ SessionStore.onChange(refresh);
     dashCache.kpiDaysWorked = text;
     saveDashCache();
   }
-  function renderSummary(total){
-    tbodySummary.innerHTML = `<tr><td>Days Worked</td><td>${total}</td></tr>`;
+  function renderSummary(totalDays, sessionCount){
+    const daysEl = tbodySummary.querySelector('#kpiDWDaysCount');
+    if (daysEl) daysEl.textContent = totalDays;
+    const sessEl = tbodySummary.querySelector('#kpiDWSessionsCount');
+    if (sessEl) sessEl.textContent = sessionCount;
   }
   function renderByFarm(rows){
     const tbody = document.querySelector('#kpiDWByFarm tbody');
@@ -4210,7 +4215,7 @@ SessionStore.onChange(refresh);
       }
     }
     renderPill(agg.total);
-    renderSummary(agg.total);
+    renderSummary(agg.total, agg.sessionCount);
     renderByFarm(agg.farmRows);
     renderByPerson(agg.personRows);
 
