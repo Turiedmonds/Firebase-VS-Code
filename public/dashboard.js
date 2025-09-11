@@ -3074,17 +3074,28 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   // CSV export (current tables)
   exportBtn?.addEventListener('click', () => {
-const rows = [['Section','Sheep Type','Total','% of total','Farms','Top Farm (day)']];
-    document.querySelectorAll('#kpiFullSheepTable tbody tr').forEach(tr=>{
-      const cells=[...tr.children].map(td=>td.textContent.trim());
-      rows.push(['Shorn', ...cells]);
-    });
-    document.querySelectorAll('#kpiCrutchedTable tbody tr').forEach(tr=>{
-      const cells=[...tr.children].map(td=>td.textContent.trim());
-      rows.push(['Crutched', ...cells]);
-    });
-    const csv = rows.map(r=>r.map(v=>`"${v.replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], {type:'text/csv'});
+    let rows;
+    if (compareMode === 'monthly' || compareMode === 'yearly') {
+      const container = compareMode === 'monthly' ? monthlyContainer : yearlyContainer;
+      const label = compareMode === 'monthly' ? 'Month' : 'Year';
+      rows = [[label, 'Shorn', 'Crutched', 'Total']];
+      container?.querySelectorAll('tbody tr').forEach(tr => {
+        const cells = [...tr.children].map(td => td.textContent.trim());
+        rows.push(cells.slice(0, 4));
+      });
+    } else {
+      rows = [['Section', 'Sheep Type', 'Total', '% of total', 'Farms', 'Top Farm (day)']];
+      document.querySelectorAll('#kpiFullSheepTable tbody tr').forEach(tr => {
+        const cells = [...tr.children].map(td => td.textContent.trim());
+        rows.push(['Shorn', ...cells]);
+      });
+      document.querySelectorAll('#kpiCrutchedTable tbody tr').forEach(tr => {
+        const cells = [...tr.children].map(td => td.textContent.trim());
+        rows.push(['Crutched', ...cells]);
+      });
+    }
+    const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = `SheepCount_${yearSel.value}.csv`;
