@@ -203,6 +203,14 @@
                   <option value="__ALL__">All farms</option>
                 </select>
               </label>
+              <label>
+                Compare
+                <select id="kpiSheepCompare">
+                  <option value="summary">Summary</option>
+                  <option value="monthly">By Month</option>
+                  <option value="yearly">By Year</option>
+                </select>
+              </label>
               <small id="kpiOfflineNote" class="kpi-note" hidden>Offline data may be incomplete.</small>
             </div>
 
@@ -227,6 +235,9 @@
                 </table>
               </section>
             </div>
+
+            <div id="kpiSheepMonthly" hidden></div>
+            <div id="kpiSheepYearly" hidden></div>
 
             <footer class="kpi-actions">
               <button id="kpiExportCsv">Export CSV</button>
