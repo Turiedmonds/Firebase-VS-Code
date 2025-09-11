@@ -32,6 +32,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let allIncidents = [];
 
+  function setDefaultDateRange() {
+    const now = new Date();
+    const year = now.getFullYear();
+    fromInput.value = new Date(year, 0, 1).toISOString().slice(0, 10);
+    toInput.value = new Date(year, 11, 31).toISOString().slice(0, 10);
+  }
+
+  setDefaultDateRange();
+
   function render(list) {
     tbody.innerHTML = '';
     if (!list.length) {
@@ -50,10 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function applyFilters() {
     const fromVal = fromInput.value ? new Date(fromInput.value) : null;
     const toVal = toInput.value ? new Date(toInput.value) : null;
+    if (toVal) toVal.setDate(toVal.getDate() + 1);
     const filtered = allIncidents.filter(it => {
       const d = it.date;
       if (fromVal && d < fromVal) return false;
-      if (toVal && d > toVal) return false;
+      if (toVal && d >= toVal) return false;
       return true;
     });
     render(filtered);
@@ -61,9 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   applyBtn.addEventListener('click', applyFilters);
   clearBtn.addEventListener('click', () => {
-    fromInput.value = '';
-    toInput.value = '';
-    render(allIncidents);
+    setDefaultDateRange();
+    applyFilters();
   });
   backBtn?.addEventListener('click', () => window.history.back());
   exportBtn?.addEventListener('click', () => {
@@ -98,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const bd = b.date ? b.date.getTime() : 0;
         return bd - ad;
       });
-      render(allIncidents);
+      applyFilters();
       seenKeys.forEach(k => localStorage.setItem('incident_seen_' + k, '1'));
       localStorage.setItem('incident_seen_last_update', Date.now().toString());
     } catch (e) {
