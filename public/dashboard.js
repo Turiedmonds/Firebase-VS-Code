@@ -2316,7 +2316,7 @@ document.addEventListener('DOMContentLoaded', () => {
   tourTip.style.display = 'none';
 
   const steps = [
-    { sel: '#kpiBar', text: 'Key Metrics — view KPI pills for sheep count, rate, hours, and days worked. Tap any pill for details.' },
+    { sel: '#kpiBar', text: 'Key Metrics — view KPI pills for sheep count, rate, hours, and days worked. Tap any pill for details. Double-tap the sheep count pill to switch between Shorn and Crutched totals.' },
     { sel: '#kpiCalendar', text: 'Calendar — view past sessions on a calendar.' },
     { sel: '#top5-shearers', text: 'Top 5 Shearers — tap “View Full List” to see rankings.' },
     { sel: '#top5-shedstaff', text: 'Top 5 Shed Staff — track hours worked; open “View Full List”.' },
