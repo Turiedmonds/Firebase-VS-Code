@@ -2940,14 +2940,18 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
 
   // Wire up
   if (pill) {
-    let clickTimer;
-    pill.addEventListener('click', () => {
-      clearTimeout(clickTimer);
-      clickTimer = setTimeout(openModal, 250);
-    });
-    pill.addEventListener('dblclick', () => {
-      clearTimeout(clickTimer);
-      togglePill();
+    let lastTap = 0;
+    let tapTimer;
+    pill.addEventListener('pointerdown', () => {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        clearTimeout(tapTimer);
+        togglePill();
+        lastTap = 0;
+      } else {
+        tapTimer = setTimeout(openModal, 300);
+        lastTap = now;
+      }
     });
   }
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
