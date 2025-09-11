@@ -398,7 +398,9 @@ button {
 /* Tab navigation */
 .tabs {
   display: flex;
+  gap: 4px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 .tab-button,
 .dashboard-button {
@@ -407,7 +409,9 @@ button {
   color: #fff;
   border: 1px solid #555;
   cursor: pointer;
-  margin-right: 4px;
+}
+.tab-button {
+  flex: 1;
 }
 .tab-button.active {
   background: #666;
