@@ -390,6 +390,16 @@ button {
     margin-bottom: 16px;
   }
 
+  /* Ensure time input fits within its cell on small screens */
+  #incidentTable {
+    table-layout: auto;
+  }
+
+  #incidentTable input[type="time"] {
+    width: 100%;
+    min-width: 0;
+  }
+
 }
 
 .highlight-error {
