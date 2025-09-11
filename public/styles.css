@@ -1575,14 +1575,14 @@ button {
 }
 
 .kpi-spark text {
-  fill:#374151;
+  fill:#f3f4f6;
   font-size:10px;
 }
 
 .kpi-spark .title {
   font-size:12px;
   font-weight:600;
-  fill:#111827;
+  fill:#f3f4f6;
 }
 
 /* Calendar modal sizing */
