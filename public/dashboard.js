@@ -2685,11 +2685,16 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   const tblFull = document.querySelector('#kpiFullSheepTable tbody');
   const tblCrutched = document.querySelector('#kpiCrutchedTable tbody');
   const exportBtn = document.getElementById('kpiExportCsv');
+  const compareSel = document.getElementById('kpiSheepCompare');
+  const summarySections = modal.querySelector('.kpi-sections');
+  const monthlyContainer = document.getElementById('kpiSheepMonthly');
+  const yearlyContainer = document.getElementById('kpiSheepYearly');
 
   // --- state + toggle helpers ---
   let currentFull = 0;
   let currentCrutched = 0;
   let showCrutched = false;
+  let compareMode = 'summary';
 
   function renderPill() {
     const val = showCrutched ? currentCrutched : currentFull;
@@ -2772,6 +2777,13 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
       offlineNote.hidden = false;
       return [];
     }
+  }
+
+  async function fetchSessionsForRange(startYear, endYear){
+    const tasks = [];
+    for (let y = startYear; y <= endYear; y++) tasks.push(fetchSessionsForYear(y));
+    const results = await Promise.all(tasks);
+    return results.flat();
   }
 
   // Extract tallies from a session; adjust to your schema
@@ -2875,6 +2887,43 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     return { totalFull, totalCrut, fullArr, crutArr, farms: Array.from(farmsSet).sort() };
   }
 
+  function aggregateByMonth(sessions, farmFilter){
+    const full = Array(12).fill(0);
+    const crutched = Array(12).fill(0);
+    sessions.forEach(s => {
+      const farm = pickFarmName(s) || 'Unknown Farm';
+      if (farmFilter && farmFilter !== '__ALL__' && farm !== farmFilter) return;
+      iterTallies(s, (type, count, f, dateTs) => {
+        const d = dateTs?.toDate ? dateTs.toDate() : new Date(dateTs);
+        const m = d.getMonth();
+        if (isCrutched(type)) crutched[m] += count; else full[m] += count;
+      });
+    });
+    const total = full.map((v,i)=>v + crutched[i]);
+    return {full, crutched, total};
+  }
+
+  function aggregateByYear(sessions, farmFilter, startYear, endYear){
+    const years = [];
+    const full = [];
+    const crutched = [];
+    for (let y=startYear; y<=endYear; y++){ years.push(y); full.push(0); crutched.push(0); }
+    sessions.forEach(s => {
+      const farm = pickFarmName(s) || 'Unknown Farm';
+      if (farmFilter && farmFilter !== '__ALL__' && farm !== farmFilter) return;
+      const ts = s.date || s.savedAt || s.updatedAt;
+      const d = ts?.toDate ? ts.toDate() : new Date(ts);
+      const y = d.getFullYear();
+      if (y < startYear || y > endYear) return;
+      const idx = y - startYear;
+      iterTallies(s,(type,count)=>{
+        if (isCrutched(type)) crutched[idx] += count; else full[idx] += count;
+      });
+    });
+    const total = full.map((v,i)=>v + crutched[i]);
+    return {years, full, crutched, total};
+  }
+
   function toDayIso(ts){
     const d = ts?.toDate ? ts.toDate() : new Date(ts || Date.now());
     // normalise to YYYY-MM-DD (NZ local assumed OK for v1)
@@ -2900,6 +2949,37 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     });
   }
 
+  function renderMonthly(data){
+    if (!monthlyContainer) return;
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const rows = monthNames.map((m,i)=>{
+      const full = data.full[i]||0;
+      const crut = data.crutched[i]||0;
+      const total = full+crut;
+      return `<tr><td>${m}</td><td>${full.toLocaleString()}</td><td>${crut.toLocaleString()}</td><td>${total.toLocaleString()}</td></tr>`;
+    }).join('');
+    monthlyContainer.innerHTML =
+      `<div class="spark"></div>`+
+      `<table class="kpi-table"><thead><tr><th>Month</th><th>Shorn</th><th>Crutched</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
+    const spark = monthlyContainer.querySelector('.spark');
+    if (spark) renderSparkline(spark, data.total);
+  }
+
+  function renderYearly(data){
+    if (!yearlyContainer) return;
+    const rows = data.years.map((y,i)=>{
+      const full = data.full[i]||0;
+      const crut = data.crutched[i]||0;
+      const total = full+crut;
+      return `<tr><td>${y}</td><td>${full.toLocaleString()}</td><td>${crut.toLocaleString()}</td><td>${total.toLocaleString()}</td></tr>`;
+    }).join('');
+    yearlyContainer.innerHTML =
+      `<div class="spark"></div>`+
+      `<table class="kpi-table"><thead><tr><th>Year</th><th>Shorn</th><th>Crutched</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
+    const spark = yearlyContainer.querySelector('.spark');
+    if (spark) renderSparkline(spark, data.total);
+  }
+
   function updatePill(full, crutched){
     currentFull = Number(full || 0);
     currentCrutched = Number(crutched || 0);
@@ -2917,21 +2997,53 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   }
 
   async function refresh(){
+    compareMode = compareSel?.value || 'summary';
     const year = Number(yearSel.value || new Date().getFullYear());
     const farm = farmSel.value || '__ALL__';
-    const sessions = await fetchSessionsForYear(year);
-    const agg = aggregate(sessions, farm);
-    if (pillVal) updatePill(agg.totalFull, agg.totalCrut);
 
-    // Populate farm list (keep current selection if possible)
-    const current = farmSel.value;
-    farmSel.innerHTML =
-      `<option value="__ALL__">All farms</option>` +
-      agg.farms.map(f => `<option value="${f}">${f}</option>`).join('');
-    if (agg.farms.includes(current)) farmSel.value = current;
+    let sessions = [];
+    if (compareMode === 'yearly') {
+      const startYear = year - 4;
+      sessions = await fetchSessionsForRange(startYear, year);
 
-    if (tblFull) renderTable(tblFull, agg.fullArr);
-    if (tblCrutched) renderTable(tblCrutched, agg.crutArr);
+      const farms = Array.from(new Set(sessions.map(s=>pickFarmName(s) || 'Unknown Farm'))).sort();
+      const current = farmSel.value;
+      farmSel.innerHTML = `<option value="__ALL__">All farms</option>` + farms.map(f=>`<option value="${f}">${f}</option>`).join('');
+      if (farms.includes(current)) farmSel.value = current;
+
+      const currentYearSessions = sessions.filter(s=>{
+        const ts = s.date || s.savedAt || s.updatedAt;
+        const d = ts?.toDate ? ts.toDate() : new Date(ts);
+        return d.getFullYear() === year;
+      });
+      const aggCurrent = aggregate(currentYearSessions, farm);
+      if (pillVal) updatePill(aggCurrent.totalFull, aggCurrent.totalCrut);
+
+      const yearAgg = aggregateByYear(sessions, farm, startYear, year);
+      renderYearly(yearAgg);
+    } else {
+      sessions = await fetchSessionsForYear(year);
+      const agg = aggregate(sessions, farm);
+      if (pillVal) updatePill(agg.totalFull, agg.totalCrut);
+
+      const current = farmSel.value;
+      farmSel.innerHTML =
+        `<option value="__ALL__">All farms</option>` +
+        agg.farms.map(f => `<option value="${f}">${f}</option>`).join('');
+      if (agg.farms.includes(current)) farmSel.value = current;
+
+      if (compareMode === 'monthly') {
+        const monthAgg = aggregateByMonth(sessions, farm);
+        renderMonthly(monthAgg);
+      } else {
+        if (tblFull) renderTable(tblFull, agg.fullArr);
+        if (tblCrutched) renderTable(tblCrutched, agg.crutArr);
+      }
+    }
+
+    if (summarySections) summarySections.hidden = compareMode !== 'summary';
+    if (monthlyContainer) monthlyContainer.hidden = compareMode !== 'monthly';
+    if (yearlyContainer) yearlyContainer.hidden = compareMode !== 'yearly';
   }
 
   // Open/close modal
@@ -2958,6 +3070,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   if (closeBtnFooter) closeBtnFooter.addEventListener('click', closeModal);
   if (yearSel) yearSel.addEventListener('change', refresh);
   if (farmSel) farmSel.addEventListener('change', refresh);
+  if (compareSel) compareSel.addEventListener('change', refresh);
 
   // CSV export (current tables)
   exportBtn?.addEventListener('click', () => {
