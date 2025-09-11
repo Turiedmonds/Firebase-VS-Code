@@ -1788,18 +1788,27 @@ function initTop5FarmsWidget() {
       const mode = (viewSel.value === 'year') ? 'year' : (viewSel.value || '12m');
       const year = (mode === 'year') ? (yearSel.value || new Date().getFullYear()) : null;
       const workType = tabs.querySelector('.siq-segmented__btn.is-active')?.dataset.worktype || 'shorn';
-        const rows = aggregateFarms(cachedSessions, mode, year, workType);
-        if (!shouldRerender(cachedRows, rows)) return;
-        cachedRows = rows;
-        renderTop5Farms(rows, listEl);
-        renderFullFarms(rows, modalBodyTbody);
-        // Save top farms for fast future paint
-        const top5Cache = rows.slice(0,5).map(r => ({ name: r.name, sheep: r.sheep }));
-        if (shouldRerender(dashCache.top5Farms, top5Cache)) {
-          dashCache.top5Farms = top5Cache;
-          saveDashCache();
-        }
+      const rows = aggregateFarms(cachedSessions, mode, year, workType);
+
+      if (!rows.length) {
+        renderEmptyLeaderboard(listEl, modalBodyTbody, 'No farm data');
+        cachedRows = [];
+        dashCache.top5Farms = [];
+        saveDashCache();
+        return;
       }
+
+      if (!shouldRerender(cachedRows, rows)) return;
+      cachedRows = rows;
+      renderTop5Farms(rows, listEl);
+      renderFullFarms(rows, modalBodyTbody);
+      // Save top farms for fast future paint
+      const top5Cache = rows.slice(0,5).map(r => ({ name: r.name, sheep: r.sheep }));
+      if (shouldRerender(dashCache.top5Farms, top5Cache)) {
+        dashCache.top5Farms = top5Cache;
+        saveDashCache();
+      }
+    }
 
     function scheduleRender() {
       if (renderPending) return;
