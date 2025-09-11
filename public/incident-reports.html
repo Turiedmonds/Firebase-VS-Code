@@ -39,6 +39,9 @@
     <img src="logo.png" alt="SHEΔR iQ logo" />
     <h2>Incident Reports</h2>
   </div>
+  <div class="tabs">
+    <button id="backBtn" class="tab-button" type="button">Return to Dashboard</button>
+  </div>
   <div id="incidentFilters" style="display:flex;gap:8px;align-items:end;margin:10px 0;flex-wrap:wrap;">
     <label>
       <div style="font-size:12px;opacity:.8;">From</div>
@@ -57,9 +60,8 @@
     </thead>
     <tbody id="incidentBody"></tbody>
   </table>
-  <div style="margin-top:20px;display:flex;gap:10px;">
+  <div style="margin-top:20px;">
     <button id="exportBtn" class="tab-button" type="button">Export</button>
-    <button id="backBtn" class="tab-button" type="button">Return to Dashboard</button>
   </div>
   <script src="/export.js"></script>
   <script type="module" src="incident-reports.js"></script>
