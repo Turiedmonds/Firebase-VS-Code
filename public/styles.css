@@ -123,6 +123,9 @@ table { border-collapse: collapse; width: 100%; margin-top: 20px; }
   width: auto;
   min-width: 100%;
 }
+#incidentTable {
+  table-layout: fixed;
+}
 th, td { border: 1px solid #555; padding: 8px; text-align: center; }
 th { background: #222; }
 /* Hide caret in non-focused editable cells */
@@ -134,7 +137,11 @@ td[contenteditable="true"]:focus {
   caret-color: auto;
 }
 /* Increase input padding for touch devices */
-input[type="number"], input[type="text"], select {
+input[type="number"],
+input[type="text"],
+input[type="time"],
+select,
+textarea {
   width: 100%;
   padding: 8px 6px;
   box-sizing: border-box;
