@@ -1736,3 +1736,36 @@ button {
   color:#ffb74d;
 }
 
+/* Responsive layout for incident table on small screens */
+@media (max-width: 600px) {
+  #incidentTable {
+    border: 0;
+  }
+  #incidentTable thead {
+    display: none;
+  }
+  #incidentTable tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid #555;
+    padding: 8px;
+  }
+  #incidentTable td {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    border: none;
+    padding: 4px 0;
+  }
+  #incidentTable td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  #incidentTable input,
+  #incidentTable textarea {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
