@@ -866,7 +866,7 @@ function populateSessionData(data) {
         if (Array.isArray(data.shedStaff)) {
             data.shedStaff.forEach(staff => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td><input placeholder="Staff Name" type="text"/></td><td><input type="text" class="hours-input" data-auto-hours="shed" readonly/></td>';
+                tr.innerHTML = '<td><input placeholder="Staff Name" type="text" name="Name"/></td><td><input type="text" class="hours-input" data-auto-hours="shed" readonly/></td>';
                 const nameInput = tr.querySelector('td:nth-child(1) input');
                 const hoursInput = tr.querySelector('td:nth-child(2) input');
                 if (nameInput) {
@@ -890,7 +890,7 @@ function populateSessionData(data) {
         if (Array.isArray(data.incidents) && data.incidents.length) {
             data.incidents.forEach(inc => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td><input type="time" /></td><td><input type="text" placeholder="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
+                tr.innerHTML = '<td><input type="time" /></td><td><input type="text" placeholder="Name" name="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
                 const timeInput = tr.querySelector('input[type="time"]');
                 const nameInput = tr.querySelector('input[type="text"]');
                 const descInput = tr.querySelector('textarea');
@@ -901,7 +901,7 @@ function populateSessionData(data) {
             });
         } else {
             const tr = document.createElement('tr');
-            tr.innerHTML = '<td><input type="time" /></td><td><input type="text" placeholder="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
+            tr.innerHTML = '<td><input type="time" /></td><td><input type="text" placeholder="Name" name="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td>';
             incidentBody.appendChild(tr);
         }
     }
@@ -1457,7 +1457,7 @@ function addStand() {
     numStands++;
     const header = document.getElementById("headerRow");
     const newHeader = document.createElement("th");
-    newHeader.innerHTML = `Stand ${numStands}<br><input type="text" placeholder="Name">`;
+    newHeader.innerHTML = `Stand ${numStands}<br><input type="text" placeholder="Name" name="Name">`;
     const input = newHeader.querySelector('input');
    if (input) {
         adjustStandNameWidth(input);
@@ -1512,7 +1512,7 @@ function addIncident() {
     if (!body) return;
     const tr = document.createElement('tr');
     tr.innerHTML = '<td data-label="Time"><input type="time" /></td>' +
-                   '<td data-label="Name"><input type="text" placeholder="Name" /></td>' +
+                   '<td data-label="Name"><input type="text" placeholder="Name" name="Name" /></td>' +
                    '<td data-label="Description"><textarea placeholder="Describe incident..."></textarea></td>';
     body.appendChild(tr);
 }
@@ -1890,7 +1890,7 @@ if (e.target.matches('#shedStaffTable td:nth-child(1) input')) {
 function addShedStaff() {
     const body = document.getElementById('shedStaffTable');
     const row = document.createElement('tr');
-    row.innerHTML = `<td><input placeholder="Staff Name" type="text"/></td><td><input type="text" class="hours-input" data-auto-hours="shed" readonly/></td>`;
+    row.innerHTML = `<td><input placeholder="Staff Name" type="text" name="Name"/></td><td><input type="text" class="hours-input" data-auto-hours="shed" readonly/></td>`;
     body.appendChild(row);
     const hours = document.getElementById('hoursWorked');
     const nameInput = row.querySelector('td:nth-child(1) input');
@@ -3187,7 +3187,7 @@ function resetTallySheet() {
     if (staffTableEl) staffTableEl.innerHTML = '';
     if (totalsBodyEl) totalsBodyEl.innerHTML = '';
     if (incidentBodyEl) {
-        incidentBodyEl.innerHTML = '<tr><td><input type="time" /></td><td><input type="text" placeholder="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td></tr>';
+        incidentBodyEl.innerHTML = '<tr><td><input type="time" /></td><td><input type="text" placeholder="Name" name="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td></tr>';
     }
 
     numStands = 0;
