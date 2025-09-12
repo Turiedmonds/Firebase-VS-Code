@@ -346,7 +346,7 @@ function loadPreviousSession() {
         if (Array.isArray(data.shedStaff)) {
             data.shedStaff.forEach(staff => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td><input placeholder="Staff Name" type="text"/></td><td><input placeholder="e.g. 8h 30m" type="text" class="hours-input"/></td>';
+                tr.innerHTML = '<td><input placeholder="Staff Name" type="text" name="Name"/></td><td><input placeholder="e.g. 8h 30m" type="text" class="hours-input"/></td>';
                 const nameInput = tr.querySelector('td:nth-child(1) input');
                 const hoursInput = tr.querySelector('td:nth-child(2) input');
                 if (nameInput) {

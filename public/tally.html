@@ -482,7 +482,7 @@
       <tbody id="incidentBody">
         <tr>
           <td data-label="Time"><input type="time" /></td>
-          <td data-label="Name"><input type="text" placeholder="Name" /></td>
+          <td data-label="Name"><input type="text" placeholder="Name" name="Name" /></td>
           <td data-label="Description"><textarea placeholder="Describe incident..."></textarea></td>
         </tr>
       </tbody>
@@ -650,7 +650,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('#shedStaffTable tr td:nth-child(2) input').forEach(function(el){ el.value = ''; });
     var incidentBody = document.getElementById('incidentBody');
     if (incidentBody) {
-      incidentBody.innerHTML = '<tr><td><input type="time" /></td><td><input type="text" placeholder="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td></tr>';
+      incidentBody.innerHTML = '<tr><td><input type="time" /></td><td><input type="text" placeholder="Name" name="Name" /></td><td><textarea placeholder="Describe incident..."></textarea></td></tr>';
     }
   }
 
