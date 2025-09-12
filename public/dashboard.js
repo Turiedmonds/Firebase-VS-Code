@@ -4522,8 +4522,13 @@ SessionStore.onChange(refresh);
   const resetBtn = document.getElementById('fmResetFilters');
   const summaryBody = document.querySelector('#farmMonthsSummaryTable tbody');
   const plannerBody = document.querySelector('#farmMonthsPlannerTable tbody');
+  const addFarmBtn = document.getElementById('fmAddFarmBtn');
+  const addFarmForm = document.getElementById('fmAddFarmForm');
+  const addFarmName = document.getElementById('fmAddFarmName');
+  const addFarmAdd = document.getElementById('fmAddFarmAdd');
+  const addFarmCancel = document.getElementById('fmAddFarmCancel');
   const PREF_KEY = 'farmMonthsPrefs';
-  let plannerData = {};
+  let plannerData = { farms: [] };
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const currentYear = new Date().getFullYear();
 
@@ -4750,27 +4755,28 @@ SessionStore.onChange(refresh);
       cell.sheep += sheep;
       cell.years.add(year);
     });
-    plannerData = {};
+    plannerData = { farms: [] };
     Object.keys(data).forEach(f => {
-      plannerData[f] = Array(12).fill(0).map(()=>({days:0,sheep:0}));
+      const farmObj = { name: f, months: Array(12).fill(0).map(()=>({days:0,sheep:0})) };
       data[f].forEach((cell,i) => {
         const yrs = cell.years.size || 1;
-        plannerData[f][i].days = Math.round(cell.days / yrs);
-        plannerData[f][i].sheep = Math.round(cell.sheep / yrs);
+        farmObj.months[i].days = Math.round(cell.days / yrs);
+        farmObj.months[i].sheep = Math.round(cell.sheep / yrs);
       });
+      plannerData.farms.push(farmObj);
     });
-    renderPlannerTable();
+    renderPlanner();
   }
 
-  function renderPlannerTable(){
+  function renderPlanner(){
     plannerBody.innerHTML = '';
     const plannerYear = currentYear + 1;
-    Object.keys(plannerData).sort().forEach(f => {
+    (plannerData.farms || []).slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach((farm,fIdx) => {
       const tr=document.createElement('tr');
-      const th=document.createElement('th'); th.textContent=f; tr.appendChild(th);
-      plannerData[f].forEach((cell,idx) => {
+      const th=document.createElement('th'); th.textContent=farm.name; tr.appendChild(th);
+      farm.months.forEach((cell,idx) => {
         const td=document.createElement('td');
-        td.dataset.farm=f; td.dataset.month=idx;
+        td.dataset.farmIndex=fIdx; td.dataset.month=idx;
         td.contentEditable = !(lockChk.checked && plannerYear === currentYear && idx < (new Date()).getMonth());
         if(cell.days || cell.sheep) td.textContent = `${cell.days}d / ${cell.sheep}`;
         if(cell.days >= 8) td.classList.add('busy');
@@ -4783,13 +4789,13 @@ SessionStore.onChange(refresh);
 
   function onEditCell(e){
     const td=e.target;
-    const f=td.dataset.farm;
+    const f=Number(td.dataset.farmIndex);
     const m=Number(td.dataset.month);
     const val=td.textContent.trim();
     const match=val.match(/(\d+)d\s*\/\s*(\d+)/i);
     let days=0, sheep=0;
     if(match){ days=parseInt(match[1],10); sheep=parseInt(match[2],10); }
-    plannerData[f][m]={days,sheep};
+    plannerData.farms[f].months[m]={days,sheep};
     if(days>=8) td.classList.add('busy'); else td.classList.remove('busy');
   }
 
@@ -4815,6 +4821,8 @@ SessionStore.onChange(refresh);
     fmFilters.hidden = (id==='calendar');
     exportBtn.hidden = (id!=='summary');
     genBtn.hidden = lockWrap.hidden = (id!=='planner');
+    if(addFarmBtn) addFarmBtn.hidden = (id!=='planner');
+    if(addFarmForm) addFarmForm.hidden = true;
     if(titleEl){
       if(id==='planner') titleEl.textContent = `Draft Plan for ${currentYear + 1}`;
       else if(id==='summary') titleEl.textContent = 'Yearly Calendar Overview';
@@ -4822,15 +4830,15 @@ SessionStore.onChange(refresh);
     }
     if(id==='summary') renderSummary();
     if(id==='planner') {
-      if(!Object.keys(plannerData).length) generateDraft();
-      else renderPlannerTable();
+      if(!plannerData.farms?.length) generateDraft();
+      else renderPlanner();
     }
   }
 
   function refreshActive(){
     const active = modal.querySelector('.fm-tab.is-active')?.dataset.tab;
     if(active==='summary') renderSummary();
-    if(active==='planner') renderPlannerTable();
+    if(active==='planner') renderPlanner();
   }
 
   function ensureCalendar(){
@@ -4951,7 +4959,31 @@ SessionStore.onChange(refresh);
   calTabs.forEach(tab=>tab.addEventListener('click',()=>showTab(tab.dataset.tab)));
   exportBtn?.addEventListener('click', exportCSV);
   genBtn?.addEventListener('click', generateDraft);
-  lockChk?.addEventListener('change', renderPlannerTable);
+  lockChk?.addEventListener('change', renderPlanner);
+  addFarmBtn?.addEventListener('click', () => {
+    addFarmForm.hidden = false;
+    addFarmBtn.hidden = true;
+    addFarmName.value = '';
+    addFarmName.focus();
+  });
+  addFarmCancel?.addEventListener('click', () => {
+    addFarmForm.hidden = true;
+    addFarmBtn.hidden = false;
+  });
+  addFarmAdd?.addEventListener('click', () => {
+    const name = addFarmName.value.trim();
+    if(!name) return;
+    const exists = (plannerData.farms || []).some(f=>f.name.toLowerCase()===name.toLowerCase());
+    if(exists) return;
+    plannerData.farms.push({ name, months: Array(12).fill(0).map(()=>({days:0,sheep:0})) });
+    renderPlanner();
+    try {
+      if (typeof savePlannerData === 'function') savePlannerData(plannerData);
+      else localStorage.setItem('plannerData', JSON.stringify(plannerData));
+    } catch(e){}
+    addFarmForm.hidden = true;
+    addFarmBtn.hidden = false;
+  });
   [farmSel, fromInput, toInput].forEach(el=>el?.addEventListener('change', ()=>{savePrefs();refreshActive();updateFilterIndicators();}));
   resetBtn?.addEventListener('click', ()=>{
     farmSel.value='__ALL__';
