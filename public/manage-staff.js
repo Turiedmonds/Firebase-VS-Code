@@ -272,6 +272,28 @@ async function restoreStaff(btn) {
       localStorage.setItem('contractor_id', contractorUid);
       await loadStaffList(contractorUid);
 
+      const staffNameInput = document.getElementById('staff-name');
+      const staffEmailInput = document.getElementById('staffEmailInput');
+      let loginEditedByUser = false;
+      if (staffNameInput && staffEmailInput) {
+        staffEmailInput.addEventListener('input', () => {
+          loginEditedByUser = true;
+        });
+        staffNameInput.addEventListener('input', () => {
+          if (loginEditedByUser) return;
+          const fullName = staffNameInput.value.trim();
+          const parts = fullName.split(/\s+/);
+          if (parts.length >= 2 && contractorBusinessName) {
+            const business = contractorBusinessName.replace(/\s+/g, '').toLowerCase();
+            const first = parts[0].toLowerCase();
+            const last = parts.slice(1).join('').toLowerCase();
+            staffEmailInput.value = `${first}.${last}@${business}`;
+          } else {
+            staffEmailInput.value = '';
+          }
+        });
+      }
+
       const deletedSearchInput = document.getElementById('deletedStaffSearch');
       if (deletedSearchInput) {
         deletedSearchInput.addEventListener('input', applyDeletedStaffFilter);
