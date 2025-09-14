@@ -92,7 +92,7 @@ async function loadStaffList(contractorId) {
       <td>${data.name || ''}</td>
       <td>${data.email}</td>
       <td>${status}</td>
-      <td><button class="deleteStaffBtn" data-uid="${docSnap.id}" data-email="${data.email}" data-name="${data.name || ''}">Delete</button></td>`;
+      <td><button class="deleteStaffBtn" data-uid="${docSnap.id}" data-email="${data.email}" data-name="${data.name || ''}">Deactivated</button></td>`;
     tbody.appendChild(tr);
   });
 
