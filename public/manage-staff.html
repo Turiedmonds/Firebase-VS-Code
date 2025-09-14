@@ -320,6 +320,20 @@
       padding: 4px 8px;
     }
 
+    /* Ensure the action column buttons keep their labels on one line */
+    .staff-table td:last-child,
+    .staff-table th:last-child {
+      white-space: nowrap !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+    }
+
+    .staff-table .deleteStaffBtn,
+    .staff-table .restoreStaffBtn {
+      width: auto;
+      white-space: nowrap;
+    }
+
     /* Make the first column narrow only for the active staff table so
        the email column gets more space without affecting deleted staff */
     #staffTable th:first-child,
