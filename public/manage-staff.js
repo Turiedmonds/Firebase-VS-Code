@@ -58,6 +58,19 @@ function showConfirm(message) {
 }
 
 
+function formatLastSeen(diffMs) {
+  const mins = Math.round(diffMs / 60000);
+  if (mins < 60) {
+    return `Last seen ${mins} mins ago`;
+  }
+  const hours = Math.round(diffMs / 3600000);
+  if (hours < 24) {
+    return `Last seen ${hours} hours ago`;
+  }
+  const days = Math.round(diffMs / 86400000);
+  return `Last seen ${days} days ago`;
+}
+
 async function loadStaffList(contractorId) {
   const tbody = document.querySelector('#staffTable tbody');
   const summaryEl = document.getElementById('staffSummary');
@@ -82,8 +95,7 @@ async function loadStaffList(contractorId) {
     if (lastActiveMs && diff <= 5 * 60 * 1000) {
       status = 'Online now';
     } else if (lastActiveMs) {
-      const mins = Math.round(diff / 60000);
-      status = `Last seen ${mins} mins ago`;
+      status = formatLastSeen(diff);
     }
 
     const tr = document.createElement('tr');
