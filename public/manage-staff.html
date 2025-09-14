@@ -328,6 +328,14 @@
       overflow-wrap: normal !important;
     }
 
+    /* Keep long staff login emails on a single line */
+    .staff-table td:nth-child(3),
+    .staff-table th:nth-child(3) {
+      white-space: nowrap !important;
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+    }
+
     .staff-table .deleteStaffBtn,
     .staff-table .restoreStaffBtn,
     .staff-table .removeDeletedStaffBtn {
