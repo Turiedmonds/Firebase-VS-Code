@@ -19,6 +19,8 @@ const functions = getFunctions(app);
 const STAFF_LIMIT = 10;
 const DELETED_STAFF_STATE_KEY = 'deletedStaffSectionState';
 
+let contractorBusinessName = '';
+
 let actionOverlay, actionOverlayText, confirmModal, confirmMessage, confirmYesBtn, confirmCancelBtn;
 
 function showActionOverlay(message) {
@@ -241,19 +243,20 @@ async function restoreStaff(btn) {
         window.location.replace('login.html');
         return;
       }
-      try {
-        const docRef = doc(collection(db, 'contractors'), user.uid);
-        const snap = await getDoc(docRef);
-        const data = snap.exists() ? snap.data() : {};
-        if (data.role !== 'contractor') {
-          window.location.replace('login.html');
-          return;
-        }
-        const backBtn = document.getElementById('back-to-dashboard-btn');
-        if (backBtn) {
-          backBtn.style.display = 'inline-block';
-          backBtn.addEventListener('click', () => {
-            window.location.href = 'dashboard.html';
+        try {
+          const docRef = doc(collection(db, 'contractors'), user.uid);
+          const snap = await getDoc(docRef);
+          const data = snap.exists() ? snap.data() : {};
+          if (data.role !== 'contractor') {
+            window.location.replace('login.html');
+            return;
+          }
+          contractorBusinessName = data.businessname || '';
+          const backBtn = document.getElementById('back-to-dashboard-btn');
+          if (backBtn) {
+            backBtn.style.display = 'inline-block';
+            backBtn.addEventListener('click', () => {
+              window.location.href = 'dashboard.html';
           });
         }
         if (pageContent) pageContent.style.display = 'block';
@@ -284,28 +287,39 @@ async function restoreStaff(btn) {
           document.getElementById('staffRoleSelect').value = 'staff';
         });
       }
-      addBtn.addEventListener('click', async () => {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-          alert('Not authenticated');
-          return;
-        }
+        addBtn.addEventListener('click', async () => {
+          const currentUser = auth.currentUser;
+          if (!currentUser) {
+            alert('Not authenticated');
+            return;
+          }
 
-        const contractorUid = currentUser.uid;
-      const staffName = document.getElementById('staff-name').value.trim();
-      const loginEmail = document.getElementById('staffEmailInput').value.trim();
-      const personalEmail = document.getElementById('staffPersonalEmail').value.trim();
-      const role = document.getElementById('staffRoleSelect').value;
-      if (!staffName) {
-        alert('Please enter a name');
-        return;
-      }
-      if (!loginEmail) {
-        alert('Please enter an email address');
-        return;
-      }
+          const contractorUid = currentUser.uid;
+          const staffNameEl = document.getElementById('staff-name');
+          const staffEmailEl = document.getElementById('staffEmailInput');
+          const staffName = staffNameEl.value.trim();
+          const personalEmail = document.getElementById('staffPersonalEmail').value.trim();
+          const role = document.getElementById('staffRoleSelect').value;
+          if (!staffName) {
+            alert('Please enter a name');
+            return;
+          }
+          const nameParts = staffName.split(/\s+/);
+          if (nameParts.length < 2) {
+            alert('Please enter first and last name');
+            return;
+          }
+          if (!contractorBusinessName) {
+            alert('Contractor business name not found');
+            return;
+          }
+          const businessNormalized = contractorBusinessName.replace(/\s+/g, '').toLowerCase();
+          const firstName = nameParts[0].toLowerCase();
+          const lastName = nameParts.slice(1).join('').toLowerCase();
+          const loginEmail = firstName + '.' + lastName + '@' + businessNormalized;
+          staffEmailEl.value = loginEmail;
 
-        console.log('Creating staff user with', { loginEmail, personalEmail });
+          console.log('Creating staff user with', { loginEmail, personalEmail });
 
         try {
           if (createOverlay) createOverlay.style.display = 'flex';
