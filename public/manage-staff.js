@@ -142,12 +142,19 @@ async function loadDeletedStaff(contractorId) {
       <td>${data.name || ''}</td>
       <td>${data.email || ''}</td>
       <td>${deletedAt}</td>
-      <td><button class="restoreStaffBtn" data-logid="${docSnap.id}" data-name="${data.name || ''}">Restore</button></td>`;
+      <td>
+        <button class="restoreStaffBtn" data-logid="${docSnap.id}" data-name="${data.name || ''}">Restore</button>
+        <button class="removeDeletedStaffBtn" data-logid="${docSnap.id}" data-name="${data.name || ''}">Remove</button>
+      </td>`;
     tbody.appendChild(tr);
   });
 
   tbody.querySelectorAll('.restoreStaffBtn').forEach(btn => {
     btn.addEventListener('click', () => restoreStaff(btn));
+  });
+
+  tbody.querySelectorAll('.removeDeletedStaffBtn').forEach(btn => {
+    btn.addEventListener('click', () => removeDeletedStaff(btn));
   });
 
   applyDeletedStaffFilter();
@@ -206,6 +213,30 @@ async function restoreStaff(btn) {
   } catch (err) {
     console.error('Failed to restore staff user', err);
     alert('Error restoring staff member: ' + (err.message || err));
+  } finally {
+    hideActionOverlay();
+    btn.disabled = false;
+  }
+}
+
+async function removeDeletedStaff(btn) {
+  const { logid, name } = btn.dataset;
+  const confirmed = await showConfirm(`Permanently remove ${name || 'this staff record'}?`);
+  if (!confirmed) return;
+  const contractorId = localStorage.getItem('contractor_id');
+  if (!contractorId) {
+    alert('Missing contractor id');
+    return;
+  }
+  try {
+    btn.disabled = true;
+    showActionOverlay('Removing record…');
+    const fn = httpsCallable(functions, 'deleteStaffLog');
+    await fn({ logId: logid, contractorId });
+    await loadStaffList(contractorId);
+  } catch (err) {
+    console.error('Failed to remove staff log', err);
+    alert('Error removing staff record: ' + (err.message || err));
   } finally {
     hideActionOverlay();
     btn.disabled = false;

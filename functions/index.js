@@ -233,3 +233,17 @@ exports.restoreStaffUser = onCall(
     }
   }
 );
+
+exports.deleteStaffLog = onCall(async (request) => {
+  const { logId, contractorId } = request.data || {};
+  if (!logId || !contractorId) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing logId or contractorId');
+  }
+  try {
+    await admin.firestore().doc(`contractors/${contractorId}/logs/${logId}`).delete();
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting staff log', error);
+    throw new functions.https.HttpsError('internal', 'Unable to delete staff log');
+  }
+});
