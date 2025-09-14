@@ -11,11 +11,22 @@ exports.createStaffUser = onCall(async (request) => {
   console.log("📥 Received data in function:", { loginEmail: authEmail, personalEmail });
 
   if (!authEmail) {
-    throw new Error('Missing loginEmail');
+    throw new functions.https.HttpsError('invalid-argument', 'Missing loginEmail');
   }
 
-  const userRecord = await admin.auth().createUser({ email: authEmail });
-  return { uid: userRecord.uid, personalEmail: personalEmail || null };
+  try {
+    const userRecord = await admin.auth().createUser({ email: authEmail });
+    return { uid: userRecord.uid, personalEmail: personalEmail || null };
+  } catch (error) {
+    console.error('Error creating staff user', error);
+    let code = 'internal';
+    if (error.code === 'auth/invalid-email') {
+      code = 'invalid-argument';
+    } else if (error.code === 'auth/email-already-exists') {
+      code = 'already-exists';
+    }
+    throw new functions.https.HttpsError(code, error.message);
+  }
 });
 
 async function sendCredentialsEmail({ staffName, loginEmail, personalEmail, contractorEmail, staffEmail }) {

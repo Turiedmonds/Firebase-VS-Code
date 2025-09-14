@@ -285,9 +285,10 @@ async function restoreStaff(btn) {
           const parts = fullName.split(/\s+/);
           if (parts.length >= 2 && contractorBusinessName) {
             const business = contractorBusinessName.replace(/\s+/g, '').toLowerCase();
+            const domain = business.includes('.') ? business : `${business}.com`;
             const first = parts[0].toLowerCase();
             const last = parts.slice(1).join('').toLowerCase();
-            staffEmailInput.value = `${first}.${last}@${business}`;
+            staffEmailInput.value = `${first}.${last}@${domain}`;
           } else {
             staffEmailInput.value = '';
           }
@@ -336,9 +337,10 @@ async function restoreStaff(btn) {
             return;
           }
           const businessNormalized = contractorBusinessName.replace(/\s+/g, '').toLowerCase();
+          const domain = businessNormalized.includes('.') ? businessNormalized : `${businessNormalized}.com`;
           const firstName = nameParts[0].toLowerCase();
           const lastName = nameParts.slice(1).join('').toLowerCase();
-          const loginEmail = firstName + '.' + lastName + '@' + businessNormalized;
+          const loginEmail = `${firstName}.${lastName}@${domain}`;
           staffEmailEl.value = loginEmail;
 
           console.log('Creating staff user with', { loginEmail, personalEmail });
