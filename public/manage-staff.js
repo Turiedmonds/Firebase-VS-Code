@@ -281,7 +281,6 @@ async function restoreStaff(btn) {
           document.getElementById('staff-name').value = '';
           document.getElementById('staffEmailInput').value = '';
           document.getElementById('staffPersonalEmail').value = '';
-          document.getElementById('new-password').value = '';
           document.getElementById('staffRoleSelect').value = 'staff';
         });
       }
@@ -296,7 +295,6 @@ async function restoreStaff(btn) {
       const staffName = document.getElementById('staff-name').value.trim();
       const loginEmail = document.getElementById('staffEmailInput').value.trim();
       const personalEmail = document.getElementById('staffPersonalEmail').value.trim();
-      const password = document.getElementById('new-password').value.trim();
       const role = document.getElementById('staffRoleSelect').value;
       if (!staffName) {
         alert('Please enter a name');
@@ -306,17 +304,13 @@ async function restoreStaff(btn) {
         alert('Please enter an email address');
         return;
       }
-      if (!password || password.length < 6) {
-        alert('Temporary password must be at least 6 characters');
-        return;
-      }
 
-        console.log('Creating staff user with', { loginEmail, personalEmail, password });
+        console.log('Creating staff user with', { loginEmail, personalEmail });
 
         try {
           if (createOverlay) createOverlay.style.display = 'flex';
           const createStaffUser = httpsCallable(functions, 'createStaffUser');
-          const result = await createStaffUser({ loginEmail, personalEmail, password });
+          const result = await createStaffUser({ loginEmail, personalEmail });
           const uid = result.data.uid;
           console.log('Created staff user UID:', uid);
 
@@ -332,7 +326,7 @@ async function restoreStaff(btn) {
 
         console.log('Reached sendStaffCredentials function');
         console.log('Contractor email:', auth.currentUser?.email);
-        console.log('staffName:', staffName, 'loginEmail:', loginEmail, 'personalEmail:', personalEmail, 'password:', password);
+        console.log('staffName:', staffName, 'loginEmail:', loginEmail, 'personalEmail:', personalEmail);
 
         try {
           const sendStaffCredentials = httpsCallable(functions, 'sendStaffCredentials');
@@ -340,7 +334,6 @@ async function restoreStaff(btn) {
             staffName,
             loginEmail,
             personalEmail,
-            password,
             contractorEmail: auth.currentUser.email
           });
           console.log('Staff credentials email sent successfully:', response.data);
