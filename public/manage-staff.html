@@ -311,12 +311,12 @@
       border-collapse: collapse;
     }
 
-    /* Prevent wrapping/overlap in table cells */
+    /* Keep headers and cells to a single line across all staff tables */
     .table-scroll .staff-table th,
     .table-scroll .staff-table td {
-      white-space: normal !important;
-      word-break: break-word !important;
-      overflow-wrap: anywhere !important;
+      white-space: nowrap;
+      word-break: normal;
+      overflow-wrap: normal;
       padding: 4px 8px;
     }
 
