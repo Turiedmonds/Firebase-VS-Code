@@ -449,6 +449,13 @@ button {
   margin-bottom: 10px;
 }
 
+#settings-modal .settings-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
 #footer {
   margin-top: 40px;
   padding: 12px;
