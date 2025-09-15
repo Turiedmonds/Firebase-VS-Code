@@ -548,6 +548,12 @@ function saveDashCache(){
 // Track which leaderboard widgets rendered from cache
 const dashCacheRendered = { shearers: false, shedstaff: false, farms: false };
 
+// Preference keys
+const K_DEFAULT_WORKTYPE = 'dashboard_default_worktype';
+function getDefaultWorkType() {
+  return localStorage.getItem(K_DEFAULT_WORKTYPE) === 'crutched' ? 'crutched' : 'shorn';
+}
+
 // Simple in-memory session store with one Firestore listener
 const SessionStore = (() => {
   let cache = [];
@@ -906,6 +912,12 @@ function initTop5ShearersWidget() {
       return;
     }
 
+    // Apply default work type preference
+    const defaultWorkType = getDefaultWorkType();
+    tabs.querySelectorAll('.siq-segmented__btn').forEach(b => {
+      b.classList.toggle('is-active', b.dataset.worktype === defaultWorkType);
+    });
+
 
     function isCrutchedType(sheepType) {
       if (!sheepType) return false;
@@ -1250,6 +1262,14 @@ function initTop5ShearersWidget() {
         viewSel.value = 'year';
         yearSel.hidden = false;
       }
+    });
+
+    document.addEventListener('worktype-preference-change', e => {
+      const w = e.detail === 'crutched' ? 'crutched' : 'shorn';
+      tabs.querySelectorAll('.siq-segmented__btn').forEach(b => {
+        b.classList.toggle('is-active', b.dataset.worktype === w);
+      });
+      scheduleRender();
     });
 
     viewAllBtn.addEventListener('click', () => {
@@ -1638,6 +1658,12 @@ function initTop5FarmsWidget() {
       return;
     }
 
+    // Apply default work type preference
+    const defaultWorkType = getDefaultWorkType();
+    tabs.querySelectorAll('.siq-segmented__btn').forEach(b => {
+      b.classList.toggle('is-active', b.dataset.worktype === defaultWorkType);
+    });
+
 
     (function labelRollingWithYear(sel) {
       if (!sel) return;
@@ -2010,6 +2036,14 @@ function initTop5FarmsWidget() {
         viewSel.value = 'year';
         yearSel.hidden = false;
       }
+    });
+
+    document.addEventListener('worktype-preference-change', e => {
+      const w = e.detail === 'crutched' ? 'crutched' : 'shorn';
+      tabs.querySelectorAll('.siq-segmented__btn').forEach(b => {
+        b.classList.toggle('is-active', b.dataset.worktype === w);
+      });
+      scheduleRender();
     });
 
     viewAllBtn.addEventListener('click', () => { openModal('farms-full-modal'); });
@@ -2492,6 +2526,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (localStorage.getItem(K_WELCOME_ENABLED) == null) localStorage.setItem(K_WELCOME_ENABLED, 'true');
   if (localStorage.getItem(K_TOUR_ENABLED)    == null) localStorage.setItem(K_TOUR_ENABLED, 'true');
   if (localStorage.getItem(K_STAFF_CAN_LOAD)  == null) localStorage.setItem(K_STAFF_CAN_LOAD, 'true');
+  if (localStorage.getItem(K_DEFAULT_WORKTYPE) == null) localStorage.setItem(K_DEFAULT_WORKTYPE, 'shorn');
 
   // Modal elements
   const overlay   = document.getElementById('dashboard-welcome-overlay');
@@ -2506,6 +2541,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const cbWelS    = document.getElementById('settings-enable-welcome');
   const cbTourS   = document.getElementById('settings-enable-tour');
   const cbStaffLoadS = document.getElementById('settings-allow-staff-load');
+  const selWorkType = document.getElementById('settings-default-worktype');
   const btnClearLocal = document.getElementById('btnClearLocalData');
 
   // Help menu elements
@@ -2524,7 +2560,8 @@ document.addEventListener('DOMContentLoaded', () => {
       welcomeEnabled: localStorage.getItem(K_WELCOME_ENABLED) !== 'false',
       welcomeDone:    localStorage.getItem(K_WELCOME_DONE) === 'true',
       tourEnabled:    localStorage.getItem(K_TOUR_ENABLED) !== 'false',
-      staffCanLoadSessions: localStorage.getItem(K_STAFF_CAN_LOAD) !== 'false'
+      staffCanLoadSessions: localStorage.getItem(K_STAFF_CAN_LOAD) !== 'false',
+      defaultWorkType: getDefaultWorkType()
     };
   }
   function setPrefs(next){
@@ -2541,6 +2578,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const val = next.staffCanLoadSessions ? 'true' : 'false';
       localStorage.setItem(K_STAFF_CAN_LOAD, val);
       localStorage.setItem(LEGACY_STAFF_KEY, val);
+    }
+    if (typeof next.defaultWorkType === 'string') {
+      const val = next.defaultWorkType === 'crutched' ? 'crutched' : 'shorn';
+      localStorage.setItem(K_DEFAULT_WORKTYPE, val);
     }
   }
 
@@ -2561,6 +2602,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cbWelS)  cbWelS.checked  = p.welcomeEnabled;
     if (cbTourS) cbTourS.checked = p.tourEnabled;
     if (cbStaffLoadS) cbStaffLoadS.checked = p.staffCanLoadSessions;
+    if (selWorkType) selWorkType.value = p.defaultWorkType;
   }
   // Call once at load so UI matches storage
   syncModalFromPrefs();
@@ -2596,7 +2638,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cbWelS)  next.welcomeEnabled = !!cbWelS.checked;
     if (cbTourS) next.tourEnabled    = !!cbTourS.checked;
     if (cbStaffLoadS) next.staffCanLoadSessions = !!cbStaffLoadS.checked;
+    if (selWorkType) next.defaultWorkType = selWorkType.value;
     setPrefs(next);
+    if (selWorkType) {
+      document.dispatchEvent(new CustomEvent('worktype-preference-change', { detail: getDefaultWorkType() }));
+    }
     if (typeof next.staffCanLoadSessions === 'boolean') {
       const uid = localStorage.getItem('contractor_id');
       if (uid) {
@@ -2624,6 +2670,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cbWelS?.addEventListener('change', persistFromSettings);
   cbTourS?.addEventListener('change', persistFromSettings);
   cbStaffLoadS?.addEventListener('change', persistFromSettings);
+  selWorkType?.addEventListener('change', persistFromSettings);
 
   btnClearLocal?.addEventListener('click', async () => {
     if (!confirm('Clear all local data? You will be signed out and the app will reload.')) return;
@@ -2735,7 +2782,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   // --- state + toggle helpers ---
   let currentFull = 0;
   let currentCrutched = 0;
-  let showCrutched = false;
+  let showCrutched = getDefaultWorkType() === 'crutched';
   let compareMode = 'summary';
 
   function renderPill() {
@@ -2748,6 +2795,11 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
     showCrutched = !showCrutched;
     renderPill();
   }
+
+  document.addEventListener('worktype-preference-change', e => {
+    showCrutched = e.detail === 'crutched';
+    renderPill();
+  });
 
   if (!pill || !pillVal || !modal || !yearSel || !farmSel) {
     return;
