@@ -699,6 +699,41 @@ function getLastSession() {
 }
 
 
+let setupPromptBound = false;
+function bindSetupPromptEvents() {
+    if (setupPromptBound) return;
+    setupPromptBound = true;
+
+    const attemptSetupPrompt = () => {
+        const stationVal = document.getElementById('stationName')?.value.trim();
+        if (window.awaitingSetupPrompt && stationVal && isSetupModalEnabled()) {
+            window.awaitingSetupPrompt = false;
+            showSetupModal();
+        }
+    };
+
+    document.addEventListener('change', (e) => {
+        const target = e.target;
+        if (target && target.id === 'stationName') {
+            attemptSetupPrompt();
+        }
+    });
+
+    document.addEventListener('focus', (e) => {
+        const target = e.target;
+        if (target && target.id === 'teamLeader') {
+            attemptSetupPrompt();
+        }
+    }, true);
+
+    document.addEventListener('click', (e) => {
+        const target = e.target;
+        if (target && target.id === 'teamLeader') {
+            attemptSetupPrompt();
+        }
+    }, true);
+}
+
 function setupDailyLayout(shearers, counts, staff) {
     console.log("Setup called with:", shearers, "shearers,", counts, "counts,", staff, "shed staff");
 
@@ -767,6 +802,7 @@ function setupDailyLayout(shearers, counts, staff) {
         if (titleEl && stationName) {
           titleEl.textContent = `${stationName} \u2014 Daily Summary`;
         }
+        bindSetupPromptEvents();
     });
 }
 
@@ -3426,8 +3462,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const fullResetBtn = document.getElementById('fullResetBtn');
      const setupConfirmBtn = document.getElementById('setupConfirmBtn');
     const setupCancelBtn = document.getElementById('setupCancelBtn');
-    const stationNameInput = document.getElementById('stationName');
-    const teamLeaderInput = document.getElementById('teamLeader');
     const saveLocalBtn = document.getElementById('saveLocalBtn');
     const saveCloudBtn = document.getElementById('saveCloudBtn');
     const saveBothBtn = document.getElementById('saveBothBtn');
@@ -3437,23 +3471,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const cloudConfirmBtn = document.getElementById('loadCloudConfirmBtn');
     const cloudCancelBtn = document.getElementById('cancelCloudLoadBtn');
     if (!layoutBuilt && !getLastSession()) {
-    window.awaitingSetupPrompt = true;
-  }
-
-  const attemptSetupPrompt = () => {
-      if (window.awaitingSetupPrompt && stationNameInput?.value.trim() && isSetupModalEnabled()) {
-        window.awaitingSetupPrompt = false;
-        showSetupModal(); // safer version that works
-      }
-  };
-
-  if (stationNameInput) {
-      stationNameInput.addEventListener('change', attemptSetupPrompt);
-  }
-  if (teamLeaderInput) {
-      teamLeaderInput.addEventListener('focus', attemptSetupPrompt);
-      teamLeaderInput.addEventListener('click', attemptSetupPrompt);
-  }
+        window.awaitingSetupPrompt = true;
+    }
+    bindSetupPromptEvents();
 
 const interceptReset = (full) => (e) => {
         e.preventDefault();
