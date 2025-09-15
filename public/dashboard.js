@@ -551,6 +551,18 @@ const dashCacheRendered = { shearers: false, shedstaff: false, farms: false };
 // Preference keys
 const K_DEFAULT_WORKTYPE = 'dashboard_default_worktype';
 
+// Helper to read the persisted work type preference
+function getSavedWorkType() {
+  return localStorage.getItem(K_DEFAULT_WORKTYPE) === 'crutched' ? 'crutched' : 'shorn';
+}
+
+// Notify listeners when the work type preference changes
+function dispatchWorkTypePrefChange() {
+  window.dispatchEvent(
+    new CustomEvent('worktype-preference-change', { detail: { workType: getSavedWorkType() } })
+  );
+}
+
 // Simple in-memory session store with one Firestore listener
 const SessionStore = (() => {
   let cache = [];
@@ -910,7 +922,7 @@ function initTop5ShearersWidget() {
     }
 
     // Apply default work type preference
-    const defaultWorkType = localStorage.getItem(K_DEFAULT_WORKTYPE) === 'crutched' ? 'crutched' : 'shorn';
+    const defaultWorkType = getSavedWorkType();
     tabs.querySelectorAll('.siq-segmented__btn').forEach(b => {
       b.classList.toggle('is-active', b.dataset.worktype === defaultWorkType);
     });
@@ -1220,6 +1232,15 @@ function initTop5ShearersWidget() {
     }
     // Ensure widget renders even when no SessionStore change fires
     scheduleRender();
+
+    // React to work type preference changes
+    window.addEventListener('worktype-preference-change', () => {
+      const wt = getSavedWorkType();
+      tabs.querySelectorAll('.siq-segmented__btn').forEach(b => {
+        b.classList.toggle('is-active', b.dataset.worktype === wt);
+      });
+      scheduleRender();
+    });
 
     tabs.addEventListener('click', e => {
       if (!rootEl) return;
@@ -1648,7 +1669,7 @@ function initTop5FarmsWidget() {
     }
 
     // Apply default work type preference
-    const defaultWorkType = localStorage.getItem(K_DEFAULT_WORKTYPE) === 'crutched' ? 'crutched' : 'shorn';
+    const defaultWorkType = getSavedWorkType();
     tabs.querySelectorAll('.siq-segmented__btn').forEach(b => {
       b.classList.toggle('is-active', b.dataset.worktype === defaultWorkType);
     });
@@ -1991,6 +2012,15 @@ function initTop5FarmsWidget() {
     }
     // Kick off an initial render so cached sessions populate the view
     scheduleRender();
+
+    // React to work type preference changes
+    window.addEventListener('worktype-preference-change', () => {
+      const wt = getSavedWorkType();
+      tabs.querySelectorAll('.siq-segmented__btn').forEach(b => {
+        b.classList.toggle('is-active', b.dataset.worktype === wt);
+      });
+      scheduleRender();
+    });
 
     tabs.addEventListener('click', e => {
       const btn = e.target.closest('.siq-segmented__btn');
@@ -2542,7 +2572,7 @@ document.addEventListener('DOMContentLoaded', () => {
       welcomeDone:    localStorage.getItem(K_WELCOME_DONE) === 'true',
       tourEnabled:    localStorage.getItem(K_TOUR_ENABLED) !== 'false',
       staffCanLoadSessions: localStorage.getItem(K_STAFF_CAN_LOAD) !== 'false',
-      defaultWorkType: localStorage.getItem(K_DEFAULT_WORKTYPE) === 'crutched' ? 'crutched' : 'shorn'
+      defaultWorkType: getSavedWorkType()
     };
   }
   function setPrefs(next){
@@ -2620,7 +2650,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cbTourS) next.tourEnabled    = !!cbTourS.checked;
     if (cbStaffLoadS) next.staffCanLoadSessions = !!cbStaffLoadS.checked;
     if (selWorkType) next.defaultWorkType = selWorkType.value;
+    const prevWT = getSavedWorkType();
     setPrefs(next);
+    if (typeof next.defaultWorkType === 'string' && next.defaultWorkType !== prevWT) {
+      dispatchWorkTypePrefChange();
+    }
     if (typeof next.staffCanLoadSessions === 'boolean') {
       const uid = localStorage.getItem('contractor_id');
       if (uid) {
@@ -2760,7 +2794,7 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   // --- state + toggle helpers ---
   let currentFull = 0;
   let currentCrutched = 0;
-  let showCrutched = localStorage.getItem(K_DEFAULT_WORKTYPE) === 'crutched';
+  let showCrutched = getSavedWorkType() === 'crutched';
   let compareMode = 'summary';
 
   function renderPill() {
@@ -2777,6 +2811,12 @@ console.info('[SHEAR iQ] To backfill savedAt on older sessions, run: backfillSav
   if (!pill || !pillVal || !modal || !yearSel || !farmSel) {
     return;
   }
+
+  // Update when preference changes
+  window.addEventListener('worktype-preference-change', () => {
+    showCrutched = getSavedWorkType() === 'crutched';
+    renderPill();
+  });
 
   if (dashCache.kpiSheepCount != null) {
     const kc = dashCache.kpiSheepCount;
