@@ -89,13 +89,13 @@ function handleStartNewDayClick(e){
   if (isReallyOffline()) {
     caches.match('/tally.html').then(res => {
       if (res) {
-        location.assign('/tally.html');
+        location.assign('/tally.html?newDay=true');
       } else {
         alert('Tally page not available offline. Please connect to the internet at least once to cache this page.');
       }
     });
   } else {
-    location.assign('/tally.html');
+    location.assign('/tally.html?newDay=true');
   }
 }
 

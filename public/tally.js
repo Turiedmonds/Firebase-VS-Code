@@ -3434,6 +3434,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } else if (isNewDay) {
         resetForNewDay();
+        window.awaitingSetupPrompt = true;
     }
 
     const storedRole = sessionStorage.getItem('userRole');
@@ -3470,7 +3471,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cloudSelect = document.getElementById('cloudSessionSelect');
     const cloudConfirmBtn = document.getElementById('loadCloudConfirmBtn');
     const cloudCancelBtn = document.getElementById('cancelCloudLoadBtn');
-    if (!layoutBuilt && !getLastSession()) {
+    if (isNewDay || (!layoutBuilt && !getLastSession())) {
         window.awaitingSetupPrompt = true;
     }
     bindSetupPromptEvents();
