@@ -715,6 +715,9 @@ button {
   gap: 8px;
   margin-top: 10px;
 }
+#settings-modal .siq-modal__body .dw-inline select {
+  width: auto;
+}
 #shearers-modal .siq-modal__close , #shedstaff-modal .siq-modal__close , #farms-full-modal .siq-modal__close , #settings-modal .siq-modal__close {
   background: transparent; border: none; color: #c8d0e0; font-size: 22px; cursor: pointer;
 }
