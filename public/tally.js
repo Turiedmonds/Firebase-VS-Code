@@ -3427,6 +3427,7 @@ document.addEventListener('DOMContentLoaded', () => {
      const setupConfirmBtn = document.getElementById('setupConfirmBtn');
     const setupCancelBtn = document.getElementById('setupCancelBtn');
     const stationNameInput = document.getElementById('stationName');
+    const teamLeaderInput = document.getElementById('teamLeader');
     const saveLocalBtn = document.getElementById('saveLocalBtn');
     const saveCloudBtn = document.getElementById('saveCloudBtn');
     const saveBothBtn = document.getElementById('saveBothBtn');
@@ -3438,14 +3439,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!layoutBuilt && !getLastSession()) {
     window.awaitingSetupPrompt = true;
   }
+
+  const attemptSetupPrompt = () => {
+      if (window.awaitingSetupPrompt && stationNameInput?.value.trim() && isSetupModalEnabled()) {
+        window.awaitingSetupPrompt = false;
+        showSetupModal(); // safer version that works
+      }
+  };
+
   if (stationNameInput) {
-      stationNameInput.addEventListener('change', () => {
-        if (window.awaitingSetupPrompt && stationNameInput.value.trim() && isSetupModalEnabled()) {
-          window.awaitingSetupPrompt = false;
-          showSetupModal(); // safer version that works
-        }
-      });
-    }
+      stationNameInput.addEventListener('change', attemptSetupPrompt);
+  }
+  if (teamLeaderInput) {
+      teamLeaderInput.addEventListener('focus', attemptSetupPrompt);
+      teamLeaderInput.addEventListener('click', attemptSetupPrompt);
+  }
 
 const interceptReset = (full) => (e) => {
         e.preventDefault();
