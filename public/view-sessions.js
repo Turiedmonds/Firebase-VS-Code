@@ -55,6 +55,7 @@ let _reachedEnd = false;
 let _loading = false;
 let _totalLoaded = 0;
 let allSessions = []; // accumulate fetched docs as plain objects { __id, ...data }
+let currentRenderedRows = [];
 
 // Parse Date from session fields; prefer 'date' then 'savedAt'
 function parseSessionDate(s) {
@@ -150,10 +151,30 @@ function renderSessionRowInto(container, docId, data) {
 
   const btns = document.createElement('div');
 
+  function persistNavState(mode) {
+    const navState = {
+      source: 'view-sessions',
+      ids: currentRenderedRows.map(r => r.__id),
+      meta: currentRenderedRows.map(r => ({
+        id: r.__id,
+        stationName: r.stationName || 'Unnamed Station',
+        date: r.date || r.savedAt || '',
+      })),
+      index: Math.max(0, currentRenderedRows.findIndex(r => r.__id === docId)),
+      mode,
+    };
+    try {
+      localStorage.setItem('sessionNavigationState', JSON.stringify(navState));
+    } catch (e) {
+      console.warn('Failed to persist session navigation state', e);
+    }
+  }
+
   const viewBtn = document.createElement('button');
   viewBtn.textContent = 'View';
   viewBtn.className = 'tab-button';
   viewBtn.addEventListener('click', () => {
+    persistNavState('view');
     localStorage.setItem('active_session', JSON.stringify(data));
     localStorage.setItem('firestoreSessionId', docId);
     localStorage.setItem('viewOnlyMode', 'true');
@@ -168,6 +189,7 @@ function renderSessionRowInto(container, docId, data) {
   editBtn.addEventListener('click', () => {
     const pin = prompt('Enter Contractor PIN to edit:');
     if (pin === '1234') {
+      persistNavState('edit');
       const editable = { ...data, viewOnly: false };
       localStorage.setItem('active_session', JSON.stringify(editable));
       localStorage.setItem('firestoreSessionId', docId);
@@ -262,6 +284,8 @@ function applyFiltersAndRender() {
   clearYearSections();
   const fallback = document.getElementById('sessionList');
   if (fallback) fallback.innerHTML = '';
+
+  currentRenderedRows = rows.map(r => ({ ...r }));
 
   if (!rows.length) {
     if (fallback) fallback.innerHTML = '<p>No sessions match your filter.</p>';
