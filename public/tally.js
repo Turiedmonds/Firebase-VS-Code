@@ -3112,72 +3112,19 @@ function getNavigationState() {
     }
 }
 
-function persistNavigationState(state) {
-    if (!state) return;
-    try {
-        localStorage.setItem(SESSION_NAV_KEY, JSON.stringify(state));
-    } catch (e) {
-        console.warn('Failed to persist navigation state', e);
-    }
-}
-
 function clearNavigationState() {
     try { localStorage.removeItem(SESSION_NAV_KEY); } catch (e) {}
 }
 
 function updateNavigationButtons(state = getNavigationState()) {
     const backBtn = document.getElementById('back-to-saved-sessions-btn');
-    const prevBtn = document.getElementById('prev-saved-session-btn');
-    const nextBtn = document.getElementById('next-saved-session-btn');
 
     if (!window.isLoadedSession || !state) {
         backBtn && (backBtn.style.display = 'none');
-        prevBtn && (prevBtn.style.display = 'none');
-        nextBtn && (nextBtn.style.display = 'none');
         return;
     }
 
-    const atStart = state.index <= 0;
-    const atEnd = state.index >= state.ids.length - 1;
-
     if (backBtn) backBtn.style.display = 'inline-block';
-    if (prevBtn) {
-        prevBtn.style.display = 'inline-block';
-        prevBtn.disabled = atStart;
-    }
-    if (nextBtn) {
-        nextBtn.style.display = 'inline-block';
-        nextBtn.disabled = atEnd;
-    }
-}
-
-function jumpToSavedSession(offset) {
-    const state = getNavigationState();
-    if (!state) return;
-
-    const newIndex = state.index + offset;
-    if (newIndex < 0 || newIndex >= state.ids.length) return;
-
-    const targetId = state.ids[newIndex];
-    confirmUnsavedChanges(async () => {
-        const data = await loadSessionFromFirestore(targetId);
-        if (!data) { alert('Failed to load session.'); return; }
-        const meta = Array.isArray(state.meta) ? state.meta.find(m => m.id === targetId) : null;
-        if (meta) {
-            if (!data.stationName && meta.stationName) data.stationName = meta.stationName;
-            if (!data.date && meta.date) data.date = meta.date;
-        }
-        const isEditMode = state.mode === 'edit';
-        data.viewOnly = !isEditMode;
-        localStorage.setItem('viewOnlyMode', isEditMode ? 'false' : 'true');
-        localStorage.setItem('active_session', JSON.stringify(data));
-        localStorage.setItem('firestoreSessionId', targetId);
-        window.isLoadedSession = true;
-        loadSessionObject(data);
-        state.index = newIndex;
-        persistNavigationState(state);
-        updateNavigationButtons(state);
-    });
 }
 
 function confirmUnsavedChanges(next) {
@@ -3545,8 +3492,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmBtn = document.getElementById('confirmLoadBtn');
     const backBtn = document.getElementById('loadSessionBackBtn');
     const backToSavedBtn = document.getElementById('back-to-saved-sessions-btn');
-    const prevSavedBtn = document.getElementById('prev-saved-session-btn');
-    const nextSavedBtn = document.getElementById('next-saved-session-btn');
     const stationInput = document.getElementById('loadStationInput');
     const dateInput = document.getElementById('loadDateInput');
     const partialResetBtn = document.getElementById('partialResetBtn');
@@ -3625,8 +3570,6 @@ const interceptReset = (full) => (e) => {
                 : 'dashboard.html';
         });
     });
-    prevSavedBtn?.addEventListener('click', () => jumpToSavedSession(-1));
-    nextSavedBtn?.addEventListener('click', () => jumpToSavedSession(1));
     stationInput?.addEventListener('input', () => populateDateOptions(stationInput.value));
      setupConfirmBtn?.addEventListener('click', confirmSetupModal);
     setupCancelBtn?.addEventListener('click', hideSetupModal);
